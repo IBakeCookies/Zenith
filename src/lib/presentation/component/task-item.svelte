@@ -6,8 +6,7 @@
 	import type { TaskEdit } from '$lib/presentation/component/task-form-fields.svelte';
 	import TaskRowShell from '$lib/presentation/component/task-row-shell.svelte';
 	import { natureBadge, type TaskNature } from '$lib/presentation/utils/task-nature';
-	import { formatDuration } from '$lib/presentation/utils/duration-format';
-	import { getTaskColumns } from '$lib/presentation/utils/ledger-column';
+	import { formatDuration, formatDurationBand } from '$lib/presentation/utils/duration-format';
 	import type {
 		DrainDraft,
 		EditorDraft,
@@ -184,62 +183,54 @@
 	{/if}
 {/snippet}
 
-<!-- `Prio` renders an empty cell on a completed task rather than being dropped:
-     a row short of a cell breaks every column's width below it. -->
-{#snippet meta()}
-	<td class="ledger-cell ledger-numeric ledger-wide whitespace-nowrap">
-		<Tooltip.Root>
-			<Tooltip.Trigger class="cursor-help">{trueEffort.toFixed(1)}</Tooltip.Trigger>
-			<Tooltip.Content>
-				<p>{m.task_derived_tooltip()}</p>
-			</Tooltip.Content>
-		</Tooltip.Root>
-	</td>
-	<td class="ledger-cell ledger-numeric ledger-wide whitespace-nowrap">
-		{#if !completed}
-			<Tooltip.Root>
-				<!-- 1 dp even at .0: a column whose decimal points do not line up is what
-						`ledger-numeric` exists to prevent (MATH.md §3's printed scale). -->
-				<Tooltip.Trigger class="cursor-help">{priorityScore.toFixed(1)}</Tooltip.Trigger>
-				<Tooltip.Content>
-					<p>{m.task_allocation_tooltip()}</p>
-				</Tooltip.Content>
-			</Tooltip.Root>
-		{/if}
-	</td>
-	<td class="ledger-cell ledger-numeric ledger-wide whitespace-nowrap">
-		<Tooltip.Root>
-			<Tooltip.Trigger class="cursor-help">
-				{flowStateTimeStd === undefined
-					? formatDuration(flowStateTime)
-					: `${formatDuration(flowStateTime)} ± ${formatDuration(flowStateTimeStd)}`}
-			</Tooltip.Trigger>
-			<!-- Two paragraphs, and the shell is an `inline-flex` ROW — so the second
-			     one sets beside the first without this. -->
-			<Tooltip.Content class="flex-col items-start">
-				<p>{m.task_derived_tooltip()}</p>
-				{#if flowStateTimeStd !== undefined}
-					<p>{m.task_flow_band_tooltip()}</p>
-				{/if}
-			</Tooltip.Content>
-		</Tooltip.Root>
-	</td>
-	<td class="ledger-cell ledger-numeric ledger-wide whitespace-nowrap">
-		<Tooltip.Root>
-			<Tooltip.Trigger class="cursor-help">{formatDuration(optimalStopHours)}</Tooltip.Trigger>
-			<Tooltip.Content>
-				<p>{m.task_derived_tooltip()}</p>
-			</Tooltip.Content>
-		</Tooltip.Root>
-	</td>
+<!-- One trigger over the three: they are one sentence about what the model made of the
+     sliders, and three triggers on one line read as three separate claims. -->
+{#snippet readings()}
+	<Tooltip.Root>
+		<Tooltip.Trigger class="cursor-help text-left">
+			{m.task_derived_values({
+				effort: trueEffort.toFixed(1),
+				flow: formatDurationBand(flowStateTime, flowStateTimeStd),
+				stop: formatDuration(optimalStopHours),
+			})}
+		</Tooltip.Trigger>
+		<!-- Two paragraphs, and the shell is an `inline-flex` ROW — so the second
+		     one sets beside the first without this. -->
+		<Tooltip.Content class="flex-col items-start">
+			<p>{m.task_derived_tooltip()}</p>
+			{#if flowStateTimeStd !== undefined}
+				<p>{m.task_flow_band_tooltip()}</p>
+			{/if}
+		</Tooltip.Content>
+	</Tooltip.Root>
 {/snippet}
 
-<!-- Last column, as in the Lab's ledger: same reading, same place. Empty on a completed
-     task rather than dropped — a row short of a cell breaks every column's width below
-     it. -->
-{#snippet trailing()}
-	<td class="ledger-cell ledger-numeric whitespace-nowrap justify-items-end">
-		{#if !completed}
+<!-- The run order's own justification, so it reads beside the readings it ranks — and
+     nothing at all on a completed task, which the plan is no longer ranking. -->
+{#snippet meta()}
+	{#if !completed}
+		<!-- The separator is the caller's: every other `·` on the line is inside a message,
+		     and the Lab renders no `meta` for one to sit before. -->
+		<span class="text-ty-ghost">·</span>
+		<Tooltip.Root>
+			<!-- 1 dp even at .0: MATH.md §3's printed scale. -->
+			<Tooltip.Trigger class="cursor-help tabular-nums">
+				{m.task_derived_priority({
+					score: priorityScore.toFixed(1),
+				})}
+			</Tooltip.Trigger>
+			<Tooltip.Content>
+				<p>{m.task_allocation_tooltip()}</p>
+			</Tooltip.Content>
+		</Tooltip.Root>
+	{/if}
+{/snippet}
+
+<!-- Beside the title, as in the Lab's list: same reading, same place. Nothing at all on
+     a completed task — hours quoted for work already done read as a verdict. -->
+{#snippet planned()}
+	{#if !completed}
+		<div class="text-right whitespace-nowrap tabular-nums">
 			<Tooltip.Root>
 				<!-- Why each reading triggers on itself: presentation/AGENTS.md, "The row's
 				     layout" -->
@@ -274,8 +265,8 @@
 					</Tooltip.Content>
 				</Tooltip.Root>
 			{/if}
-		{/if}
-	</td>
+		</div>
+	{/if}
 {/snippet}
 
 <Tooltip.Provider>
@@ -289,7 +280,6 @@
 		{importance}
 		{tags}
 		{tagVocabulary}
-		columnCount={getTaskColumns().length}
 		ontoggle={() => ontoggle(id)}
 		{flowMinutes}
 		{flowDraft}
@@ -309,7 +299,8 @@
 		onremove={onremove && (() => onremove(id))}
 		{lead}
 		{badges}
+		{readings}
 		{meta}
-		{trailing}
+		{planned}
 	/>
 </Tooltip.Provider>

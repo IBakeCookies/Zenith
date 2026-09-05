@@ -2,7 +2,6 @@
 	import { defineMeta } from '@storybook/addon-svelte-csf';
 	import { expect, waitFor, within } from 'storybook/test';
 	import TaskListCard from '$lib/presentation/component/task-list-card.svelte';
-	import { getTaskColumns } from '$lib/presentation/utils/ledger-column';
 
 	const { Story } = defineMeta({
 		title: 'Component/Task List Card',
@@ -36,11 +35,11 @@
 		});
 
 		const strip = canvas.getByText('the day');
-		const table = canvas.getByRole('table');
+		const list = canvas.getByRole('list');
 
 		expect(title.compareDocumentPosition(strip)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
-		expect(strip.compareDocumentPosition(table)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
-		expect(table.querySelectorAll('tbody tr')).toHaveLength(2);
+		expect(strip.compareDocumentPosition(list)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+		expect(canvas.getAllByRole('listitem')).toHaveLength(2);
 
 		// Inside the heading's row, not merely before the form: a sibling of the card's
 		// sections would be the block that pushed the list out of line with the metrics
@@ -67,7 +66,7 @@
 >
 	{#snippet template()}
 		<div class="max-w-2xl">
-			<TaskListCard columns={getTaskColumns()} {rows} {form} {strip} {heading} />
+			<TaskListCard {rows} {form} {strip} {heading} />
 		</div>
 	{/snippet}
 </Story>
@@ -75,11 +74,11 @@
 <Story
 	name="Empty"
 	play={async ({ canvas, userEvent }) => {
-		// No rows: the empty state, and no <table> at all — a header row over nothing is a grid of
-		// nothing, the same mistake an empty <ul> was
+		// No rows: the empty state, and no <ul> at all — a list of nothing announces
+		// "list, 0 items" over the copy that explains the day is empty
 		await expect(canvas.getByText('No tasks deployed yet')).toBeVisible();
 		await expect(canvas.getByText('Add a task to begin tracking')).toBeVisible();
-		expect(canvas.queryByRole('table')).not.toBeInTheDocument();
+		expect(canvas.queryByRole('list')).not.toBeInTheDocument();
 
 		// No `heading` passed: the row is the title alone, which is what the Lab
 		// mounts and what `/` shows before the day's first 🪫 log.
@@ -104,7 +103,7 @@
 >
 	{#snippet template()}
 		<div class="max-w-2xl">
-			<TaskListCard columns={getTaskColumns()} rows={null} {form} />
+			<TaskListCard rows={null} {form} />
 		</div>
 	{/snippet}
 </Story>
@@ -133,7 +132,7 @@
 >
 	{#snippet template()}
 		<div class="max-w-2xl">
-			<TaskListCard columns={getTaskColumns()} rows={null} {form} exampleDayHref="/?demo" />
+			<TaskListCard rows={null} {form} exampleDayHref="/?demo" />
 		</div>
 	{/snippet}
 </Story>
@@ -151,10 +150,6 @@
 {/snippet}
 
 {#snippet rows()}
-	<tbody>
-		<tr><td>write the calibration section</td></tr>
-	</tbody>
-	<tbody>
-		<tr><td>boxing</td></tr>
-	</tbody>
+	<li>write the calibration section</li>
+	<li>boxing</li>
 {/snippet}

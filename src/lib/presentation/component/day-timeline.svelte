@@ -3,7 +3,7 @@
 	import { BAND_BAR_CLASS, bandLabel } from '$lib/presentation/utils/band';
 	import type { DayTimeline } from '$lib/presentation/utils/day-timeline';
 	import { scrollByDrag } from '$lib/presentation/utils/drag-scroll';
-	import { formatDuration } from '$lib/presentation/utils/duration-format';
+	import { formatDuration, formatDurationBand } from '$lib/presentation/utils/duration-format';
 
 	let { totalHours, minimumBlockWidths, blocks }: DayTimeline = $props();
 
@@ -21,8 +21,8 @@
 		<!-- Inside the strip: the legend names marks, and a day with none reads a
 		     sentence about nothing. -->
 		<p class="text-xs text-ty-silent">{m.day_timeline_legend()}</p>
-		<!-- The strip scrolls sideways in its own container and the DOCUMENT does not —
-		     the ledger's pattern (task-list-card.svelte). -->
+		<!-- The strip scrolls sideways in its own container and the DOCUMENT does not: the
+		     one place on either task screen that still scrolls at all. -->
 		<!-- svelte-ignore a11y_no_noninteractive_tabindex -- a scrollable region has to be
 		     scrollable by keyboard, and a block is not focusable -->
 		<div
@@ -52,7 +52,7 @@
 								: 'text-ty-primary'}"
 						>
 							{#if !block.isCompleted}
-								<span class="text-ty-secondary">#{block.position}</span>
+								<span class="text-flow">#{block.position}</span>
 							{/if}
 							{block.title}
 						</p>
@@ -61,13 +61,13 @@
 						</p>
 						<!-- The narrowest blocks keep this sentence for a screen reader and drop it
 						     on screen: it is the one line carrying a duration it did not compute
-						     itself, so truncating it would print a figure nobody measured. The
-						     ledger's own `Flow at` column, directly below, is where the sighted
-						     reading of it lives. -->
+						     itself, so truncating it would print a figure nobody measured. The ± is
+						     ϕ's own, so only the arrival carries one — a band on the shortfall would
+						     read as the PLAN being unsure of the hours it chose. -->
 						<p class="truncate text-2xs text-ty-secondary @max-day-flow:sr-only">
 							{block.band === 'success'
 								? m.flow_reached({
-										duration: formatDuration(block.flowHours),
+										duration: formatDurationBand(block.flowHours, block.flowHoursStd),
 									})
 								: m.flow_short({
 										duration: formatDuration(block.flowHours - block.hours),

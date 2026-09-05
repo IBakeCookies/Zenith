@@ -89,10 +89,12 @@
 	   `var(--spacer-…)`: a custom property is not valid inside an `@container`
 	   condition. This one is measured on the block's CONTENT box, which is what an
 	   inline-size query reads — the 14px inset is already outside it. 136px is the
-	   widest sentence the formatter produces, `short of flow by 12h 45m` at 135px
-	   and `text-2xs`; narrower, and it would truncate mid-duration and print a
-	   figure nothing computed, so the block drops it instead. */
-	--container-day-flow: 8.5rem;
+	   widest sentence the formatter produces. 8.5rem was `short of flow by 12h 45m`
+	   at 135px and `text-2xs`; the fit's band added a `± <duration>` term to the
+	   arrival sentence, and the floor is raised to clear it. Narrower, and the line
+	   would truncate mid-duration and print a figure nothing computed, so the block
+	   sends it to `sr-only` instead. */
+	--container-day-flow: 11rem;
 
 	/* The width at which the task form's three sliders sit side by side instead of
 	   one per line. A literal, for the same reason as above. Measured on the
@@ -277,125 +279,6 @@
    `uppercase tracking-wide`; `#1` would be nothing but noise in caps. */
 @utility order-badge {
 	@apply cursor-help rounded-sm bg-flow/15 px-box-3xs py-text-3xs text-xs font-semibold text-flow;
-}
-
-/* One cell of either task screen's ledger. The rule between rows lives here rather
-   than on a wrapper, because a table's rows are separated by their cells. */
-@utility ledger-cell {
-	@apply border-b border-line-soft px-box-3xs py-box-xs align-middle sm:px-box-2xs;
-}
-
-/* A reading is only comparable down the column while its digits line up. */
-@utility ledger-numeric {
-	@apply text-right tabular-nums;
-}
-
-/* A column a phone drops, so the ledger fits instead of scrolling sideways. What stays
-   is the plan's answer and the two instruments — the lead, `Task`, `Planned`, `Logged`
-   and the ✎/✕ strip; the ratings and the derived readings come back at `sm`. Goes on the
-   `<th>` (from the column list's `isWideOnly`) and on the matching `<td>`, or the header
-   stops lining up with its cells. */
-@utility ledger-wide {
-	@apply hidden sm:table-cell;
-}
-
-/* The two columns that say WHICH task a row is — the lead (`#N` or the Lab's hue) and
-   `Task` — pinned to the left edge, because `Planned` is the second-to-last of twelve
-   and on a phone it is only reachable by scrolling the ledger sideways. Goes on those
-   cells in the row and on their `<th>`, or the header stops naming the columns beneath
-   it while scrolled. Never on a spanning cell (the group headings, the editor row):
-   one cell as wide as the table holds no column still.
-
-   Which of the two a cell is comes from `:first-child` rather than a second class,
-   which is also what fixes the lead column's width: a table can pin one cell, so the
-   pair only lines up while `Task`'s offset and the lead's width are one value. */
-@utility ledger-pin {
-	/* `#12` and the Lab's swatch both fit 2.5rem; the wider rest is breathing room a
-	   phone's five columns cannot spare. */
-	--ledger-lead-width: 2.5rem;
-
-	@variant sm {
-		--ledger-lead-width: 3.25rem;
-	}
-
-	position: sticky;
-	left: var(--ledger-lead-width);
-	z-index: 1;
-
-	/* `min-width` and not `width` alone: a `width` on a table cell is only a preferred
-	   one, and the lead column took its content's 44px instead — leaving 8px of the
-	   scrolling columns showing between the two pinned cells. */
-	&:first-child {
-		left: 0;
-		min-width: var(--ledger-lead-width);
-	}
-
-	/* The fill rides a pseudo-element rather than the cell so it can be FADED IN, and
-	   it is only ever needed while the ledger is scrolled: a card is translucent and
-	   blurred, so an opaque patch two columns wide reads as a pale block over the
-	   scenery on a screen where nothing scrolls at all. `scroll()` ties it to the
-	   ledger's own scroll offset — invisible at rest, solid by the time a column has
-	   passed under it.
-
-	   The `opacity: 0` sits INSIDE the `@supports` with the animation, and the fade runs
-	   0 → 1 rather than the other way round, because a scroll timeline whose container
-	   cannot scroll is INACTIVE: its keyframes never apply and the cell renders the base
-	   style. Off by default, that is exactly right — a ledger wide enough to fit has no
-	   column passing underneath to hide. Declared the other way the fill was permanent
-	   from the width the table stopped overflowing (~1024px), which is most screens.
-	   Where scroll-driven animations are unsupported at all, the base style is the one
-	   outside the `@supports` and the fill stays on always: two texts overlapping is
-	   worse than a visible block.
-
-	   The fill has to be OPAQUE — the scrolling columns pass underneath — and
-	   `--surface-card` carries alpha on most themes, so the card's own fill is LAYERED
-	   over `--surface-page`, the one surface every theme keeps opaque (`--destructive-soft`
-	   leans on the same fact). The row's hover tint is a third layer over that, driven by
-	   the row's `group`, since a cell painting its own background hides the `<tr>`'s.
-
-	   `z-index: -1` and not a lower stacking order on the cell: the pinned cell is its
-	   own stacking context (`z-index: 1`), so a negative child paints under the cell's
-	   own text and still over every scrolling cell beside it. */
-	&::before {
-		content: '';
-		position: absolute;
-		inset: 0;
-		z-index: -1;
-		background-color: var(--surface-page);
-		background-image: linear-gradient(var(--surface-card), var(--surface-card));
-
-		@supports (animation-timeline: scroll()) {
-			opacity: 0;
-			animation-name: ledger-pin-fill;
-			animation-timing-function: linear;
-			animation-fill-mode: both;
-			animation-timeline: scroll(nearest inline);
-			animation-range: 0 0.75rem;
-		}
-	}
-
-	/* `@variant`, not a hand-written `.group:hover &`: a bare nested selector inside
-	   `@utility` is flattened to the utility itself, so the hover fill became the rest
-	   one and the pinned pair was permanently tinted. */
-	@variant group-hover {
-		&::before {
-			background-image:
-				linear-gradient(var(--surface-hover), var(--surface-hover)),
-				linear-gradient(var(--surface-card), var(--surface-card));
-		}
-	}
-}
-
-/* Longhands above and not the `animation` shorthand: the shorthand would reset
-   `animation-duration` to `0s`, and a scroll-driven fill needs it left at `auto` to
-   span the range. */
-@keyframes ledger-pin-fill {
-	from {
-		opacity: 0;
-	}
-	to {
-		opacity: 1;
-	}
 }
 
 /* The app's horizontal frame: centred, capped at the layout width, and inset by

@@ -86,7 +86,7 @@
 		},
 	});
 
-	/** Five funded tasks, so the header is read over a full ledger. */
+	/** Five funded tasks, so the list is read at its full length. */
 	const fundedFive: SuggestedTask[] = [
 		task(1, 'design the error boundary', {
 			physicalDifficulty: 0,
@@ -115,7 +115,7 @@
 </script>
 
 <Story
-	name="Headed columns"
+	name="One list, one row per task"
 	args={{
 		suggestedTasks: fundedFive,
 		runOrder: new Map([
@@ -127,48 +127,18 @@
 		]),
 	}}
 	play={async ({ canvas }) => {
-		// Every reading gets a headed column, so the numbers line up down the page and can be compared
-		// between tasks. The trailing column heads the ✎/✕ strip: its name is `sr-only`, so the column
-		// shows nothing and still announces as itself.
-		expect(canvas.getAllByRole('table')).toHaveLength(1);
+		// One list of five rows and no table at all: every reading is the row's own, so
+		// nothing on this screen has a column to line up in.
+		expect(canvas.queryByRole('table')).not.toBeInTheDocument();
+		expect(canvas.getAllByRole('list')).toHaveLength(1);
+		expect(canvas.getAllByRole('listitem')).toHaveLength(5);
 
-		const table = canvas.getByRole('table');
+		// The row holds the task's own editors, so the plan's hours and what a phone reads
+		// stay together in one box per task.
+		const [first] = canvas.getAllByRole('listitem');
 
-		// One row group per task: the shell is a `<tbody>`, so its spanning editor row
-		// can sit under the task's own row without leaving the table.
-		expect(table.querySelectorAll('tbody')).toHaveLength(5);
-
-		const headers = [...table.querySelectorAll('thead th')];
-
-		expect(headers.map((header) => header.textContent?.trim())).toEqual([
-			'#',
-			'Task',
-			'Phys',
-			'Ment',
-			'Enjoy',
-			'Effort',
-			'Prio',
-			'Flow at',
-			'Stop by',
-			'Logged',
-			'Planned',
-			'Actions',
-		]);
-
-		for (const header of headers) {
-			await expect(header).toHaveAttribute('scope', 'col');
-		}
-
-		// `Planned` is the second-to-last column, so on a phone it is only reachable by
-		// scrolling the ledger — and the identity pair `#`/`Task` is pinned in both the
-		// header and the row, or the hours arrive with no task attached to them.
-		const isPinned = (cell: Element) => cell.classList.contains('ledger-pin');
-
-		expect(headers.filter(isPinned)).toEqual(headers.slice(0, 2));
-
-		const cells = [...table.querySelectorAll('tbody:first-of-type td')];
-
-		expect(cells.filter(isPinned)).toEqual(cells.slice(0, 2));
+		await expect(first).toContainElement(canvas.getByText('#1'));
+		await expect(first).toContainElement(canvas.getByText('prio 25.3'));
 	}}
 />
 
@@ -180,7 +150,7 @@
 		// ticking a row off never moves it out from under the 🪫 about to be logged on it.
 		//
 		// PIN: read through the row titles and the badges rather than the markup around them, so it
-		// holds across the row becoming a table row.
+		// holds across the row's own shape changing.
 		// The sequence counts down the page, and the completed task holds position 2
 		// between the two active rows instead of sinking below them. The task the plan
 		// funded nothing comes last, having no position at all. The card's own title
@@ -233,35 +203,36 @@
 		]),
 	}}
 	play={async ({ canvas }) => {
-		// The plan's two answers about a task read as two row groups of one table, so the columns stay
-		// aligned across the split instead of becoming two tables' worth of independently-sized ones.
+		// The plan's two answers about a task read as two headed lists, so a row is never
+		// under a heading that says the opposite of what the plan did with it.
 		const sequence = canvas.getByText("Today's sequence");
 		const dropped = canvas.getByText('No time today');
 
 		await expect(sequence).toBeVisible();
 		await expect(dropped).toBeVisible();
 
-		// A spanning header row, and deliberately no `scope`: every task row is its own
-		// `<tbody>`, so `rowgroup` would have headed a group holding no data cells at all.
-		// It has to span every column, or the rows below it shift out of their headings.
-		const columnCount = canvas.getByRole('table').querySelectorAll('thead th').length;
+		// The label names its list rather than heading it: every row title is an `<h3>`, so
+		// an `<h4>` here would be closed by the first row under it and the second group
+		// would read as part of the last task. `aria-label` carries the name instead.
+		for (const label of [sequence, dropped]) expect(label.tagName).toBe('P');
 
-		for (const heading of [sequence, dropped]) {
-			expect(heading.tagName).toBe('TH');
-			expect(heading).not.toHaveAttribute('scope');
-			expect(heading.getAttribute('colspan')).toBe(String(columnCount));
+		const lists = canvas.getAllByRole('list');
 
-			// And it is not pinned: a cell as wide as the table has no column to hold
-			// still, so a sticky offset would only slide it out of its own row.
-			expect(heading).not.toHaveClass('ledger-pin');
-		}
+		expect(lists).toHaveLength(2);
 
-		const table = canvas.getByRole('table');
+		// And the split is the plan's: the two funded rows above, the two it dropped below
+		await expect(lists[0]).toHaveAccessibleName("Today's sequence");
+		await expect(lists[1]).toHaveAccessibleName('No time today');
 
-		expect(canvas.getAllByRole('table')).toHaveLength(1);
-		expect(table.querySelectorAll('thead')).toHaveLength(1);
-		expect(table).toContainElement(sequence);
-		expect(table).toContainElement(dropped);
+		expect([...lists[0].querySelectorAll('h3')].map((row) => row.textContent)).toEqual([
+			'design the error boundary',
+			'write the PDF solution',
+		]);
+
+		expect([...lists[1].querySelectorAll('h3')].map((row) => row.textContent)).toEqual([
+			'reorganize the garage',
+			'inbox',
+		]);
 	}}
 />
 
@@ -277,9 +248,9 @@
 			name: 'Tasks',
 		});
 
-		const table = canvas.getByRole('table');
+		const list = canvas.getByRole('list');
 
-		expect(table.querySelectorAll('tbody')).toHaveLength(3);
+		expect(canvas.getAllByRole('listitem')).toHaveLength(3);
 
 		expect(
 			canvas.queryByRole('heading', {
@@ -287,10 +258,10 @@
 			}),
 		).not.toBeInTheDocument();
 
-		// No form supplied, so nothing sits between the heading's row and the table.
+		// No form supplied, so nothing sits between the heading's row and the list.
 		// Read from the row, not the heading: the heading shares it with "Next", and
 		// with no next task the heading is that row's only child.
-		expect(heading.parentElement?.nextElementSibling?.contains(table)).toBe(true);
+		expect(heading.parentElement?.nextElementSibling?.contains(list)).toBe(true);
 	}}
 />
 
@@ -301,11 +272,10 @@
 		runOrder: new Map(),
 	}}
 	play={async ({ canvas }) => {
-		// An empty <table> is the same mistake an empty <ul> was: a grid of nothing, announced over the
-		// copy that explains the day is empty
+		// An empty <ul> announces "list, 0 items" over the copy that explains the day is empty
 		await expect(canvas.getByText('No tasks deployed yet')).toBeVisible();
 		await expect(canvas.getByText('Add a task to begin tracking')).toBeVisible();
-		expect(canvas.queryByRole('table')).not.toBeInTheDocument();
+		expect(canvas.queryByRole('list')).not.toBeInTheDocument();
 	}}
 />
 
@@ -318,9 +288,10 @@
 			name: 'Tasks',
 		});
 
-		const table = canvas.getByRole('table');
+		// The default day splits, so the funded group's list is the first of the two.
+		const [list] = canvas.getAllByRole('list');
 
-		expect(heading.compareDocumentPosition(table)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+		expect(heading.compareDocumentPosition(list)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
 		expect(canvas.queryByText('add a task')).not.toBeInTheDocument();
 
 		await expect(
@@ -374,7 +345,7 @@
 					.getByRole('heading', {
 						name: title,
 					})
-					.closest('tbody')!,
+					.closest('li')!,
 			);
 
 		await expect(row('tax return').getByText('day 4')).toBeVisible();

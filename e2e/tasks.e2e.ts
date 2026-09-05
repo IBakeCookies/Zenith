@@ -438,15 +438,11 @@ test('capacity left reads N/A until a session is rated, then names what is spent
 	await expect(row).toContainText('75%');
 });
 
-/* Below `sm` the ledger drops the seven readings `ledger-wide` marks and keeps five —
-   the lead, `Task`, `Logged`, `Planned` and the ✎/✕ strip — so a phone reads the plan's
-   answer without dragging the table sideways. Both halves are the test: the columns are
-   gone AND the document still does not scroll, since hiding cells is only correct while
-   nothing else widens the page. The container keeps its `overflow-x: auto` — between
-   `sm` and the twelve columns' own width it is still the thing that scrolls. */
-test("a phone reads five of the ledger's columns, and the page does not scroll", async ({
-	page,
-}) => {
+/* A phone reads the plan and drops the row's detail line: seven figures at `text-2xs`
+   wrapped to three lines buried the one thing the screen is for. Both halves are the
+   test — what stays is on screen AND the document still does not scroll, since hiding a
+   line is only correct while nothing else widens the page. */
+test('a phone reads the plan and hides the row detail', async ({ page }) => {
 	await page.setViewportSize({
 		width: 390,
 		height: 900,
@@ -458,32 +454,28 @@ test("a phone reads five of the ledger's columns, and the page does not scroll",
 	await addTask(page, 'Write the PDF solution');
 	await addTask(page, 'Review 1 PR API');
 
-	const table = page.locator('table').first();
-	await expect(table).toBeVisible();
+	const row = taskRow(page, 'Design the error boundary');
+	await expect(row).toBeVisible();
 
-	const header = table.locator('thead th');
+	// The run order, the hours the plan gave it, and the four controls
+	await expect(row.getByText(/^#\d+$/)).toBeVisible();
+	await expect(row.locator('.font-semibold.text-ty-primary')).toBeVisible();
 
-	for (const label of ['Phys', 'Ment', 'Enjoy', 'Effort', 'Prio', 'Flow at', 'Stop by']) {
+	for (const name of ['Edit task', 'Delete task']) {
 		await expect(
-			header.getByText(label, {
-				exact: true,
-			}),
-		).toBeHidden();
-	}
-
-	for (const label of ['#', 'Task', 'Logged', 'Planned']) {
-		await expect(
-			header.getByText(label, {
-				exact: true,
+			row.getByRole('button', {
+				name,
 			}),
 		).toBeVisible();
 	}
 
-	const overflowX = await table.evaluate(
-		(element) => getComputedStyle(element.parentElement!).overflowX,
-	);
+	// And not the readings — ✎ is where a phone re-reads the three sliders. Counted
+	// first: `toBeHidden` also passes on a locator that matches nothing, so on its own
+	// it would still pass if the reading were renamed rather than hidden.
+	const readings = row.getByText(/^effort /);
 
-	expect(overflowX).toBe('auto');
+	await expect(readings).toHaveCount(1);
+	await expect(readings).toBeHidden();
 
 	const document = await page.evaluate(() => ({
 		content: window.document.documentElement.scrollWidth,
@@ -650,18 +642,13 @@ test('a second drain editor opened over the reading opens empty', async ({ page 
 	await expect(claimed.first()).toHaveValue('45');
 });
 
-/* The ledger is what the page is for, so it reads before the day's readings: the metrics
-   grid above it put the table's header past the fold at every desktop size. */
+/* The list is what the page is for, so it reads before the day's readings: the metrics
+   grid above it put the first task past the fold at every desktop size. */
 test('the ledger reads above the day metrics', async ({ page }) => {
 	await page.goto('/');
 	await addTask(page, 'Write report');
 
-	const ledger = await page
-		.getByRole('columnheader', {
-			name: 'Task',
-			exact: true,
-		})
-		.boundingBox();
+	const ledger = await taskRow(page, 'Write report').boundingBox();
 
 	const readings = await page
 		.getByText('Momentum', {

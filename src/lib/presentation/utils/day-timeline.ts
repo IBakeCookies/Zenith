@@ -15,6 +15,8 @@ export type DayBlock = {
 	/** Hours from the day's start; the switch cost is the gap it leaves. */
 	startOffset: number;
 	flowHours: number;
+	/** The fit's spread on ϕ, printed beside it. Absent until a fit produced one. */
+	flowHoursStd?: number;
 	band: Band;
 	isCompleted: boolean;
 };
@@ -32,11 +34,14 @@ export type DayTimeline = {
 export interface DayTimelineInput {
 	suggestedTasks: Pick<
 		SuggestedTask,
-		'id' | 'title' | 'suggestedHours' | 'flowStateTime' | 'completed'
+		'id' | 'title' | 'suggestedHours' | 'flowStateTime' | 'flowStateTimeStd' | 'completed'
 	>[];
 	runOrder: Map<number, number>;
 	switchCost: number;
 	availableHours: number;
+	/** `constantsFit.fitted` — every other path returns the prior, whose band describes
+	 *  the article's defaults rather than the user, so no block prints one. */
+	isConstantsFitted: boolean;
 }
 
 export function buildDayTimeline(input: DayTimelineInput): DayTimeline {
@@ -58,6 +63,7 @@ export function buildDayTimeline(input: DayTimelineInput): DayTimeline {
 			hours: task.suggestedHours,
 			startOffset,
 			flowHours: task.flowStateTime,
+			flowHoursStd: input.isConstantsFitted ? task.flowStateTimeStd : undefined,
 			band: getBandFlowReached(task.suggestedHours, task.flowStateTime),
 			isCompleted: task.completed,
 		};

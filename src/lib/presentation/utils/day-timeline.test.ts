@@ -42,10 +42,46 @@ const input = (over: Partial<DayTimelineInput> = {}): DayTimelineInput => ({
 	runOrder: new Map(),
 	switchCost: 0,
 	availableHours: 8,
+	isConstantsFitted: false,
 	...over,
 });
 
 describe('buildDayTimeline', () => {
+	/* The strip prints ϕ, so it prints the same spread the row under it does — and on the
+	   same condition: the prior's band describes the article's defaults, not the user. */
+	it("carries the fit's spread on ϕ only once a fit produced one", () => {
+		const flowStateTimeStd = 0.35;
+
+		const withFit = buildDayTimeline(
+			input({
+				suggestedTasks: [
+					{
+						...task(1, 2),
+						flowStateTimeStd,
+					},
+				],
+				runOrder: new Map([[1, 1]]),
+				isConstantsFitted: true,
+			}),
+		);
+
+		expect(withFit.blocks[0].flowHoursStd).toBe(flowStateTimeStd);
+
+		const withoutFit = buildDayTimeline(
+			input({
+				suggestedTasks: [
+					{
+						...task(1, 2),
+						flowStateTimeStd,
+					},
+				],
+				runOrder: new Map([[1, 1]]),
+			}),
+		);
+
+		expect(withoutFit.blocks[0].flowHoursStd).toBeUndefined();
+	});
+
 	it('reads the blocks in run order, each offset by the ones before it', () => {
 		const timeline = buildDayTimeline(
 			input({

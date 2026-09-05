@@ -15,6 +15,15 @@ export function formatDuration(hours: number): string {
 	return m === 0 ? `${h}h` : `${h}h ${m}m`;
 }
 
+/** A length of time with the fit's spread beside it — "2h 14m ± 21m" — or the length
+ *  alone before a fit produced one. The row and the day strip both print ϕ, so the two
+ *  spell its uncertainty the same way (R3). */
+export function formatDurationBand(hours: number, standardDeviation?: number): string {
+	return standardDeviation === undefined
+		? formatDuration(hours)
+		: `${formatDuration(hours)} ± ${formatDuration(standardDeviation)}`;
+}
+
 /**
  * Hours elapsed since the start of the day window, not a wall-clock time: the
  * MODEL has no notion of when the day begins, and the old `0:00`–`10:00` form

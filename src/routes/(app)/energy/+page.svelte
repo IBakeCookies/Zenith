@@ -29,7 +29,6 @@
 	import TaskFormEnergyPreview from '$lib/presentation/component/task-form-energy-preview.svelte';
 	import DayActions from '$lib/presentation/component/day-actions.svelte';
 	import TaskListCard from '$lib/presentation/component/task-list-card.svelte';
-	import { getEnergyTaskColumns } from '$lib/presentation/utils/ledger-column';
 	import EnergyChart from '$lib/presentation/component/energy-chart.svelte';
 	import EnergyTaskRow from '$lib/presentation/component/energy-task-row.svelte';
 	import PlanTimelineBar from '$lib/presentation/component/plan-timeline-bar.svelte';
@@ -500,7 +499,6 @@
 						form={addTaskForm}
 						heading={dayActions}
 						strip={restForm}
-						columns={getEnergyTaskColumns()}
 						rows={hasTasks ? taskRows : null}
 					/>
 

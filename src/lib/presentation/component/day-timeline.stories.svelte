@@ -15,6 +15,7 @@
 			hours: 1.75,
 			startOffset: 0,
 			flowHours: 2,
+			flowHoursStd: 0.35,
 			band: 'warning',
 			isCompleted: false,
 		},
@@ -25,6 +26,7 @@
 			hours: 1.5,
 			startOffset: 2,
 			flowHours: 1.25,
+			flowHoursStd: 0.35,
 			band: 'success',
 			isCompleted: false,
 		},
@@ -52,6 +54,7 @@
 		runOrder: new Map(crowdedHours.map((_, index): [number, number] => [index + 1, index + 1])),
 		switchCost: 0.05,
 		availableHours: 8,
+		isConstantsFitted: false,
 	});
 
 	const { Story } = defineMeta({
@@ -73,6 +76,10 @@
 		// readable without it (WCAG 1.4.1)
 		await expect(canvas.getByText('Caution')).toBeInTheDocument();
 
+		// The band belongs to ϕ, and this sentence is the gap the plan left to it: the
+		// hours are the plan's own, so nothing here is uncertain.
+		await expect(canvas.getByText('short of flow by 15m')).toBeInTheDocument();
+
 		// A day that fits is untouched by the floor: the track is the container's own
 		// width and each block its share of the day.
 		const block = canvas.getByText('Write the PDF').parentElement!;
@@ -89,8 +96,7 @@
 	play={async ({ canvas }) => {
 		// The day the strip exists for. The 15-minute allocation is BY CONSTRUCTION the block short of
 		// flow, and proportionally it is a colour sliver, so the strip carries a floor and scrolls
-		// inside its own container — never the document (task-list-card.svelte's ledger is the same
-		// pattern).
+		// inside its own container — never the document.
 		const shortest = canvas.getByText('Expense report 12').parentElement!;
 		const longest = canvas.getByText('Expense report 1').parentElement!;
 		const track = shortest.parentElement!;
@@ -114,6 +120,7 @@
 		await expect(sentence(longest)).toBeVisible();
 		await expect(sentence(longest).getBoundingClientRect().width).toBeGreaterThan(100);
 		await expect(sentence(shortest).getBoundingClientRect().width).toBeLessThanOrEqual(1);
+		// No fit, so no band: the prior's spread describes the article's defaults.
 		await expect(sentence(shortest).textContent?.trim()).toBe('short of flow by 45m');
 
 		// The bars are the reading blocks are compared on, so they sit on one line across
@@ -185,7 +192,7 @@
 		await expect(canvas.getByText('#1')).toBeInTheDocument();
 
 		// Both are readings of the plan, and the plan did not move when the box was ticked.
-		await expect(block.textContent).toContain('flow at 1h 15m');
+		await expect(block.textContent).toContain('flow @ 1h 15m ± 21m');
 
 		await expect(block.querySelector('.mt-auto')!.firstElementChild).toHaveClass(
 			BAND_BAR_CLASS.success,

@@ -293,24 +293,18 @@ Read this before touching markup, classes, or anything under
   border colour from its base layer. Give them explicit token borders first,
   then remove it.
 - **An overflowing panel scrolls with `nice-scrollbar` (`base.css`), never the
-  native bar** — the theme dropdown, the analytics log history and the two task
-  screens' ledger are all it. No palette reaches a UA scrollbar, so it renders as
-  the same grey slab on every theme. The ledger's container also carries
+  native bar** — the theme dropdown, the analytics log history, `/`'s day strip and
+  the dialog and calendar bodies are all it. No palette reaches a UA scrollbar, so it renders as
+  the same grey slab on every theme. The strip's container also carries
   `tabindex="0"`, because a region that only scrolls is unreachable by keyboard
   otherwise (axe `scrollable-region-focusable`), which is why it holds a scoped
   `svelte-ignore` for `a11y_no_noninteractive_tabindex`.
 - **A repeated cluster becomes an `@utility`, not a wrapper component** —
   `field-input` is the newest (the app's text field, spelled by hand in the add
-  form, the ✎ editor and the tag field they share), over `banner-shell` and the
-  `ledger-cell` / `ledger-numeric` / `ledger-wide` set. A `<td>` cannot be
-  wrapped: an element between `<tr>` and its cells is not a table cell, so a
-  component per cell would either break the table model or add a `<div>` inside
-  every one of twelve columns. Same argument as `hint-underline`'s, arrived at
-  from the other direction — there the wrapper would cost the heading level or
-  the label association.
-  `ledger-numeric` is `text-right` + `tabular-nums` together on purpose: either
-  alone leaves a column that cannot be compared down its own length, which is
-  the only reason the ledger is a table.
+  form, the ✎ editor and the tag field they share), over `banner-shell` and
+  `card-shell`. A wrapper component would cost each caller a level it cannot
+  always afford: the same argument as `hint-underline`'s, where it would cost the
+  heading level or the label association.
 - **The hand cursor marks anything clickable** — Tailwind v4's Preflight gives
   buttons `cursor: default` (the spec reading, where the hand means "link");
   `base.css` puts `cursor: pointer` back on every enabled `button` and

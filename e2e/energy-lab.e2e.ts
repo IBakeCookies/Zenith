@@ -458,10 +458,13 @@ test('re-tuning a task re-plans the day without reordering the list', async ({ p
 	const before = await order();
 
 	// The one row the hour went to, pinned by name so it stays the same row after
-	// the plan moves off it.
-	const rows = page.locator('table tbody').filter({
-		has: page.getByRole('checkbox'),
-	});
+	// the plan moves off it. Filtered on the checkbox, because the Lab's schedule
+	// list holds the same titles in list items of its own.
+	const rows = taskCard(page)
+		.getByRole('listitem')
+		.filter({
+			has: page.getByRole('checkbox'),
+		});
 
 	const fundedName = await rows
 		.filter({
@@ -1218,7 +1221,7 @@ test('completing a task opens its drain rating', async ({ page }) => {
 	// that only exists for a finished session into looking disabled. Asserted on the
 	// ROW, not the form — `opacity` does not inherit, so a child of an `opacity-60`
 	// ancestor still computes 1 and an assertion on the form itself cannot fail.
-	await expect(form.locator('xpath=ancestor::tbody[1]')).toHaveCSS('opacity', '1');
+	await expect(form.locator('xpath=ancestor::li[1]')).toHaveCSS('opacity', '1');
 
 	const fields = form.locator('input[type="number"]');
 	await fields.nth(0).fill('90');

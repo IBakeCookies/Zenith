@@ -5,7 +5,6 @@
 	import type { Persisted, DrainObservationRecord } from '$lib/business/type';
 	import EnergyTaskRow from '$lib/presentation/component/energy-task-row.svelte';
 	import TaskListCard from '$lib/presentation/component/task-list-card.svelte';
-	import { getEnergyTaskColumns } from '$lib/presentation/utils/ledger-column';
 
 	const { Story } = defineMeta({
 		title: 'Component/Energy Task Row',
@@ -40,19 +39,6 @@
 		},
 	});
 
-	/* The Lab's column order — a peer model, so it heads only what it computes. */
-	const CELL = {
-		hue: 0,
-		task: 1,
-		physical: 2,
-		mental: 3,
-		enjoyment: 4,
-		effort: 5,
-		logged: 6,
-		planned: 7,
-		actions: 8,
-	};
-
 	const drainLog = (over: Partial<Persisted<DrainObservationRecord>> = {}) => ({
 		id: 11,
 		date: '2026-08-10',
@@ -67,9 +53,8 @@
 		...over,
 	});
 
-	// The shared `template` snippet mounts the row in the card the Lab uses, with the Lab's own
-	// columns: the row is a `<tbody>`, so it has to be read inside the table whose header names its
-	// cells.
+	// Mounted in the card the Lab uses: the row is an `<li>`, so it is only a row inside
+	// the list that card draws.
 </script>
 
 {#snippet template(args: ComponentProps<typeof EnergyTaskRow>)}
@@ -77,7 +62,7 @@
 		<EnergyTaskRow {...args} />
 	{/snippet}
 	<div class="max-w-4xl">
-		<TaskListCard columns={getEnergyTaskColumns()} {rows} />
+		<TaskListCard {rows} />
 	</div>
 {/snippet}
 
@@ -88,50 +73,35 @@
 	}}
 	play={async ({ args, canvas, userEvent }) => {
 		// The row fills the shared shell with the Lab's reading: the plan's hue, the three model
-		// inputs, the true effort they come to, and the hours the schedule gave it.
-		const headers = [...canvas.getByRole('table').querySelectorAll('thead th')];
+		// inputs and the true effort they come to on the line under the title, and the hours
+		// the schedule gave it beside the name.
+		const row = canvas.getByRole('listitem');
 
-		// The hue swatch and the ✎/✕ strip show no heading and still carry an `sr-only`
-		// one, so nothing in the row reads as an unnamed column.
-		expect(headers.map((header) => header.textContent?.trim())).toEqual([
-			'Color',
-			'Task',
-			'Phys',
-			'Ment',
-			'Enjoy',
-			'Effort',
-			'Logged',
-			'Planned',
-			'Actions',
-		]);
-
-		const cells = canvas.getAllByRole('cell');
-
-		// One hue per task across the timeline, the schedule list and this row — it takes
-		// the narrow leading cell `#N` takes on `/`, so both screens share the grammar
-		await expect(cells[CELL.hue].firstElementChild).toHaveAttribute(
+		// One hue per task across the timeline, the schedule list and this row — it leads
+		// the row where `#N` leads `/`'s, so both screens share the grammar. The swatch is
+		// the row's only inline style, since a hue cannot be a class (STYLE.md).
+		await expect(row.querySelector('span[style]')).toHaveAttribute(
 			'style',
 			expect.stringContaining('var(--series-1)'),
 		);
 
-		// The three inputs read as text, and the number the three of them come to reads
-		// beside them: no sliders — they are a definition, and ✎ is what re-tunes them.
-		expect(cells[CELL.physical].textContent?.trim()).toBe('2');
-		expect(cells[CELL.mental].textContent?.trim()).toBe('8');
-		expect(cells[CELL.enjoyment].textContent?.trim()).toBe('7');
-		expect(cells[CELL.effort].textContent?.trim()).toBe('4.1');
+		// The three inputs read as text under the title, and the number the three of them
+		// come to reads beside them: no sliders — they are a definition, and ✎ re-tunes them.
+		// `getByText` on the bare reading matches the meta line itself — its only direct
+		// text — so this is the three sliders and what they come to, on one line.
+		const meta = canvas.getByText('effort 4.1');
+
+		for (const reading of ['P 2', 'M 8', 'E 7']) {
+			expect(meta).toContainElement(canvas.getByText(reading));
+		}
+
 		await expect(canvas.queryByRole('slider')).not.toBeInTheDocument();
 
 		// What the plan gave the task, in the app's one duration spelling
-		expect(cells[CELL.planned].textContent?.trim()).toBe('2h 30m');
+		await expect(canvas.getByText('2h 30m')).toBeVisible();
 
-		// `Planned` is reached by scrolling the ledger on a phone, so the identity pair —
-		// the hue and the title, the Lab's own leading columns — is pinned in the header
-		// and in the row alike, or the hours arrive with no task attached to them.
-		const isPinned = (cell: Element) => cell.classList.contains('ledger-pin');
-
-		expect(headers.filter(isPinned)).toEqual(headers.slice(0, CELL.physical));
-		expect(cells.filter(isPinned)).toEqual(cells.slice(0, CELL.physical));
+		// A peer model heads nothing it does not compute, and it computes no table.
+		expect(canvas.queryByRole('table')).not.toBeInTheDocument();
 
 		// Both measurements are on this row now, not just the Lab's own 🪫: the energy
 		// model reads the ϕ constants ⚡ calibrates, so a Lab-only user could not feed
@@ -181,9 +151,9 @@
 		color: 'var(--series-3)',
 	}}
 	play={async ({ canvas }) => {
-		// Funded nothing this plan: said out loud in the cell that would otherwise be blank, because a
-		// blank cell reads as a reading the optimizer never took
-		expect(canvas.getAllByRole('cell')[CELL.planned].textContent?.trim()).toBe('no hours');
+		// Funded nothing this plan: said out loud where the hours would read, because a row
+		// silent about them reads as a reading the optimizer never took
+		await expect(canvas.getByText('no hours')).toBeVisible();
 	}}
 />
 
@@ -303,13 +273,9 @@
 		// Seeded with what was already logged, not blank
 		await expect(canvas.getByPlaceholderText('min')).toHaveValue(45);
 
-		// The editor is one cell as wide as the Lab's ledger, and unpinned: it holds no
-		// column, so a sticky offset would only slide it out of its own row.
-		const spanning = [...canvas.getByRole('table').querySelectorAll('td[colspan]')];
-
-		expect(spanning).toHaveLength(1);
-		await expect(spanning[0]).toHaveAttribute('colspan', '9');
-		expect(spanning[0]).not.toHaveClass('ledger-pin');
+		// The editor opens INSIDE the row it corrects, which is what keeps a correction
+		// attached to the session it is about.
+		expect(canvas.getByRole('listitem')).toContainElement(canvas.getByPlaceholderText('min'));
 
 		// ✓ reports the amended session through the row, in hours
 		await userEvent.click(

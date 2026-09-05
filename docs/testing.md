@@ -129,12 +129,12 @@ closes what it opens (waiting for both the unmount and the lock), and
 `.storybook/preview.ts`'s `beforeEach` clears the body's `pointerEvents`/`overflow`
 so no story can inherit another's lock.
 
-A component whose root is a `<tbody>` — both task rows, through
-`task-row-shell.svelte` — cannot be rendered bare: with no table around it every
-cell lays out as an inline box, so a visual or axe assertion reads the wrong DOM.
-Those stories set `render: template` in `defineMeta` and wrap the component once
-for the whole file (`{#snippet template(args: ComponentProps<typeof X>)}`, typed
-because a snippet referenced through a variable gets no contextual type).
+A component whose root is an `<li>` — both task rows, through
+`task-row-shell.svelte` — is rendered inside a list, or axe reads a list item with
+no list and `getAllByRole('listitem')` has nothing to find. Those stories set
+`render: template` in `defineMeta` and wrap the component once for the whole file
+(`{#snippet template(args: ComponentProps<typeof X>)}`, typed because a snippet
+referenced through a variable gets no contextual type).
 
 ## The five commands
 
