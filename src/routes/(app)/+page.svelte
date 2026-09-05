@@ -37,6 +37,7 @@
 	import TaskList from '$lib/presentation/component/task-list.svelte';
 	import DayConstraintsBar from '$lib/presentation/component/day-constraints-bar.svelte';
 	import DayTimeline from '$lib/presentation/component/day-timeline.svelte';
+	import MetricHeadlineStrip from '$lib/presentation/component/metric-headline-strip.svelte';
 	import MetricsDashboard from '$lib/presentation/component/metrics-dashboard.svelte';
 	import PlanAdviceCard from '$lib/presentation/component/plan-advice-card.svelte';
 	import FallowExplainer from '$lib/presentation/component/fallow-explainer.svelte';
@@ -132,6 +133,8 @@
 
 	const daily = $derived(plan.daily);
 	const metrics = $derived(buildMetrics(daily, session.pools, plan.remainingDay));
+	// The two inputs every headline reading is gated on in `buildMetrics`.
+	const hasPlan = $derived(daily.totalTasks > 0 && daily.budgetHours > 0);
 	const remainingSuggestedHours = $derived(daily.remainingSuggestedHours.toFixed(2));
 	const timeline = $derived(
 		buildDayTimeline({
@@ -251,6 +254,15 @@
 		</div>
 	{/if}
 
+	<!-- The verdict comes before the setup that produces it, so a returning user
+	     reads how today stands without scrolling past the plan — but only once
+	     there is a plan to judge. With no tasks or no budget all four tiles read
+	     N/A, and four N/As above the card that would fix them is the worst first
+	     thing the app can show. -->
+	{#if hasPlan}
+		<MetricHeadlineStrip {metrics} momentum={daily.totalTasks > 0 ? daily.momentum : null} />
+	{/if}
+
 	{#if isViewingPast}
 		<div
 			class="p-box-md rounded-xl border border-warning/20 bg-warning/5 text-warning-strong text-sm"
@@ -275,8 +287,10 @@
 		{/key}
 	{/if}
 
-	<!-- The ledger takes the whole width and the readings sit under it: the metrics are
-	     what you read after the plan, not beside it. -->
+	<!-- The ledger takes the whole width and the full readings sit under it: they
+	     are what you read after the plan, not beside it. Only the verdict strip
+	     goes above, and it is four tiles rather than the grid that used to put the
+	     first task past the fold at every desktop size. -->
 	<div class="space-y-grid-xl">
 		<div class="space-y-grid-lg">
 			<TaskList
@@ -312,7 +326,7 @@
 				exampleDayHref={session.isDemo || isViewingPast ? undefined : getDemoHref()}
 			/>
 
-			<MetricsDashboard {metrics} momentum={daily.totalTasks > 0 ? daily.momentum : null} />
+			<MetricsDashboard {metrics} />
 
 			{#if !isViewingPast && tasks.length > 0}
 				<PlanAdviceCard

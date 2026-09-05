@@ -2,13 +2,13 @@
 	import { defineMeta } from '@storybook/addon-svelte-csf';
 	import { expect } from 'storybook/test';
 	import type { Metric } from '$lib/presentation/type';
-	import MetricsDashboard from '$lib/presentation/component/metrics-dashboard.svelte';
+	import MetricHeadlineStrip from '$lib/presentation/component/metric-headline-strip.svelte';
 
 	/* The band is the banding policy's output (utils/band.ts) — the component owns
 	   the colour and the screen-reader wording it renders from it. */
 	const metrics: Metric[] = [
-		// The four headline readings: the strip draws them as tiles, and they read
-		// again here under the question each answers.
+		// The four headline readings, drawn as tiles — two banded, two not, so the
+		// grid is exercised with both. The rest are here to prove they are NOT.
 		{
 			headline: true,
 			group: 'worth',
@@ -74,51 +74,64 @@
 	];
 
 	const { Story } = defineMeta({
-		title: 'Component/Metrics Dashboard',
-		component: MetricsDashboard,
+		title: 'Component/Metric Headline Strip',
+		component: MetricHeadlineStrip,
 		tags: ['autodocs'],
 		args: {
 			metrics,
+			momentum: 0.4,
 		},
 	});
 </script>
 
 <Story
-	name="Four questions"
+	name="Upward momentum"
 	play={async ({ canvas, canvasElement }) => {
-		// Open, with no disclosure to click: the four question headings are the
-		// hierarchy that the fold used to buy, so the click bought nothing.
-		expect(canvasElement.querySelector('details')).toBeNull();
-		await expect(canvas.getByText('Does the day fit?')).toBeVisible();
-		await expect(canvas.getByText('Is the time well spent?')).toBeVisible();
-		await expect(canvas.getByText('Can I keep doing this?')).toBeVisible();
+		// The verdict on the day, before the setup that produces it: four tiles and
+		// nothing else. The reference readings are a separate card under the plan.
+		await expect(canvas.getByText('Burnout Risk')).toBeVisible();
+		await expect(canvas.getByText('104%')).toBeVisible();
+		expect(canvas.queryByText('Yield Index')).toBeNull();
 
-		// A headline reading reads here too — the tiles are a screen away above the
-		// day's setup, so the column that promises the answer carries it.
-		await expect(canvas.getByText('Human Capacity')).toBeVisible();
-		await expect(canvas.getByText('Yield Index')).toBeVisible();
-		await expect(canvas.getByText('82%')).toBeVisible();
+		// Momentum is one badge carrying its own tooltip: the state alone named
+		// nothing once the label it sat beside was gone.
+		await expect(canvas.getByText('Momentum: Upward')).toBeVisible();
 
-		// No reading in this fixture answers the cost question, so the column is
-		// absent rather than a title standing over nothing.
-		expect(canvas.queryByText('What is it costing?')).toBeNull();
-
-		// Each judged band carries text a screen reader hears; the neutral readings
-		// (Completion Rate, Flow Coverage, and Primary Bottleneck — which names a
-		// task rather than judging one) are the default value colour, make no
+		// Each judged band carries text a screen reader hears; the two neutral tiles
+		// (Completion Rate and Flow Coverage) are the default value colour, make no
 		// claim, and stay silent.
 		await expect(canvas.getByText('(Critical)')).toBeInTheDocument();
-		expect(canvasElement.querySelectorAll('.sr-only')).toHaveLength(5);
+		expect(canvasElement.querySelectorAll('.sr-only')).toHaveLength(2);
 	}}
 />
 
 <Story
-	name="No metrics"
+	name="Reset required"
 	args={{
-		metrics: [],
+		momentum: -0.4,
 	}}
 	play={async ({ canvas }) => {
-		// Nothing to answer with, so no question is asked.
-		expect(canvas.queryByText('Does the day fit?')).toBeNull();
+		await expect(canvas.getByText('Momentum: Reset Reqd')).toBeVisible();
+	}}
+/>
+
+<Story
+	name="Stable"
+	args={{
+		momentum: 0,
+	}}
+	play={async ({ canvas }) => {
+		await expect(canvas.getByText('Momentum: Stable')).toBeVisible();
+	}}
+/>
+
+<Story
+	name="No momentum"
+	args={{
+		momentum: null,
+	}}
+	play={async ({ canvas }) => {
+		// No history yet: the badge names the reading and reads N/A
+		await expect(canvas.getByText('Momentum: N/A')).toBeVisible();
 	}}
 />

@@ -14,6 +14,12 @@
  * deliberately not among them: it judges the allocator, not the day, and there
  * is no action a reader can take on it.
  *
+ * Every reading also carries the `group` naming which of the lower card's four
+ * questions it answers, headline rows included — a tile reads twice rather than
+ * leaving its own question short of the answer the reader came for. Fallow Gain
+ * answers none of the four cleanly, for the reason it is not a tile; `worth` is
+ * the question it comes closest to.
+ *
  * A reading is gated on the inputs it needs: a metric that is undefined without
  * tasks, without active tasks, without a budget or — for the executed capacity
  * burn-down — without a logged hour today renders N/A, never 0. `gated`
@@ -131,6 +137,7 @@ export function buildMetrics(
 
 	return [
 		{
+			group: 'worth',
 			label: m.metric_zenith_gain(),
 			description: m.metric_zenith_gain_desc(),
 			...gated(
@@ -148,12 +155,14 @@ export function buildMetrics(
 			),
 		},
 		{
+			group: 'worth',
 			label: m.metric_yield_index(),
 			description: m.metric_yield_index_desc(),
 			...gated(completedTasks > 0, `${yieldIndex}%`, getBandBiggerBetter(yieldIndex)),
 		},
 		{
 			headline: true,
+			group: 'worth',
 			label: m.metric_completion_rate(),
 			description: m.metric_completion_rate_desc(),
 			// The reading is honest at 0% but the band is not: an untouched day is the
@@ -167,6 +176,7 @@ export function buildMetrics(
 		},
 		{
 			headline: true,
+			group: 'worth',
 			label: m.metric_flow_coverage(),
 			description: m.metric_flow_coverage_desc(),
 			// Plan-scoped: "3/3 reached flow" is the answer a finished day
@@ -179,6 +189,7 @@ export function buildMetrics(
 		},
 		{
 			headline: true,
+			group: 'fit',
 			label: m.metric_human_capacity(),
 			// The description names the pool that binds, so it can only be written
 			// once one does: with no tasks the model reports no limit type, and
@@ -205,6 +216,7 @@ export function buildMetrics(
 			),
 		},
 		{
+			group: 'fit',
 			label: m.metric_capacity_left(),
 			// Next-up: it counts the hours you WORKED, so it moves as the day
 			// is logged and names whichever pool those hours load hardest — which mid-day
@@ -238,6 +250,7 @@ export function buildMetrics(
 			),
 		},
 		{
+			group: 'fit',
 			label: m.metric_time_scarcity(),
 			description: m.metric_time_scarcity_desc(),
 			// Budget-gated as well as task-gated: with no budget the model returns a
@@ -245,6 +258,7 @@ export function buildMetrics(
 			...gated(planned, `${timeScarcity}%`, AXIS_BAND.timeScarcity(timeScarcity)),
 		},
 		{
+			group: 'fit',
 			label: m.metric_bottleneck(),
 			// Names the pool the reading itself read the draw on — NOT Human
 			// Capacity's. The two agree while the day is untouched and may part once
@@ -272,6 +286,7 @@ export function buildMetrics(
 			band: 'neutral',
 		},
 		{
+			group: 'fit',
 			label: m.metric_longest_warm_up(),
 			description: longestWarmUp
 				? m.metric_longest_warm_up_desc({
@@ -289,11 +304,13 @@ export function buildMetrics(
 		},
 		{
 			headline: true,
+			group: 'endurance',
 			label: m.metric_burnout_risk(),
 			description: m.metric_burnout_risk_desc(),
 			...gated(planned, `${burnoutRisk}%`, AXIS_BAND.burnoutRisk(burnoutRisk)),
 		},
 		{
+			group: 'cost',
 			label: m.metric_cognitive_load(),
 			description: m.metric_cognitive_load_desc(),
 			// Both loads arrive exact and are rounded HERE, like the capacity
@@ -303,11 +320,13 @@ export function buildMetrics(
 			...gated(planned, `${Math.round(cognitiveLoad)}%`, AXIS_BAND.cognitiveLoad(cognitiveLoad)),
 		},
 		{
+			group: 'cost',
 			label: m.metric_physical_load(),
 			description: m.metric_physical_load_desc(),
 			...gated(planned, `${Math.round(physicalLoad)}%`, AXIS_BAND.physicalLoad(physicalLoad)),
 		},
 		{
+			group: 'endurance',
 			label: m.metric_energy_balance(),
 			description: m.metric_energy_balance_desc(),
 			// The share as well as the word it falls in: the word alone is three
@@ -320,6 +339,7 @@ export function buildMetrics(
 			),
 		},
 		{
+			group: 'fit',
 			label: m.metric_schedule_integrity(),
 			description: m.metric_schedule_integrity_desc(),
 			// Same as time scarcity: budget 0 short-circuits to 0%, an alarm about
@@ -332,22 +352,26 @@ export function buildMetrics(
 			),
 		},
 		{
+			group: 'cost',
 			label: m.metric_friction_index(),
 			description: m.metric_friction_index_desc(),
 			...gated(planned && funded, `${frictionIndex}%`, AXIS_BAND.frictionIndex(frictionIndex)),
 		},
 		{
+			group: 'worth',
 			label: m.metric_deep_work(),
 			description: m.metric_deep_work_desc(),
 			// Exact in, rounded here, like the Loads above.
 			...gated(planned, `${Math.round(deepWorkRatio)}%`, getBandDeepWork(deepWorkRatio)),
 		},
 		{
+			group: 'worth',
 			label: m.metric_quick_wins(),
 			description: m.metric_quick_wins_desc(),
 			...gated(hasActive, `${quickWins}`, quickWins > 0 ? 'success' : 'neutral'),
 		},
 		{
+			group: 'cost',
 			label: m.metric_grind_density(),
 			description: m.metric_grind_density_desc(),
 			// Gated on FUNDED work, not on the task list: with nothing funded there
@@ -362,6 +386,7 @@ export function buildMetrics(
 			),
 		},
 		{
+			group: 'endurance',
 			label: m.metric_sustainable_work(),
 			description: m.metric_sustainable_work_desc(),
 			// Exact in, rounded here. Null when the plan funds no
@@ -374,11 +399,13 @@ export function buildMetrics(
 			),
 		},
 		{
+			group: 'endurance',
 			label: m.metric_recovery_ratio(),
 			description: m.metric_recovery_ratio_desc(),
 			...recovery,
 		},
 		{
+			group: 'cost',
 			label: m.metric_day_profile(),
 			description: m.metric_day_profile_desc(),
 			// Gated on the reading, not on the task list: the profile is hour-weighted
@@ -398,16 +425,19 @@ export function buildMetrics(
 			),
 		},
 		{
+			group: 'cost',
 			label: m.metric_avg_physical(),
 			description: m.metric_avg_physical_desc(),
 			...gated(hasTasks, `${averagePhysicalDifficulty}/10`, 'neutral'),
 		},
 		{
+			group: 'cost',
 			label: m.metric_avg_mental(),
 			description: m.metric_avg_mental_desc(),
 			...gated(hasTasks, `${averageMentalDifficulty}/10`, 'neutral'),
 		},
 		{
+			group: 'endurance',
 			label: m.metric_avg_enjoyment(),
 			description: m.metric_avg_enjoyment_desc(),
 			...gated(hasTasks, `${averageEnjoyment}/10`, 'neutral'),

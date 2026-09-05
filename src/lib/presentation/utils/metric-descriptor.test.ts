@@ -5,6 +5,16 @@ import * as m from '$lib/paraglide/messages.js';
 import { AXIS_BAND, type Band } from '$lib/presentation/utils/band';
 import { buildMetrics } from '$lib/presentation/utils/metric-descriptor';
 
+/** Group sizes, so the pin names the shape and not twenty-four expectations. */
+const countBy = <T, K extends string>(items: T[], key: (item: T) => K) =>
+	items.reduce<Partial<Record<K, number>>>(
+		(counts, item) => ({
+			...counts,
+			[key(item)]: (counts[key(item)] ?? 0) + 1,
+		}),
+		{},
+	);
+
 const pools = {
 	cognitiveHours: 8,
 	physicalHours: 4,
@@ -105,6 +115,15 @@ describe('buildMetrics', () => {
 		// rotting the docs that count these rows.
 		expect(rows).toHaveLength(24);
 		expect(rows.filter((row) => row.headline)).toHaveLength(4);
+
+		// Every reading answers exactly one of the lower card's four questions, so a
+		// new row cannot land in it without someone deciding which one.
+		expect(countBy(rows, (row) => row.group)).toEqual({
+			fit: 6,
+			worth: 6,
+			cost: 7,
+			endurance: 5,
+		});
 
 		for (const row of rows) {
 			expect(row.value, row.label).not.toMatch(/\d/);
