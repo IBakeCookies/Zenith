@@ -139,6 +139,7 @@
 			runOrder: daily.runOrder,
 			switchCost: session.switchCost,
 			availableHours: daily.budgetHours,
+			isConstantsFitted: session.constantsFit.fitted,
 		}),
 	);
 	const advice = $derived(plan.advice ? buildAdviceDisplay(plan.advice, getDateLocale()) : null);
@@ -274,9 +275,8 @@
 		{/key}
 	{/if}
 
-	<!-- The ledger takes the whole width and the readings sit under it: twelve columns
-	     have nowhere to go in two thirds of a page, and the metrics are what you read
-	     after the plan, not beside it. -->
+	<!-- The ledger takes the whole width and the readings sit under it: the metrics are
+	     what you read after the plan, not beside it. -->
 	<div class="space-y-grid-xl">
 		<div class="space-y-grid-lg">
 			<TaskList

@@ -59,10 +59,11 @@ async function addTask(page: Page, task: typeof INVOICE, importance?: 'Low' | 'N
 	await closeTaskForm(page);
 }
 
-/** The row's `Planned` cell — index 10 of `getTaskColumns()`, and NOT the last cell:
- *  `Actions` (the ✎/✕ strip) is. Indexed the way `expectTaskInputs` indexes the three
- *  ratings, because the column list is one definition and this reads off it. */
-const plannedHours = (page: Page, title: string) => taskRow(page, title).getByRole('cell').nth(10);
+/** The hours the plan gave the task, at the right edge of its title's line
+ *  (`task-item.svelte`'s `planned` snippet). The title is the row's other
+ *  `text-ty-primary`, and it is `font-medium`. */
+const plannedHours = (page: Page, title: string) =>
+	taskRow(page, title).locator('.font-semibold.text-ty-primary');
 
 test('a task deployed at high importance is badged as one', async ({ page }) => {
 	await page.goto('/');

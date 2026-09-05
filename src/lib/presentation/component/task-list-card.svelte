@@ -1,28 +1,22 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import * as m from '$lib/paraglide/messages.js';
-	import { cn } from '$lib/presentation/utils';
 	import * as Dialog from '$lib/presentation/component/ui/dialog';
-	import {
-		PINNED_LEDGER_COLUMN_COUNT,
-		type LedgerColumn,
-	} from '$lib/presentation/utils/ledger-column';
 
 	interface Props {
 		/** Mounted in the dialog below, so it renders only while that is open — every
 		 *  opening is a fresh mount, and no page decides when a form is on screen. It
 		 *  takes the closer: only this card knows the dialog its Cancel closes. */
 		form?: Snippet<[() => void]>;
-		/** Between the heading and the ledger — `/` its day strip, the Lab its ☕ editor. */
+		/** Between the heading and the list — `/` its day strip, the Lab its ☕ editor. */
 		strip?: Snippet;
 		/** What the screen reads beside the heading — both screens put the day's Load/Save
 		 *  there, and `/` its "Next" too. A snippet, like `form`: this card is the two
 		 *  screens' shared frame, so what only one of them says arrives from that one. */
 		heading?: Snippet;
-		/** Null, not an empty snippet: an empty `<table>` announces a grid of nothing over the empty-state copy. */
+		/** Null, not an empty snippet: an empty `<ul>` announces "list, 0 items" over the
+		 *  empty-state copy. */
 		rows: Snippet | null;
-		/** The caller's own column list, headed here and spanned by the row's editors. */
-		columns: LedgerColumn[];
 		/** Splits the list into two headed groups instead of one plain one — `/` reads
 		 *  the tasks the plan funded nothing in the second. Both labels arrive with it: a
 		 *  heading over the only group there is says nothing about it. */
@@ -35,25 +29,19 @@
 		exampleDayHref?: string;
 	}
 
-	let { form, strip, heading, rows, columns, split, exampleDayHref }: Props = $props();
+	let { form, strip, heading, rows, split, exampleDayHref }: Props = $props();
 
 	let addOpen = $state(false);
 </script>
 
-{#snippet groupHeading(label: string)}
-	<!-- No `scope`: every task row is its own `<tbody>` (the shell), so `rowgroup` would
-	     head a row group that holds nothing. Left implicit, a header row of one spanning
-	     cell heads the cells beneath it instead, down to the next such row. -->
-	<tbody>
-		<tr>
-			<th
-				colspan={columns.length}
-				class="ledger-cell text-left text-2xs font-semibold tracking-wider text-ty-silent uppercase"
-			>
-				{label}
-			</th>
-		</tr>
-	</tbody>
+<!-- A styled label and NOT a heading: every row title is an `<h3>`, so an `<h4>` here
+     would be closed by the first row under it and the second group would read as part of
+     the last task. The list carries the group's name instead. -->
+{#snippet group(label: string, items: Snippet)}
+	<div class="space-y-text-2xs">
+		<p class="text-2xs font-semibold tracking-wider text-ty-silent uppercase">{label}</p>
+		<ul aria-label={label} class="divide-y divide-line-soft">{@render items()}</ul>
+	</div>
 {/snippet}
 
 <Dialog.Root bind:open={addOpen}>
@@ -76,55 +64,11 @@
 			{@render heading?.()}
 		</div>
 		{@render strip?.()}
-		{#if rows}
-			<!-- The table's DIRECT parent: below `sm` the ledger scrolls sideways in here and
-		     the document does not, so no reading is unreachable on a phone. -->
-			<!-- svelte-ignore a11y_no_noninteractive_tabindex -- a scrollable region has to be
-		     scrollable by keyboard, and a row's own buttons are not always tabbable -->
-			<div class="nice-scrollbar overflow-x-auto" tabindex="0">
-				<table class="w-full">
-					<thead>
-						<tr>
-							{#each columns as column, index (index)}
-								{@const isPinned = index < PINNED_LEDGER_COLUMN_COUNT}
-								<th
-									scope="col"
-									class={cn(
-										'ledger-cell text-2xs font-semibold tracking-wider whitespace-nowrap text-ty-silent uppercase',
-										column.isNumeric ? 'ledger-numeric' : 'text-left',
-										column.isWideOnly && 'ledger-wide',
-										// The header pins the same columns the row does, or it stops naming what
-										// is under it as soon as the ledger is scrolled.
-										isPinned && 'ledger-pin',
-										// `sr-only` is absolutely positioned, and an absolute box is clipped by
-										// the ledger's `overflow-x` only while its containing block is inside
-										// it — unpositioned, the name landed past the viewport and the DOCUMENT
-										// scrolled (`e2e/tasks.e2e.ts`). A pinned cell is positioned already.
-										column.isLabelHidden && !isPinned && 'relative',
-									)}
-								>
-									<!-- The two columns that show no heading still name themselves for a
-								     screen reader (`isLabelHidden`), or the reader announces an
-								     anonymous column. -->
-									{#if column.isLabelHidden}
-										<span class="sr-only">{column.label}</span>
-									{:else}
-										{column.label}
-									{/if}
-								</th>
-							{/each}
-						</tr>
-					</thead>
-					{#if split}
-						{@render groupHeading(split.firstLabel)}
-						{@render rows()}
-						{@render groupHeading(split.restLabel)}
-						{@render split.rest()}
-					{:else}
-						{@render rows()}
-					{/if}
-				</table>
-			</div>
+		{#if rows && split}
+			{@render group(split.firstLabel, rows)}
+			{@render group(split.restLabel, split.rest)}
+		{:else if rows}
+			<ul class="divide-y divide-line-soft">{@render rows()}</ul>
 		{:else}
 			<div class="flex flex-col items-center justify-center py-empty-state text-center">
 				<div class="text-ty-silent mb-text-xs">

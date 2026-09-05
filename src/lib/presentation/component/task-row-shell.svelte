@@ -26,9 +26,9 @@
 		size: 'icon-xs',
 	});
 
-	/** A logged READING in the `Logged` cell. The recessed chip is what separates the two
-	 *  readings from the two bare-glyph triggers beside them: ⚡ and 🪫 open an editor, and
-	 *  "⚡ 🪫 2h Mind 0 Body 0 🪫" read as one run of glyphs while all four were bare. */
+	/** A logged READING on the meta line. The recessed chip is what separates the two
+	 *  readings from the two bare-glyph triggers that open their editors — "⚡ 🪫 2h Mind 0
+	 *  Body 0 🪫" read as one run of glyphs while all four were bare. */
 	const READING_CHIP_CLASS =
 		'flex items-center gap-text-xs rounded-sm bg-surface-inset px-box-3xs py-text-3xs whitespace-nowrap tabular-nums';
 
@@ -50,9 +50,6 @@
 		 *  mode flag on the shell" — presentation/AGENTS.md says which reading it is and
 		 *  why the seeded value still round-trips. Same name all the way down. */
 		withMustDoToday?: boolean;
-		/** How wide the caller's table is, for the editors' spanning row. Not a mode flag:
-		 *  it switches no behaviour, and each caller owns its own column list. */
-		columnCount: number;
 		ontoggle: () => void;
 		flowMinutes?: number;
 		flowDraft?: EditorDraft | null;
@@ -72,10 +69,18 @@
 		ondraindelete: (recordId: number) => void;
 		onupdate?: (edit: TaskEdit) => void;
 		onremove?: () => void;
+		/** The row's leading mark — `/`'s `#N`, the Lab's hue. */
 		lead?: Snippet;
 		badges?: Snippet;
+		/** What the screen's own model derived, on the meta line beside the three ratings,
+		 *  and required: a row that derives nothing from the sliders is not a row either
+		 *  screen has. */
+		readings: Snippet;
+		/** One more of the screen's own readings, after `readings` on the meta line. */
 		meta?: Snippet;
-		trailing?: Snippet;
+		/** The hours the optimizer planned, at the right edge of the title's line — the one
+		 *  reading both screens put in the same place. */
+		planned?: Snippet;
 	}
 
 	let {
@@ -89,7 +94,6 @@
 		tags = [],
 		tagVocabulary = [],
 		withMustDoToday = true,
-		columnCount,
 		ontoggle,
 		flowMinutes,
 		flowDraft = null,
@@ -109,8 +113,9 @@
 		onremove,
 		lead,
 		badges,
+		readings,
 		meta,
-		trailing,
+		planned,
 	}: Props = $props();
 
 	// Local, unlike the two measurement drafts: the task it edits is the row, and nothing
@@ -146,19 +151,22 @@
 	}
 
 	const hasEditor = $derived(flowDraft !== null || drainDraft !== null || isEditing);
+	const hasLogged = $derived(Boolean(flowMinutes) || drainLogs.length > 0);
+	// A past day passes none of the four, and an empty box would take the right end of
+	// the line the hours are meant to hold.
+	const hasControls = $derived(Boolean(onflowopen || ondrainopen || onupdate || onremove));
 </script>
 
-<tbody class="text-sm">
-	<!-- `group`, because the two pinned cells paint their own opaque fill and so hide the
-	     row's hover — `ledger-pin` re-reads it from here. -->
-	<tr class="group transition hover:bg-surface-hover">
-		<td class="ledger-cell ledger-pin">{@render lead?.()}</td>
+<li class="rounded-lg px-box-2xs py-box-xs text-sm transition hover:bg-surface-hover">
+	<!-- Two columns from `sm`: everything the task IS stacks on the left, and what today
+	     gave it holds the whole right edge — one block, full height, so the hours never
+	     sit above a second right-hand reading. Stacked in DOM order, so a phone reads
+	     title, readings, logs, then the controls. -->
+	<div class="flex flex-col gap-x-grid-md gap-y-text-2xs sm:flex-row sm:items-center">
+		<div class="min-w-0 flex-1 space-y-text-2xs">
+			<div class="flex flex-wrap items-center gap-x-grid-xs gap-y-text-2xs">
+				{@render lead?.()}
 
-		<!-- The one flexible-width column, so the checkbox goes in a flex WITH the title
-		     rather than a cell of its own, which would be a column of ticks. Pinned with
-		     the lead: the task's name is what a scrolled-out reading needs beside it. -->
-		<td class="ledger-cell ledger-pin sm:min-w-48">
-			<div class="flex items-start gap-grid-xs">
 				<input
 					type="checkbox"
 					checked={completed}
@@ -166,13 +174,12 @@
 					aria-label={m.task_toggle_aria({
 						title,
 					})}
-					class="mt-text-3xs h-4 w-4 cursor-pointer appearance-auto accent-brand focus:ring-2 focus:ring-brand/40"
+					class="h-4 w-4 shrink-0 cursor-pointer appearance-auto accent-brand focus:ring-2 focus:ring-brand/40"
 				/>
 
-				<!-- The dim covers the title and its badges only: the `Logged` cell holds the
-				     🪫 rating a finished session exists for, and a faded reading reads as
-				     disabled. -->
-				<div class="flex flex-wrap items-center gap-text-xs" class:opacity-60={completed}>
+				<!-- The dim covers the title and its badges only: the logs beside them are the 🪫
+		     rating a finished session exists for, and a faded reading reads as disabled. -->
+				<div class="flex min-w-0 flex-wrap items-center gap-text-xs" class:opacity-60={completed}>
 					<h3
 						class={cn(
 							'font-medium wrap-break-word capitalize',
@@ -184,19 +191,40 @@
 					{@render badges?.()}
 				</div>
 			</div>
-		</td>
 
-		<!-- Bare numbers: the headed columns say what `P `/`M `/`E ` and a tooltip had to.
-		     The hues stay, though — body/mind/brand are how every other reading of the same
-		     three names is written (`drain-log-form`, `log-history-list`). -->
-		<td class="ledger-cell ledger-numeric ledger-wide text-body/80">{physicalDifficulty}</td>
-		<td class="ledger-cell ledger-numeric ledger-wide text-mind/80">{mentalDifficulty}</td>
-		<td class="ledger-cell ledger-numeric ledger-wide text-brand/80">{enjoyment}</td>
+			<!-- The meta line: what the task IS and what the two instruments recorded of it,
+			     one line under the title. The READINGS half is dropped on a phone — eight
+			     figures at `text-2xs` wrap to three lines there and bury the plan's own
+			     answer, and ✎ still opens all three sliders — so with nothing logged the
+			     line goes with it rather than leaving a gap.
+			     `text-left` on the triggers: a trigger is a <button>, whose UA `text-align`
+			     centres a wrapped last line. -->
+			<div
+				class={cn(
+					'flex flex-wrap items-center gap-x-text-xs gap-y-text-3xs text-2xs text-ty-silent',
+					!hasLogged && 'hidden sm:flex',
+				)}
+			>
+				<div class="hidden flex-wrap items-center gap-x-text-xs gap-y-text-3xs sm:flex">
+					<Tooltip.Root>
+						<Tooltip.Trigger class="cursor-help text-left">
+							<!-- body/mind/brand are how every other reading of the same three names is
+				     written (`drain-log-form`, `log-history-list`). -->
+							<span class="font-medium text-body/80">P {physicalDifficulty}</span>
+							<span class="text-ty-ghost">·</span>
+							<span class="font-medium text-mind/80">M {mentalDifficulty}</span>
+							<span class="text-ty-ghost">·</span>
+							<span class="font-medium text-brand/80">E {enjoyment}</span>
+						</Tooltip.Trigger>
+						<Tooltip.Content>
+							<p>{m.task_inputs_tooltip()}</p>
+						</Tooltip.Content>
+					</Tooltip.Root>
+					<span class="text-ty-ghost">|</span>
+					{@render readings()}
+					{@render meta?.()}
+				</div>
 
-		{@render meta?.()}
-
-		<td class="ledger-cell">
-			<div class="flex flex-wrap items-center gap-x-text-xs gap-y-text-3xs text-2xs text-ty-silent">
 				{#if flowMinutes}
 					<Tooltip.Root>
 						<Tooltip.Trigger>
@@ -230,24 +258,6 @@
 					</Tooltip.Root>
 				{/if}
 
-				{#if onflowopen}
-					<Tooltip.Root>
-						<Tooltip.Trigger
-							class={cn(
-								ROW_ACTION_CLASS,
-								flowMinutes || flowDraft ? 'text-flow' : 'text-ty-silent hover:text-flow',
-							)}
-							onclick={() => (flowDraft ? onflowclose?.() : onflowopen('button'))}
-							aria-label={m.task_log_flow_aria()}
-						>
-							⚡
-						</Tooltip.Trigger>
-						<Tooltip.Content>
-							<p>{m.task_log_flow_tooltip()}</p>
-						</Tooltip.Content>
-					</Tooltip.Root>
-				{/if}
-
 				{#each drainLogs as log (log.id)}
 					<Tooltip.Root>
 						<Tooltip.Trigger>
@@ -263,8 +273,8 @@
 									<span class="text-flow">🪫</span>
 									<span>{formatDuration(log.hours)}</span>
 									<!-- Worded, not `M6`/`B4`: two bare initials beside a duration read as a code
-									     rather than as two ratings, and both words are already localized for the
-									     editor's own fields. -->
+							     rather than as two ratings, and both words are already localized for the
+							     editor's own fields. -->
 									<span class="font-medium text-mind/90">
 										{m.energy_drain_mind_label()}
 										{log.mindDrain}
@@ -281,116 +291,140 @@
 						</Tooltip.Content>
 					</Tooltip.Root>
 				{/each}
+			</div>
+		</div>
 
-				<!-- Why the `recordId === undefined` arm: presentation/AGENTS.md, "One click
-				     rule covers the whole `Logged` cell" — 🪫 owns only the append editor. -->
-				{#if ondrainopen}
-					<Tooltip.Root>
-						<Tooltip.Trigger
+		<!-- The plan's hours and the four controls: the row's whole right edge from `sm`,
+		     and its own line under the title below it — where the two take opposite ends,
+		     since the hours are a reading and the controls are the thumb's target. -->
+		<div class="flex items-center justify-between gap-grid-2xs sm:justify-end">
+			{@render planned?.()}
+
+			{#if hasControls}
+				<div class="flex items-center gap-grid-2xs">
+					{#if onflowopen}
+						<Tooltip.Root>
+							<Tooltip.Trigger
+								class={cn(
+									ROW_ACTION_CLASS,
+									flowMinutes || flowDraft ? 'text-flow' : 'text-ty-silent hover:text-flow',
+								)}
+								onclick={() => (flowDraft ? onflowclose?.() : onflowopen('button'))}
+								aria-label={m.task_log_flow_aria()}
+							>
+								⚡
+							</Tooltip.Trigger>
+							<Tooltip.Content>
+								<p>{m.task_log_flow_tooltip()}</p>
+							</Tooltip.Content>
+						</Tooltip.Root>
+					{/if}
+
+					<!-- Why the `recordId === undefined` arm: presentation/AGENTS.md, "One click rule
+			     covers both instruments" — 🪫 owns only the append editor. -->
+					{#if ondrainopen}
+						<Tooltip.Root>
+							<Tooltip.Trigger
+								class={cn(
+									ROW_ACTION_CLASS,
+									drainLogs.length > 0 || drainDraft
+										? 'text-flow'
+										: 'text-ty-silent hover:text-flow',
+								)}
+								onclick={() =>
+									drainDraft && drainDraft.recordId === undefined
+										? ondrainclose?.()
+										: ondrainopen('button')}
+								aria-label={m.energy_log_drain_aria()}
+							>
+								🪫
+							</Tooltip.Trigger>
+							<Tooltip.Content>
+								<p>{m.energy_log_drain_tooltip()}</p>
+							</Tooltip.Content>
+						</Tooltip.Root>
+					{/if}
+
+					{#if onupdate}
+						<button
+							type="button"
 							class={cn(
 								ROW_ACTION_CLASS,
-								drainLogs.length > 0 || drainDraft ? 'text-flow' : 'text-ty-silent hover:text-flow',
+								isEditing ? 'text-success' : 'text-ty-silent hover:text-success',
 							)}
-							onclick={() =>
-								drainDraft && drainDraft.recordId === undefined
-									? ondrainclose?.()
-									: ondrainopen('button')}
-							aria-label={m.energy_log_drain_aria()}
+							onclick={() => (isEditing = !isEditing)}
+							aria-label={m.task_edit_aria()}
 						>
-							🪫
-						</Tooltip.Trigger>
-						<Tooltip.Content>
-							<p>{m.energy_log_drain_tooltip()}</p>
-						</Tooltip.Content>
-					</Tooltip.Root>
-				{/if}
-			</div>
-		</td>
+							<Pencil class="h-4 w-4" />
+						</button>
+					{/if}
 
-		{@render trailing?.()}
+					{#if onremove}
+						<button
+							type="button"
+							class={cn(ROW_ACTION_CLASS, 'text-ty-silent hover:text-danger')}
+							onclick={onremove}
+							aria-label={m.task_remove_aria()}
+						>
+							<X class="h-4 w-4" />
+						</button>
+					{/if}
+				</div>
+			{/if}
+		</div>
+	</div>
 
-		<td class="ledger-cell">
-			<div class="flex items-center gap-grid-2xs">
-				{#if onupdate}
-					<button
-						type="button"
-						class={cn(
-							ROW_ACTION_CLASS,
-							isEditing ? 'text-success' : 'text-ty-silent hover:text-success',
-						)}
-						onclick={() => (isEditing = !isEditing)}
-						aria-label={m.task_edit_aria()}
-					>
-						<Pencil class="h-4 w-4" />
-					</button>
-				{/if}
-
-				{#if onremove}
-					<button
-						type="button"
-						class={cn(ROW_ACTION_CLASS, 'text-ty-silent hover:text-danger')}
-						onclick={onremove}
-						aria-label={m.task_remove_aria()}
-					>
-						<X class="h-4 w-4" />
-					</button>
-				{/if}
-			</div>
-		</td>
-	</tr>
-
+	<!-- One block for all three, so an open editor reads under the whole row rather than
+	     inside either column of it. -->
 	{#if hasEditor}
-		<tr>
-			<td colspan={columnCount} class="ledger-cell">
-				<!-- Both keyed on the draft: `seed`/`focusMinutes` are read at MOUNT and the page
-				     can swap a draft while its editor is open — unkeyed, ✓ overwrote a stored
-				     rating. -->
-				{#if flowDraft && onlogflow}
-					{#key flowDraft}
-						<FlowLogForm
-							seed={flowMinutes ?? null}
-							focusMinutes={flowDraft.focusMinutes}
-							onsave={onlogflow}
-							oncancel={() => onflowclose?.()}
-							ondelete={flowMinutes === undefined ? undefined : onflowdelete}
-						/>
-					{/key}
-				{/if}
-
-				{#if drainDraft && ondrainsave}
-					{#key drainDraft}
-						{@const recordId = drainDraft.recordId}
-						<DrainLogForm
-							seed={drainDraft}
-							focusMinutes={drainDraft.focusMinutes}
-							onsave={ondrainsave}
-							oncancel={() => ondrainclose?.()}
-							ondelete={recordId === undefined ? undefined : () => ondraindelete(recordId)}
-						/>
-					{/key}
-				{/if}
-
-				{#if isEditing && onupdate}
-					<TaskEditForm
-						{tagVocabulary}
-						seed={{
-							title,
-							physicalDifficulty,
-							mentalDifficulty,
-							enjoyment,
-							mustDoToday,
-							importance,
-							tags,
-						}}
-						{withMustDoToday}
-						onsave={(edit) => {
-							onupdate(edit);
-							isEditing = false;
-						}}
-						oncancel={() => (isEditing = false)}
+		<div>
+			<!-- Both keyed on the draft: `seed`/`focusMinutes` are read at MOUNT and the page can
+			     swap a draft while its editor is open — unkeyed, ✓ overwrote a stored rating. -->
+			{#if flowDraft && onlogflow}
+				{#key flowDraft}
+					<FlowLogForm
+						seed={flowMinutes ?? null}
+						focusMinutes={flowDraft.focusMinutes}
+						onsave={onlogflow}
+						oncancel={() => onflowclose?.()}
+						ondelete={flowMinutes === undefined ? undefined : onflowdelete}
 					/>
-				{/if}
-			</td>
-		</tr>
+				{/key}
+			{/if}
+
+			{#if drainDraft && ondrainsave}
+				{#key drainDraft}
+					{@const recordId = drainDraft.recordId}
+					<DrainLogForm
+						seed={drainDraft}
+						focusMinutes={drainDraft.focusMinutes}
+						onsave={ondrainsave}
+						oncancel={() => ondrainclose?.()}
+						ondelete={recordId === undefined ? undefined : () => ondraindelete(recordId)}
+					/>
+				{/key}
+			{/if}
+
+			{#if isEditing && onupdate}
+				<TaskEditForm
+					{tagVocabulary}
+					seed={{
+						title,
+						physicalDifficulty,
+						mentalDifficulty,
+						enjoyment,
+						mustDoToday,
+						importance,
+						tags,
+					}}
+					{withMustDoToday}
+					onsave={(edit) => {
+						onupdate(edit);
+						isEditing = false;
+					}}
+					oncancel={() => (isEditing = false)}
+				/>
+			{/if}
+		</div>
 	{/if}
-</tbody>
+</li>

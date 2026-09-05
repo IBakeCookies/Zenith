@@ -145,7 +145,7 @@
 				<DropdownMenu.Root>
 					<DropdownMenu.Trigger aria-label={m.nav_switch_theme()}>
 						<Palette class="h-4 w-4 shrink-0" />
-						<span class="hidden sm:inline">{themeStore.label}</span>
+						<span class="hidden md:inline">{themeStore.label}</span>
 					</DropdownMenu.Trigger>
 					<DropdownMenu.Content
 						align="end"

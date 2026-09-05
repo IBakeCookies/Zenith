@@ -13,7 +13,6 @@
 	import type { SuggestedTask } from '$lib/business/model/metric/calculation';
 	import type { Persisted, DrainObservationRecord } from '$lib/business/type';
 	import { getSlideDay } from '$lib/presentation/utils/slide-age';
-	import { getTaskColumns } from '$lib/presentation/utils/ledger-column';
 
 	interface Props {
 		suggestedTasks: SuggestedTask[];
@@ -185,14 +184,12 @@
 <!-- Built here and not in the page: this list is `/`'s alone, and the card beneath
      it is the Lab's too. -->
 {#snippet heading()}
-	<!-- One group, so the buttons stay pinned right while the Next title grows
-	     leftward — and `items-center` because the card's row is `items-baseline`. -->
-	<div class="flex min-w-0 items-center gap-grid-md">
-		{#if nextTaskTitle}
-			<NextUpLine title={nextTaskTitle} />
-		{/if}
-		{@render actions?.()}
-	</div>
+	<!-- Two items of the card's own header row, not a group: the `+` trigger's `mr-auto`
+	     already holds this end, so the Next line and the buttons need no box between. -->
+	{#if nextTaskTitle}
+		<NextUpLine title={nextTaskTitle} />
+	{/if}
+	{@render actions?.()}
 {/snippet}
 
 <TaskListCard
@@ -200,7 +197,6 @@
 	{strip}
 	{heading}
 	{exampleDayHref}
-	columns={getTaskColumns()}
 	rows={suggestedTasks.length ? rows : null}
 	split={isSplit
 		? {

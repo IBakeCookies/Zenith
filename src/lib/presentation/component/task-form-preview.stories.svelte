@@ -222,7 +222,7 @@
 	play={async ({ canvas }) => {
 		// The hours clear ϕ, so the row says where flow arrives rather than how far
 		// short the day stops — Flow Coverage's criterion, narrowed to this task.
-		const warmUp = canvas.getByText('flow at 45m').closest('div')!;
+		const warmUp = canvas.getByText('flow @ 45m').closest('div')!;
 
 		await expect(within(warmUp).getByText('Warm-up')).toBeInTheDocument();
 		await expect(within(warmUp).getByText('Optimal')).toHaveClass('sr-only');

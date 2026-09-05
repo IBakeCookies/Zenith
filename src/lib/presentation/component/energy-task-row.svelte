@@ -5,7 +5,6 @@
 	import type { TaskEdit } from '$lib/presentation/component/task-form-fields.svelte';
 	import TaskRowShell from '$lib/presentation/component/task-row-shell.svelte';
 	import { formatDuration } from '$lib/presentation/utils/duration-format';
-	import { getEnergyTaskColumns } from '$lib/presentation/utils/ledger-column';
 	import type {
 		DrainDraft,
 		EditorDraft,
@@ -96,24 +95,27 @@
 	></span>
 {/snippet}
 
-{#snippet meta()}
-	<td class="ledger-cell ledger-numeric ledger-wide whitespace-nowrap">{trueEffort.toFixed(1)}</td>
+<!-- What this peer model derives from the three sliders, and all of it: no ϕ and no
+     stopping time — an energy plan never took either reading, which is also why this one
+     carries no tooltip. `task_derived_tooltip` explains all three. -->
+{#snippet readings()}
+	{m.task_derived_effort({
+		effort: trueEffort.toFixed(1),
+	})}
 {/snippet}
 
-<!-- Empty on a completed task: the optimizer funds it like any other (`toEnergyTask`
+<!-- Silent on a completed task: the optimizer funds it like any other (`toEnergyTask`
      drops `completed`), but hours quoted for work already done read as a verdict. -->
-{#snippet trailing()}
-	<td class="ledger-cell ledger-numeric whitespace-nowrap">
-		{#if !completed && plannedHours !== null}
-			<span
-				class={plannedHours
-					? 'text-sm font-semibold text-ty-primary'
-					: 'text-2xs text-ty-silent italic'}
-			>
-				{plannedHours ? formatDuration(plannedHours) : m.energy_no_hours()}
-			</span>
-		{/if}
-	</td>
+{#snippet planned()}
+	{#if !completed && plannedHours !== null}
+		<span
+			class={plannedHours
+				? 'text-sm font-semibold whitespace-nowrap text-ty-primary tabular-nums'
+				: 'text-2xs whitespace-nowrap text-ty-silent italic'}
+		>
+			{plannedHours ? formatDuration(plannedHours) : m.energy_no_hours()}
+		</span>
+	{/if}
 {/snippet}
 
 <Tooltip.Provider>
@@ -128,7 +130,6 @@
 		{tags}
 		{tagVocabulary}
 		withMustDoToday={false}
-		columnCount={getEnergyTaskColumns().length}
 		{ontoggle}
 		{flowMinutes}
 		{flowDraft}
@@ -147,7 +148,7 @@
 		{onupdate}
 		{onremove}
 		{lead}
-		{meta}
-		{trailing}
+		{readings}
+		{planned}
 	/>
 </Tooltip.Provider>

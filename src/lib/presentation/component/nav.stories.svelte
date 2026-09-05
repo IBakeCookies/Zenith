@@ -40,6 +40,11 @@
 		const body = within(canvasElement.ownerDocument.body);
 
 		await waitFor(() => expect(body.getByText(/^Splits your daily time budget/)).toBeVisible());
+
+		// The labels survive to 768px, not 640: at `sm` a phone in landscape still fits them,
+		// and reading "Today" beats decoding a glyph. Pinned as the class because the gate IS
+		// one — a viewport story would only re-measure the browser's own breakpoints.
+		await expect(canvas.getByText('Today')).toHaveClass('md:inline');
 	}}
 />
 

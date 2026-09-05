@@ -102,7 +102,7 @@
 
 <header class="sticky top-0 z-20 border-b border-line-soft bg-surface-float backdrop-blur">
 	<div class="page-column flex items-center justify-between gap-grid-md py-box-md">
-		<div class="flex items-center gap-grid-sm sm:gap-grid-lg">
+		<div class="flex items-center gap-grid-sm md:gap-grid-lg">
 			<!-- The brand mark carries the tagline: it is on every route, so "what is
 			     this app" is answered wherever the visitor landed. -->
 			<Tooltip.Provider>
@@ -125,7 +125,7 @@
 										<line x1="22" y1="42" x2="42" y2="42" />
 									</g>
 								</svg>
-								<span class="hidden text-lg font-bold tracking-tight text-ty-primary sm:inline">
+								<span class="hidden text-lg font-bold tracking-tight text-ty-primary md:inline">
 									{m.app_name()}
 								</span>
 							</a>
@@ -149,16 +149,17 @@
 							: link.label}
 						title={link.mode ? m.nav_return_to_today() : undefined}
 						class={cn(
-							'flex items-center rounded-md px-box-2xs py-box-3xs text-sm font-medium transition-colors sm:px-box-sm',
+							'flex items-center rounded-md px-box-2xs py-box-3xs text-sm font-medium transition-colors md:px-box-sm',
 							isActive(link.href)
 								? ACTIVE_CLASS[link.mode ?? 'today']
 								: 'text-ty-secondary hover:bg-surface-hover hover:text-ty-primary',
 						)}
 					>
 						<!-- the design is a text nav; the icon carries the item where a
-						     narrow viewport has no room for four labels -->
-						<link.icon class="h-4 w-4 shrink-0 sm:hidden" />
-						<span class="hidden sm:inline">{link.label}</span>
+						     narrow viewport has no room for four labels. `md`, not `sm`: at 640px the
+						     four labels and the brand fit only by crowding the row's other half. -->
+						<link.icon class="h-4 w-4 shrink-0 md:hidden" />
+						<span class="hidden md:inline">{link.label}</span>
 					</a>
 				{/each}
 			</nav>
@@ -171,7 +172,7 @@
 			<DropdownMenu.Root>
 				<DropdownMenu.Trigger aria-label={m.nav_switch_language()}>
 					<Languages class="h-4 w-4 shrink-0" />
-					<span class="hidden sm:inline">{localeLabel(activeLocale.value)}</span>
+					<span class="hidden md:inline">{localeLabel(activeLocale.value)}</span>
 				</DropdownMenu.Trigger>
 				<DropdownMenu.Content align="end" class="w-max min-w-40">
 					<DropdownMenu.RadioGroup

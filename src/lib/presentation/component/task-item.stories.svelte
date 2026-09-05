@@ -43,23 +43,6 @@
 		},
 	});
 
-	/* `/`'s column order (task-list.stories.svelte pins the header). A row story renders
-	   no `<thead>`, so a cell's position is what says which column it is. */
-	const CELL = {
-		order: 0,
-		task: 1,
-		physical: 2,
-		mental: 3,
-		enjoyment: 4,
-		effort: 5,
-		priority: 6,
-		flow: 7,
-		stop: 8,
-		logged: 9,
-		planned: 10,
-		actions: 11,
-	};
-
 	const drainLog = (over: Partial<Persisted<DrainObservationRecord>> = {}) => ({
 		id: 11,
 		date: '2026-08-10',
@@ -76,7 +59,7 @@
 </script>
 
 {#snippet template(args: ComponentProps<typeof TaskItem>)}
-	<table class="w-full"><TaskItem {...args} /></table>
+	<ul><TaskItem {...args} /></ul>
 {/snippet}
 
 <Story
@@ -125,17 +108,16 @@
 
 		await expect(canvas.getByText('#1')).toBeVisible();
 
-		// The plan's three readings, each in the column that names it — no `prio`,
-		// `flow @` or `stop by` prefix left to spell out what the header says.
-		const cells = canvas.getAllByRole('cell');
+		// The plan's own hours hold the row's right edge; everything the model derived —
+		// the priority with it — reads on the line under the title.
+		await expect(canvas.getByText('1h 45m')).toBeVisible();
 
-		expect(cells[CELL.planned].textContent?.trim()).toBe('1h 45m');
-		expect(cells[CELL.priority].textContent?.trim()).toBe('12.4');
-		expect(cells[CELL.flow].textContent?.trim()).toBe('36m');
-		expect(cells[CELL.stop].textContent?.trim()).toBe('2h 15m');
+		const derived = canvas.getByText('effort 4.2 · flow @ 36m · stop by 2h 15m');
 
-		// A derived reading keeps its tooltip: no column word says what ϕ is.
-		await userEvent.hover(canvas.getByText('36m'));
+		expect(derived.parentElement).toContainElement(canvas.getByText('prio 12.4'));
+
+		// A derived reading keeps its tooltip: nothing on the line says what ϕ is.
+		await userEvent.hover(derived);
 
 		const body = within(canvasElement.ownerDocument.body);
 
@@ -150,11 +132,7 @@
 		flowStateTimeStd: 0.4,
 	}}
 	play={async ({ canvas, canvasElement, userEvent }) => {
-		const cells = canvas.getAllByRole('cell');
-
-		expect(cells[CELL.flow].textContent?.replace(/\s+/g, ' ').trim()).toBe('1h 24m ± 24m');
-
-		const trigger = cells[CELL.flow].querySelector('[data-slot="tooltip-trigger"]') as HTMLElement;
+		const trigger = canvas.getByText('effort 4.2 · flow @ 1h 24m ± 24m · stop by 2h 15m');
 
 		await userEvent.hover(trigger);
 
@@ -178,11 +156,7 @@
 		flowStateTime: 1.4,
 	}}
 	play={async ({ canvas, canvasElement, userEvent }) => {
-		const cells = canvas.getAllByRole('cell');
-
-		expect(cells[CELL.flow].textContent?.replace(/\s+/g, ' ').trim()).toBe('1h 24m');
-
-		const trigger = cells[CELL.flow].querySelector('[data-slot="tooltip-trigger"]') as HTMLElement;
+		const trigger = canvas.getByText('effort 4.2 · flow @ 1h 24m · stop by 2h 15m');
 
 		await userEvent.hover(trigger);
 
@@ -214,9 +188,8 @@
 		await expect(plan).toBeVisible();
 		await expect(plan).toHaveClass(/text-ty-silent/);
 
-		// Both readings in the one cell the question is about, priority beside it
-		expect(canvas.getAllByRole('cell')[CELL.planned]).toContainElement(delta);
-		expect(canvas.getAllByRole('cell')[CELL.planned]).toContainElement(plan);
+		// Both readings in one stack at the row's right edge, the plan under the re-plan
+		expect(plan.parentElement).toContainElement(delta);
 	}}
 />
 
@@ -234,11 +207,11 @@
 		const plan = canvas.getByText('1h 45m');
 
 		await expect(plan).toHaveClass(/text-ty-primary/);
-		await expect(canvas.getByText('12.4')).toBeVisible();
+		await expect(canvas.getByText('prio 12.4')).toBeVisible();
 
 		// The same two elements the re-plan reading uses, and each still its own trigger:
 		// the two modes were two structures, and the small line had to be edited twice.
-		for (const reading of [plan, canvas.getByText('12.4')]) {
+		for (const reading of [plan, canvas.getByText('prio 12.4')]) {
 			await expect(reading).toHaveAttribute('data-slot', 'tooltip-trigger');
 		}
 
@@ -866,7 +839,7 @@
 />
 
 <Story
-	name="Every reading in its own cell"
+	name="The sliders and what they derive, under the title"
 	args={{
 		physicalDifficulty: 0,
 		mentalDifficulty: 8,
@@ -878,33 +851,26 @@
 		optimalStopHours: 3.92,
 	}}
 	play={async ({ canvas }) => {
-		// One reading, one cell, so a column can be compared between tasks.
-		const cells = canvas.getAllByRole('cell');
+		// Everything the row says about the TASK is one line under the title, priority
+		// included — the plan's own hours are all that reads beside the name.
+		const meta = canvas.getByText('effort 4.1 · flow @ 2h 14m · stop by 3h 55m').parentElement;
 
-		expect(cells[CELL.physical].textContent?.trim()).toBe('0');
-		expect(cells[CELL.mental].textContent?.trim()).toBe('8');
-		expect(cells[CELL.enjoyment].textContent?.trim()).toBe('9');
-		expect(cells[CELL.effort].textContent?.trim()).toBe('4.1');
-		expect(cells[CELL.priority].textContent?.trim()).toBe('25.3');
-
-		// Right-aligned with `tabular-nums` is the whole point of the column.
-		for (const column of [
-			CELL.physical,
-			CELL.mental,
-			CELL.enjoyment,
-			CELL.effort,
-			CELL.priority,
-			CELL.flow,
-			CELL.stop,
-			CELL.planned,
-		]) {
-			expect(getComputedStyle(cells[column]).textAlign).toBe('right');
+		for (const reading of ['P 0', 'M 8', 'E 9', 'prio 25.3']) {
+			expect(meta).toContainElement(canvas.getByText(reading));
 		}
+
+		expect(meta).not.toContainElement(
+			canvas.getByRole('heading', {
+				level: 3,
+			}),
+		);
+
+		expect(canvas.queryByRole('table')).not.toBeInTheDocument();
 	}}
 />
 
 <Story
-	name="Readings and triggers in the Logged cell"
+	name="Logged readings read apart from their triggers"
 	args={{
 		flowMinutes: 95,
 		drainLogs: [
@@ -920,17 +886,13 @@
 		],
 	}}
 	play={async ({ canvas }) => {
-		// 🪫 is one rating per session (MATH.md §8.7), so its chip count is unbounded and only a
-		// flexible cell holds it — with the triggers, or the one-click rule breaks.
+		// 🪫 is one rating per session (MATH.md §8.7), so the chips are unbounded: they wrap
+		// on the meta line, and the two bare triggers keep the row's right edge.
 		const badge = canvas.getByRole('button', {
 			name: 'Correct this time to flow',
 		});
 
 		await expect(badge).toHaveTextContent('⚡ 95m');
-
-		const logged = canvas.getAllByRole('cell')[CELL.logged];
-
-		expect(logged).toContainElement(badge);
 
 		const chips = canvas.getAllByRole('button', {
 			name: 'Correct this drain rating',
@@ -938,13 +900,19 @@
 
 		expect(chips).toHaveLength(2);
 
-		for (const chip of chips) expect(logged).toContainElement(chip);
+		for (const chip of chips) expect(badge.parentElement).toContainElement(chip);
 
 		const append = canvas.getByRole('button', {
 			name: 'Log end-of-session drain',
 		});
 
-		expect(logged).toContainElement(append);
+		expect(badge.parentElement).not.toContainElement(append);
+
+		expect(append.parentElement).toContainElement(
+			canvas.getByRole('button', {
+				name: 'Delete task',
+			}),
+		);
 
 		// `toBeVisible` walks the ancestors' opacity — what the old strip could never pass.
 		for (const reading of [badge, ...chips, append]) await expect(reading).toBeVisible();
@@ -954,20 +922,19 @@
 <Story
 	name="Both instruments offered with nothing logged"
 	play={async ({ canvas }) => {
-		// Nothing logged is the state both instruments exist for, so both are offered
-		const logged = canvas.getAllByRole('cell')[CELL.logged];
+		// Nothing logged is the state both instruments exist for, so both are offered —
+		// in the action group, beside ✎ and ✕.
+		const actions = canvas.getByRole('button', {
+			name: 'Delete task',
+		}).parentElement;
 
-		expect(logged).toContainElement(
-			canvas.getByRole('button', {
-				name: 'Log time to flow',
-			}),
-		);
-
-		expect(logged).toContainElement(
-			canvas.getByRole('button', {
-				name: 'Log end-of-session drain',
-			}),
-		);
+		for (const name of ['Log time to flow', 'Log end-of-session drain']) {
+			expect(actions).toContainElement(
+				canvas.getByRole('button', {
+					name,
+				}),
+			);
+		}
 	}}
 />
 
@@ -986,7 +953,7 @@
 />
 
 <Story
-	name="Both measurement forms in one spanning row"
+	name="Both measurement forms open under the row"
 	args={{
 		flowDraft: {
 			focusMinutes: false,
@@ -995,23 +962,18 @@
 		drainDraft: newDrainDraft('completion'),
 	}}
 	play={async ({ canvas }) => {
-		// Completion opens both editors ("Completion asks both" pins that half); both land in one
-		// spanning row under the task's own, which is why the shell is a `<tbody>`.
-		const rows = canvas.getAllByRole('row');
+		// Completion opens both editors ("Completion asks both" pins that half), and both stack
+		// INSIDE the task's own row — the row is the unit, so nothing spans anything.
+		const row = canvas.getByRole('listitem');
 
-		expect(rows).toHaveLength(2);
-
-		const editors = rows[1].querySelectorAll('td');
-
-		expect(editors).toHaveLength(1);
-		await expect(editors[0]).toHaveAttribute('colspan', '12');
-		expect(editors[0]).toContainElement(canvas.getByText('⚡ Minutes to reach flow:'));
-		expect(editors[0]).toContainElement(canvas.getByText('🪫 After the session:'));
+		expect(row).toContainElement(canvas.getByText('⚡ Minutes to reach flow:'));
+		expect(row).toContainElement(canvas.getByText('🪫 After the session:'));
+		expect(canvas.queryByRole('table')).not.toBeInTheDocument();
 	}}
 />
 
 <Story
-	name="The editor joins the spanning row"
+	name="The editor joins the two measurement forms"
 	args={{
 		flowDraft: {
 			focusMinutes: false,
@@ -1020,16 +982,14 @@
 		drainDraft: newDrainDraft('completion'),
 	}}
 	play={async ({ canvas, userEvent }) => {
-		// ✎ stacks in the same spanning row, and the row keeps one line of cells
+		// ✎ stacks with the other two, in the one row the task has
 		await userEvent.click(
 			canvas.getByRole('button', {
 				name: 'Edit task',
 			}),
 		);
 
-		const rows = canvas.getAllByRole('row');
-
-		expect(rows).toHaveLength(2);
-		expect(rows[1].querySelector('td')).toContainElement(canvas.getByLabelText('Title'));
+		expect(canvas.getAllByRole('listitem')).toHaveLength(1);
+		expect(canvas.getByRole('listitem')).toContainElement(canvas.getByLabelText('Title'));
 	}}
 />

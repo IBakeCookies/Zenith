@@ -1,9 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { addTask, AUTOSAVE_MS, isoDate, logFlow, setBudget, taskRow } from './helpers';
 
-/** `Flow at` in `/`'s ledger — `getTaskColumns`' eighth column. */
-const FLOW_CELL = 7;
-
 test('past day is read-only with a banner', async ({ page }) => {
 	await page.goto(`/?date=${isoDate(-3)}`);
 	await expect(page.getByText('Viewing a past day:')).toBeVisible();
@@ -236,7 +233,7 @@ test('a fresh profile plans with no ± beside the flow time', async ({ page }) =
 	await page.goto('/');
 	await addTask(page, 'Boxing');
 
-	await expect(taskRow(page, 'Boxing').locator('td').nth(FLOW_CELL)).not.toContainText('±');
+	await expect(taskRow(page, 'Boxing')).not.toContainText('±');
 });
 
 test('a ⚡ logged today shows its ± on the next day', async ({ page }) => {
@@ -251,5 +248,5 @@ test('a ⚡ logged today shows its ± on the next day', async ({ page }) => {
 	// The new day holds none of yesterday's tasks, so the band needs one of its own.
 	await addTask(page, 'Inbox');
 
-	await expect(taskRow(page, 'Inbox').locator('td').nth(FLOW_CELL)).toContainText('±');
+	await expect(taskRow(page, 'Inbox')).toContainText('±');
 });

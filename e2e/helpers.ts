@@ -16,15 +16,8 @@ export function isoDate(offsetDays: number): string {
 	return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
-/** A task's row in the ledger: the `<tbody>` holding its cells and any editor it has
- *  open (`task-row-shell.svelte`). The ledger is the only table on either screen. */
-export const taskRow = (page: Page, title: string) =>
-	page.locator('table tbody').filter({
-		hasText: title,
-	});
-
 /** The Tasks card — `card-shell` is the documented card surface (tokens.css) and this
- *  is the one that heads the ledger. Scoped, because the day's Load and Save read on
+ *  is the one that heads the list. Scoped, because the day's Load and Save read on
  *  this card's heading row and nowhere else on the page. */
 export const taskCard = (page: Page) =>
 	page.locator('.card-shell').filter({
@@ -34,13 +27,22 @@ export const taskCard = (page: Page) =>
 		}),
 	});
 
-/** The row's three model-input readings, one headed column each since the row became a
- *  table row. Offset by 2: the `#`/hue lead and the `Task` cell come first. */
-export async function expectTaskInputs(page: Page, title: string, inputs: number[]) {
-	const cells = taskRow(page, title).getByRole('cell');
+/** A task's row: the `<li>` holding both its lines and any editor it has open
+ *  (`task-row-shell.svelte`). Scoped to the Tasks card, because the Lab's schedule list
+ *  carries the same titles in list items of its own. */
+export const taskRow = (page: Page, title: string) =>
+	taskCard(page).getByRole('listitem').filter({
+		hasText: title,
+	});
 
+/** The row's three model-input readings — `P n · M n · E n`, on the line under the
+ *  title with everything else the row says about the task. */
+export async function expectTaskInputs(page: Page, title: string, inputs: number[]) {
+	const row = taskRow(page, title);
+
+	// Bounded: a bare `P 1` also reads inside `P 10`, so a slider off by a digit passes.
 	for (const [index, value] of inputs.entries()) {
-		await expect(cells.nth(index + 2)).toHaveText(String(value));
+		await expect(row).toContainText(new RegExp(`\\b${'PME'[index]} ${value}\\b`));
 	}
 }
 
