@@ -365,9 +365,15 @@ centres a wrapped last line. The one trigger that carries `text-right` is
 
 ### `/` reads the day as the two groups the plan makes
 
-Settled 2026-08-17. Each group is its own `<ul>` under an `<h4>` — a real heading,
-under the card's own `<h3>`, so a row is never read under a heading the plan
-disagrees with and neither list has to know the other exists.
+Settled 2026-08-17. Each group is its own `<ul>` NAMED by a styled `<p>` — not
+headed by one, since every row title is an `<h3>` and an `<h4>` above the rows
+would be closed by the first of them, leaving the second group read as part of
+the last task. `aria-label` on the list carries the name instead, so a row is
+never read under a label the plan disagrees with and neither list has to know
+the other exists. The second group is ruled off with `border-t border-line-strong`:
+the rows inside a group divide on `line-soft`, and the same hairline at the same
+weight would read as one more row rather than as the break between planned and
+not planned.
 
 Funded rows sit under "Today's sequence" in their `#N` order, the tasks the plan
 gave nothing under "No time today" in the priority order they arrive in, having

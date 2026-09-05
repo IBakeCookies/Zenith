@@ -233,6 +233,12 @@
 			'reorganize the garage',
 			'inbox',
 		]);
+
+		// And the two are ruled apart — the break the table drew with a second `<thead>`.
+		// On the second group only: a rule above the first would divide it from the day
+		// strip, which is not a claim the plan makes.
+		expect(dropped.parentElement).toHaveClass('border-t');
+		expect(sequence.parentElement).not.toHaveClass('border-t');
 	}}
 />
 

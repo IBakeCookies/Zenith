@@ -36,9 +36,11 @@
 
 <!-- A styled label and NOT a heading: every row title is an `<h3>`, so an `<h4>` here
      would be closed by the first row under it and the second group would read as part of
-     the last task. The list carries the group's name instead. -->
-{#snippet group(label: string, items: Snippet)}
-	<div class="space-y-text-2xs">
+     the last task. The list carries the group's name instead, and `ruled` divides the two
+     at a weight the rows inside one do not use: presentation/AGENTS.md, "`/` reads the day
+     as the two groups the plan makes". -->
+{#snippet group(label: string, items: Snippet, ruled: boolean)}
+	<div class="space-y-text-2xs {ruled ? 'border-t border-line-strong pt-text-sm' : ''}">
 		<p class="text-2xs font-semibold tracking-wider text-ty-silent uppercase">{label}</p>
 		<ul aria-label={label} class="divide-y divide-line-soft">{@render items()}</ul>
 	</div>
@@ -65,8 +67,8 @@
 		</div>
 		{@render strip?.()}
 		{#if rows && split}
-			{@render group(split.firstLabel, rows)}
-			{@render group(split.restLabel, split.rest)}
+			{@render group(split.firstLabel, rows, false)}
+			{@render group(split.restLabel, split.rest, true)}
 		{:else if rows}
 			<ul class="divide-y divide-line-soft">{@render rows()}</ul>
 		{:else}
