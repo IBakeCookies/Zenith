@@ -11,8 +11,8 @@
 		/** Between the heading and the list — `/` its day strip, the Lab its ☕ editor. */
 		strip?: Snippet;
 		/** What the screen reads beside the heading — both screens put the day's Load/Save
-		 *  there, and `/` its "Next" too. A snippet, like `form`: this card is the two
-		 *  screens' shared frame, so what only one of them says arrives from that one. */
+		 *  there. A snippet, like `form`: this card is the two screens' shared frame, so
+		 *  what only one of them says arrives from that one. */
 		heading?: Snippet;
 		/** Null, not an empty snippet: an empty `<ul>` announces "list, 0 items" over the
 		 *  empty-state copy. */

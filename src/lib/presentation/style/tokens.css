@@ -260,8 +260,8 @@
 	}
 }
 
-/* The run order's badge: `#N` on a task row (the whole-day plan's position) and
-   "Next" on the list's heading (position 1 of the mid-day re-plan). Both are
+/* The run order's badge, both on a task row: `#N` (the whole-day plan's position)
+   and "Next" (position 1 of the mid-day re-plan). Both are
    their own tooltip trigger, and the filled pill is the affordance — which is
    why `cursor-help` is in here and `hint-underline` is not: a dotted underline
    under a pill reads as damage. The worded one adds its own

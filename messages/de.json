@@ -105,7 +105,7 @@
 	"task_edit_flow_log_aria": "Diese Zeit bis zum Flow korrigieren",
 	"task_allocation_tooltip": "Vorgeschlagene Zeitzuteilung für heute und der Prioritätswert der Aufgabe (intrinsischer Wert × 10), der sie bestimmt",
 	"next_up_label": "Als Nächstes",
-	"next_up_tooltip": "Hier weitermachen: die erste Aufgabe der Reihenfolge, die aus den heute erfassten Stunden neu geplant wurde. Das #1-Abzeichen in der Liste darunter gehört zur Tagesplanung und bleibt die Antwort von heute Morgen. Es sagt nie, dass du für heute aufhören sollst — das bewertet der Stopp-Berater im Energie-Labor.",
+	"next_up_tooltip": "Hier weitermachen: die erste Aufgabe der Reihenfolge, die aus den heute erfassten Stunden neu geplant wurde. Das #N-Abzeichen daneben gehört zur Tagesplanung und bleibt die Antwort von heute Morgen — im Lauf des Tages weichen die beiden also voneinander ab. Es sagt nie, dass du für heute aufhören sollst — das bewertet der Stopp-Berater im Energie-Labor.",
 	"task_remaining_spend": "{hours} aufwenden",
 	"task_remaining_tooltip": "Von den {left}, die heute noch offen sind, würde das Modell diesen Anteil jetzt in diese Aufgabe stecken — neu geplant aus den erfassten Stunden, sodass eine bereits bearbeitete Aufgabe ihren Anlaufbonus nicht erneut erhält und eine über ihrem Stopppunkt nichts mehr bekommt. Es ist Zeit ZUSÄTZLICH zum bereits Geleisteten. Die Tagesplanung ist ein eigener Wert und ändert sich beim Arbeiten nicht.",
 	"task_plan_hours": "Plan {hours}",

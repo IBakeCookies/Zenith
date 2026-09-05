@@ -314,79 +314,47 @@ test('a title picked from the suggestions brings its ratings with it', async ({ 
 	await expect(page.getByRole('dialog')).toBeHidden();
 });
 
-/* "Next" carries a `nowrap` title, and `next-up-line.svelte` is a flex item of
-   the card's header row — so without its `min-w-0` the longest task name sizes
-   the row and the whole page scrolls sideways on a phone, with the title
-   running off the card instead of eliding.
-
-   BOTH halves are asserted, and neither alone is the test. Drop that `min-w-0`
-   and the page widens, but the title is still clipped by its own `truncate` —
-   the first assertion is the only one that notices. Drop `truncate` and the
-   title wraps instead: a wrapping box's min-content is its longest WORD, so the
-   page stays 390 wide and the first assertion passes a line that no longer
-   elides at all. Together they pin the pair; either alone silently permits the
-   other's removal. */
-test('a long next-up title is clipped, never widening the page', async ({ page }) => {
-	await page.setViewportSize({
-		width: 390,
-		height: 900,
-	});
-
+/* The badge is the page's only wiring of the mid-day re-plan's position 1 — a story
+   can pass `nextTaskId` itself, so only an e2e sees `/` reading it off
+   `remainingDay.nextTask`. The two orders are read from different bases and the
+   morning `#N` beside it is not moved to agree, which is what the tooltip explains. */
+test('"Next" badges the row to pick up, not the card heading', async ({ page }) => {
 	await page.goto('/');
-	await addTask(page, 're-derive the stopping-inversion margin from the measured distributions');
+	await addTask(page, 'Write report');
 	await addTask(page, 'Gym session');
 
 	// A fresh profile has no hours, and an unfunded remainder has no position 1.
 	await setBudget(page, 6);
+	await logDrain(page, 60, 5, 3);
 
-	// A 🪫 log is what gates the mid-day re-plan, and completing a task opens the
-	// form by itself — leaving the long-titled one to be named as next. Filled in
-	// place rather than through `logDrain`, whose first act is to open the form.
-	await page
-		.getByRole('checkbox', {
-			name: 'Mark Gym session complete',
-		})
-		.check();
-
-	const form = page.locator('form').filter({
-		hasText: 'After the session',
+	const next = taskCard(page).getByRole('button', {
+		name: 'Next',
 	});
 
-	const fields = form.locator('input[type="number"]');
+	await expect(next).toBeVisible();
 
-	await fields.nth(0).fill('60');
-	await fields.nth(1).fill('5');
-	await fields.nth(2).fill('3');
-
-	await form
-		.getByRole('button', {
-			name: '✓',
-		})
-		.click();
+	// Inside a row, and inside the one row the re-plan names: the heading no longer
+	// prints the title a second time.
+	await expect(
+		taskCard(page)
+			.getByRole('listitem')
+			.filter({
+				// Page-relative: `has` re-queries inside each row, so a card-scoped locator
+				// here matches nothing.
+				has: page.getByRole('button', {
+					name: 'Next',
+				}),
+			}),
+	).toHaveCount(1);
 
 	await expect(
-		page.getByRole('button', {
-			name: 'Next',
-		}),
-	).toBeVisible();
-
-	const overflow = await page.evaluate(() => document.body.scrollWidth - window.innerWidth);
-	expect(overflow).toBeLessThanOrEqual(0);
-
-	// Scoped to the card, and its FIRST match there: the heading's next-up line precedes
-	// the rows, and the task row below renders the same title again. Page-wide, the
-	// metrics grid names the same task as its bottleneck. Clipped, not merely narrow: a
-	// box only overflows its own content box while it refuses to wrap.
-	const title = taskCard(page)
-		.getByText('re-derive the stopping-inversion margin from the measured distributions')
-		.first();
-
-	const width = await title.evaluate((el) => ({
-		content: el.scrollWidth,
-		box: el.clientWidth,
-	}));
-
-	expect(width.content).toBeGreaterThan(width.box);
+		taskCard(page)
+			.getByRole('heading', {
+				name: 'Plan',
+				exact: true,
+			})
+			.locator('..'),
+	).not.toContainText('Next');
 });
 
 /* ROADMAP item 14. The row's own arithmetic is a unit test (`remaining-day`,

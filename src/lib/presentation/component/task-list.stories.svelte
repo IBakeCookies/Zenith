@@ -181,6 +181,33 @@
 />
 
 <Story
+	name="Next rides the row it names"
+	args={{
+		nextTaskId: 1,
+	}}
+	play={async ({ canvas }) => {
+		// The re-plan's position 1 marks its own row rather than naming the task on the
+		// card's heading, so the answer to "what now" is on the thing to act on and the
+		// title is printed once.
+		const next = canvas.getByRole('button', {
+			name: 'Next',
+		});
+
+		const row = canvas
+			.getByRole('heading', {
+				name: 'write the calibration section',
+			})
+			.closest('li');
+
+		expect(row).toContainElement(next);
+
+		// The row it lands on is `#3` in the morning plan: the two orders are read from
+		// different bases and a badge is not moved to make them agree.
+		expect(row).toContainElement(canvas.getByText('#3'));
+	}}
+/>
+
+<Story
 	name="Two headed groups"
 	args={{
 		suggestedTasks: [
@@ -264,9 +291,8 @@
 			}),
 		).not.toBeInTheDocument();
 
-		// No form supplied, so nothing sits between the heading's row and the list.
-		// Read from the row, not the heading: the heading shares it with "Next", and
-		// with no next task the heading is that row's only child.
+		// No form supplied, so nothing sits between the heading's row and the list. Read
+		// from the row, not the heading: the heading shares it with the day's actions.
 		expect(heading.parentElement?.nextElementSibling?.contains(list)).toBe(true);
 	}}
 />

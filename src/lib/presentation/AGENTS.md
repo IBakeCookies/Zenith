@@ -220,9 +220,8 @@ Six components hold what the two screens say the same way:
   separated: the rule is the list's `divide-y`). `split` is
   how a caller reads its rows as two headed groups instead of one — `/`
   passes it, the Lab never does. `heading` is the caller's own half of the card's
-  heading row: both screens put the day's Load/Save there — `/` through
-  `task-list`'s `actions` snippet, the Lab straight into `heading` — and `/` its
-  "Next" line too.
+  heading row, and both screens put the day's Load/Save there and nothing else —
+  `/` through `task-list`'s `actions` snippet, the Lab straight into `heading`.
 - **`task-row-shell.svelte`** — the row's `<li>` and hover surface, the completion
   checkbox, the title, the meta line under it (readings and both instruments'
   logged chips), the ⚡ 🪫 ✎ ✕ group holding the row's right edge, and
@@ -396,6 +395,13 @@ position under the same rule and drops it the same way: it sits inches above the
 ledger, so a `#2` beside a title the rows had already stopped numbering
 contradicted the reading
 ([the-strip-that-read-as-all-ahead.md](../../../docs/features/the-strip-that-read-as-all-ahead.md)).
+
+**"Next" badges the row in its `lead`, beside `#N`** — both mark a plan position,
+so the badges beside the title stay the task's own attributes. Different bases
+(`isNext` is position 1 of the mid-day re-plan), so `#4 NEXT` is a normal afternoon
+row and neither is moved to agree; the tooltip says so. `task-list` resolves
+`task.id === nextTaskId` rather than the row taking a title, so "what now" rides
+the thing to act on ([the-line-that-named-a-task-twice.md](../../../docs/features/the-line-that-named-a-task-twice.md)).
 
 ### Slide age is a `/` reading, computed above the row
 
