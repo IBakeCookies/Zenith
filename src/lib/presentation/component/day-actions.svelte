@@ -164,8 +164,10 @@
 <!-- Wraps, and gives up width when asked: the two menus are ~150px and a stopped
      reading adds a line of copy beside the readout, which is more than a 375px screen
      holds in one row. The Next title truncates first (its own `truncate`); what still
-     does not fit wraps here rather than scrolling the document sideways. -->
-<div class="flex flex-wrap items-center justify-end gap-grid-xs">
+     does not fit wraps here rather than scrolling the document sideways. Once it has
+     wrapped it aligns left: ragged rows pushed against the right edge read as
+     misaligned, and the strip shares the page's left edge with everything above it. -->
+<div class="flex flex-wrap items-center justify-start sm:justify-end gap-grid-xs">
 	<!-- Today only, unlike its neighbours: a day being planned can be loaded and saved,
 	     but a new 🪫 measurement is today's alone, and this reading fills one. -->
 	{#if isToday}
