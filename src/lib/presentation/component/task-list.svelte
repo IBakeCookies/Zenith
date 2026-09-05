@@ -3,7 +3,6 @@
 	import * as m from '$lib/paraglide/messages.js';
 	import TaskItem from '$lib/presentation/component/task-item.svelte';
 	import TaskListCard from '$lib/presentation/component/task-list-card.svelte';
-	import NextUpLine from '$lib/presentation/component/next-up-line.svelte';
 	import type { TaskEdit } from '$lib/presentation/component/task-form-fields.svelte';
 	import type {
 		DrainDraft,
@@ -30,9 +29,9 @@
 			remainingHours: number;
 			hoursByTask: ReadonlyMap<number, number>;
 		} | null;
-		/** Position 1 of that re-plan's run order, rendered on the card's header row.
-		 *  Undefined when there is nothing to pick up, which is every morning. */
-		nextTaskTitle?: string;
+		/** Position 1 of that re-plan's run order, badged on its own row. Undefined when
+		 *  there is nothing to pick up, which is every morning. */
+		nextTaskId?: number;
 		// The add-task form, rendered by the card below the list: adding and reading
 		// the plan are the same place, and it costs no second card. Takes the card's
 		// closer, so the form's own Cancel can shut the dialog it is mounted in.
@@ -40,8 +39,8 @@
 		/** The day's strip, rendered by the card between the heading and the ledger — a
 		 *  reading OF this list, so it sits in its card rather than in one of its own. */
 		strip?: Snippet;
-		/** The day's Load and Save, rendered on the card's header row beside "Next" —
-		 *  the page owns the callbacks behind them. Passed on every day, unlike `form`:
+		/** The day's Load and Save, rendered on the card's header row — the page owns the
+		 *  callbacks behind them. Passed on every day, unlike `form`:
 		 *  what a past day withholds is inside `day-actions.svelte`, since both menus
 		 *  read the same guard. */
 		actions?: Snippet;
@@ -85,7 +84,7 @@
 		viewedDate,
 		constantsFitted,
 		remainingDay = null,
-		nextTaskTitle,
+		nextTaskId,
 		form,
 		strip,
 		actions,
@@ -155,6 +154,7 @@
 					}
 				: undefined}
 			runOrder={runOrder.get(task.id)}
+			isNext={task.id === nextTaskId}
 			slideDay={getSlideDay(task.createdAt, viewedDate)}
 			flowMinutes={flowLogs?.get(task.id)}
 			mustDoToday={task.mustDoToday}
@@ -181,21 +181,10 @@
 	{/each}
 {/snippet}
 
-<!-- Built here and not in the page: this list is `/`'s alone, and the card beneath
-     it is the Lab's too. -->
-{#snippet heading()}
-	<!-- Two items of the card's own header row, not a group: the `+` trigger's `mr-auto`
-	     already holds this end, so the Next line and the buttons need no box between. -->
-	{#if nextTaskTitle}
-		<NextUpLine title={nextTaskTitle} />
-	{/if}
-	{@render actions?.()}
-{/snippet}
-
 <TaskListCard
 	{form}
 	{strip}
-	{heading}
+	heading={actions}
 	{exampleDayHref}
 	rows={suggestedTasks.length ? rows : null}
 	split={isSplit

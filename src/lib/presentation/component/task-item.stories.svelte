@@ -126,6 +126,36 @@
 />
 
 <Story
+	name="Next in the mid-day re-plan"
+	args={{
+		runOrder: 4,
+		isNext: true,
+	}}
+	play={async ({ canvas, canvasElement, userEvent }) => {
+		const next = canvas.getByRole('button', {
+			name: 'Next',
+		});
+
+		// Beside `#N`, not among the title's badges — and the two disagree by design.
+		expect(canvas.getByText('#4').nextElementSibling).toBe(next);
+
+		expect(
+			next.compareDocumentPosition(
+				canvas.getByRole('checkbox', {
+					name: /^Mark/,
+				}),
+			),
+		).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+
+		await userEvent.hover(next);
+
+		const body = within(canvasElement.ownerDocument.body);
+
+		await waitFor(() => expect(body.getByText(/^Where to pick up now/)).toBeVisible());
+	}}
+/>
+
+<Story
 	name="Flow band"
 	args={{
 		flowStateTime: 1.4,

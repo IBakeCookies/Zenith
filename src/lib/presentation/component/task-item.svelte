@@ -37,6 +37,10 @@
 			dayHours: number;
 		};
 		runOrder?: number;
+		/** Position 1 of the mid-day re-plan — "you are here". Read from the hours logged
+		 *  today, so it is routinely not the row `#1`: that badge is the whole-day plan's
+		 *  order and stays the morning's answer. */
+		isNext?: boolean;
 		flowMinutes?: number;
 		mustDoToday?: boolean;
 		importance?: TaskImportance;
@@ -79,6 +83,7 @@
 		optimalStopHours,
 		remaining,
 		runOrder,
+		isNext = false,
 		flowMinutes,
 		mustDoToday = false,
 		importance = 'normal',
@@ -122,6 +127,16 @@
 			</Tooltip.Trigger>
 			<Tooltip.Content>
 				<p>{m.task_run_order_tooltip()}</p>
+			</Tooltip.Content>
+		</Tooltip.Root>
+	{/if}
+	{#if isNext}
+		<Tooltip.Root>
+			<Tooltip.Trigger class="order-badge uppercase tracking-wide">
+				{m.next_up_label()}
+			</Tooltip.Trigger>
+			<Tooltip.Content>
+				<p>{m.next_up_tooltip()}</p>
 			</Tooltip.Content>
 		</Tooltip.Root>
 	{/if}
