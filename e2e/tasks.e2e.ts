@@ -642,20 +642,24 @@ test('a second drain editor opened over the reading opens empty', async ({ page 
 	await expect(claimed.first()).toHaveValue('45');
 });
 
-/* The list is what the page is for, so it reads before the day's readings: the metrics
-   grid above it put the first task past the fold at every desktop size. */
-test('the ledger reads above the day metrics', async ({ page }) => {
+/* The verdict on the day comes before the setup that produces it; the list still
+   reads before the full readings. What put the first task past the fold at every
+   desktop size was the whole metrics grid, and that is what stayed underneath. */
+test('the verdict reads above the ledger and the full readings below it', async ({ page }) => {
 	await page.goto('/');
 	await addTask(page, 'Write report');
+	await setBudget(page, 8);
 
+	const verdict = await page.getByText(/^Momentum:/).boundingBox();
 	const ledger = await taskRow(page, 'Write report').boundingBox();
 
 	const readings = await page
-		.getByText('Momentum', {
+		.getByText('Does the day fit?', {
 			exact: true,
 		})
 		.boundingBox();
 
+	expect(verdict?.y).toBeLessThan(ledger?.y ?? 0);
 	expect(ledger?.y).toBeLessThan(readings?.y ?? 0);
 });
 

@@ -606,10 +606,11 @@ Tasks completed, Avg completion rate, Current streak and Logged hours keep the
 large reading and the note — volume, trend, consistency, load, one per question
 the range asks. Active days, Longest streak, Planned hours, Rest hours and Best
 day fold under a rule in the same card as label, value and suffix; the five
-notes are what the hierarchy cost. `metrics-dashboard.svelte`'s own comment
-holds why there is a headline set at all, and its `metrics_more` labels this
-summary too (R3 — one key for one concept). The fold carries no `Band`: none of
-these readings is judged, so no colour and no tooltip.
+notes are what the hierarchy cost. `metric-headline-strip.svelte`'s own comment
+holds why there is a headline set at all, and `metrics_more` — which `/`'s own
+readings no longer fold behind — labels this summary (R3 — one key for one
+concept). The fold carries no `Band`: none of these readings is judged, so no
+colour and no tooltip.
 
 **One card, not one per reading** — `/`'s shape. `stat-tile.svelte` therefore
 draws no shell of its own: four shells side by side said the four readings were
@@ -766,6 +767,33 @@ colour makes no claim, so silence is the honest equivalent.
 its derivation is MATH.md §9's and its number is
 `scripts/adherence-tie-band.probe.ts`'s — unlike `utils/band.ts`, whose
 thresholds are display policy this layer owns outright.
+
+### `/`'s readings are two cards: a verdict above the setup, four questions below
+
+Settled 2026-09-05. `metric-headline-strip.svelte` draws Momentum and the four
+headline tiles **above `DayConstraintsBar`**, so a returning user reads how today
+stands without scrolling past the plan; `metrics-dashboard.svelte` draws every
+reading under the plan, always open. The strip renders only when the day has
+tasks and a budget (`hasPlan`, the two gates `buildMetrics` reads): four N/A
+tiles above the card that would fix them is the worst first thing the app can
+show.
+
+Every reading carries a `MetricGroup` naming which of "Does the day fit? / Is the
+time well spent? / What is it costing? / Can I keep doing this?" it answers, and
+the lower card is one column per question rather than the `columns-4` flow it
+was: column flow keeps a reading's descriptor neighbours beside it but has
+nowhere to hang a heading, and the heading is what makes a reading findable by
+the question that sent the reader looking. **Those headings are the hierarchy the
+disclosure used to buy**, which is why there is no longer one to click.
+
+**The four headline readings appear in their column as well as in a tile** — the
+tiles are a screen away, and a column titled with a question that omits the
+reading answering it best is worse than reading a number twice. A headline label
+therefore matches twice, which is why `time-budget.e2e.ts` picks the tile by the
+`<p>` only a tile draws its value in. A column with no readings is dropped: a
+title over nothing is a question the card cannot answer. Momentum is one badge
+that names itself (`momentum_badge`) — the state alone is a word with no subject.
+`metric-label` and `metric-band-text` are what both cards draw (R3).
 
 ### The Lab's task list reads in schedule order, snapshotted per visit
 

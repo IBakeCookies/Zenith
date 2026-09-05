@@ -21,15 +21,16 @@ test('setting the time budget feeds the plan', async ({ page }) => {
 	// it is one of the four headline tiles, so it is on screen without opening
 	// anything, and it is undefined without both inputs. Fallow Gain used to
 	// stand in for this and no longer can — it judges the allocator rather than
-	// the day, so it is not a tile and renders hidden inside the disclosure.
-	const humanCapacity = page
-		.locator('div')
-		.filter({
-			has: page.getByText('Human Capacity', {
-				exact: true,
-			}),
-		})
-		.last();
+	// the day, so it is not a tile and reads only in the lower card.
+	// The label reads twice — a tile, and again in the lower card under the
+	// question it answers. The tile is the one drawing its value in a `<p>`, and
+	// that `<p>` has to be a DIRECT child: every wrapper holding both cards has one
+	// somewhere inside it.
+	const humanCapacity = page.locator('div:has(> p)').filter({
+		has: page.getByText('Human Capacity', {
+			exact: true,
+		}),
+	});
 
 	await expect(humanCapacity.getByText(/^\d+%$/)).toBeVisible();
 
