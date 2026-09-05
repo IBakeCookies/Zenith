@@ -85,17 +85,6 @@
 	/* the day strip's narrowest block — the floor its track is scaled against */
 	--spacing-day-block: var(--spacer-day-block);
 
-	/* The width at which a day-strip block keeps its flow sentence. A literal, not
-	   `var(--spacer-…)`: a custom property is not valid inside an `@container`
-	   condition. This one is measured on the block's CONTENT box, which is what an
-	   inline-size query reads — the 14px inset is already outside it. 136px is the
-	   widest sentence the formatter produces. 8.5rem was `short of flow by 12h 45m`
-	   at 135px and `text-2xs`; the fit's band added a `± <duration>` term to the
-	   arrival sentence, and the floor is raised to clear it. Narrower, and the line
-	   would truncate mid-duration and print a figure nothing computed, so the block
-	   sends it to `sr-only` instead. */
-	--container-day-flow: 11rem;
-
 	/* The width at which the task form's three sliders sit side by side instead of
 	   one per line. A literal, for the same reason as above. Measured on the
 	   fields' own content box: the ledger's inline editor is past it on any

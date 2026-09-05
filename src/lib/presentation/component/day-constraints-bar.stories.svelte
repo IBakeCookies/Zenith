@@ -110,6 +110,6 @@
 
 		// Closed by the `<details>` itself, not by an `{#if}`: the fields below stay in
 		// the DOM, and the element's own attribute is the state nothing else can move.
-		await expect(canvas.getByText('Time Budget').closest('details')).not.toHaveAttribute('open');
+		await expect(canvas.getByText('Day Setup').closest('details')).not.toHaveAttribute('open');
 	}}
 />

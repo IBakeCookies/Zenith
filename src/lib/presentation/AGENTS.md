@@ -70,7 +70,7 @@ Untestable at every level is the signal.
 - **The add-task form lives in a dialog the CARD owns, and no page decides when a
   form is on screen.** `task-list-card.svelte` holds the `Dialog.Root`, both triggers
   — the `+` BESIDE the `<h3>` and never inside it, since a button in the heading joins
-  its accessible name and the card would stop being "Tasks", plus the empty state's own
+  its accessible name and the card would stop being "Plan", plus the empty state's own
   button, because a 24px glyph in the corner is not the call to action an empty day
   is — and renders the caller's `form` snippet inside `Dialog.Content`. Three things fall out and none of them may
   come back: the form has no open/closed state and no collapse control; neither page
@@ -417,13 +417,13 @@ computed from. The two sit on different bases: the re-plan is time to spend ON
 TOP of the hours already worked, so neither line may be phrased as a comparison
 ("15m more"); each is labelled by the question it answers.
 
-### The day's strip reads inside the Tasks card, and carries no clock
+### The day's strip reads inside the Plan card, and carries no clock
 
 `utils/day-timeline.ts` builds
 `{ totalHours, minimumBlockWidths, blocks }` from the funded plan,
 `runOrder` and the switch cost; `component/day-timeline.svelte` draws it — no card
 and no visible title of its own, since it renders through `task-list-card`'s `strip`
-between the "Tasks" heading and the ledger it is a reading of. The name stays
+between the "Plan" heading and the ledger it is a reading of. The name stays
 `sr-only`: the strip's scroll region is focusable and nothing else says what the
 blocks are.
 The geometry is a tested util rather than `$derived` in the markup (R2), a block
@@ -431,13 +431,12 @@ carries a `Band`, and the gap between two blocks IS the switch cost — no numbe
 restates it. Every width is a share of the TRACK, and so is the floor:
 `minimumBlockWidths` is the day over its shortest allocation, so scaling the
 track to that many minimum block widths lifts the narrowest block to legible
-without moving any width off scale. What legible means is settled per block, not
-per day: each block is its own container query, and under `--container-day-flow`
-it sends the flow sentence to `sr-only` rather than truncate a duration into a
-figure nothing computed. So the floor is the width of a block that has already
-dropped it — its run position and its hours — and the flow bar is pinned with
-`mt-auto`, or it would step up and down between the blocks that kept the
-sentence and the blocks that did not. A day that then overflows scrolls sideways
+without moving any width off scale. The floor is the width of the one line
+that decides legibility — the run position, the title and the hours, which share
+it — and the flow sentence below truncates in a block that narrow rather than
+being dropped, so a screen and a screen reader read the same strip. The flow bar
+is pinned with `mt-auto`, or it would sit at a different height in a block whose
+sentence wrapped. A day that then overflows scrolls sideways
 inside the strip's own container and the DOCUMENT does not, `tabindex` included —
 the one place on either screen that still scrolls sideways. The strip is its own scroll handle as well
 (`utils/drag-scroll.ts`), because `nice-scrollbar` keeps the bar invisible until

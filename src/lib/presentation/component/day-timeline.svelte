@@ -1,6 +1,6 @@
 <script lang="ts">
 	import * as m from '$lib/paraglide/messages.js';
-	import { BAND_BAR_CLASS, bandLabel } from '$lib/presentation/utils/band';
+	import { BAND_BAR_CLASS, BAND_TEXT_CLASS, bandLabel } from '$lib/presentation/utils/band';
 	import type { DayTimeline } from '$lib/presentation/utils/day-timeline';
 	import { scrollByDrag } from '$lib/presentation/utils/drag-scroll';
 	import { formatDuration, formatDurationBand } from '$lib/presentation/utils/duration-format';
@@ -10,17 +10,13 @@
 	const share = (hours: number) => hours / totalHours;
 </script>
 
-<!-- No card and no visible title: the strip reads inside the Tasks card, under its
-     heading. The name stays for a screen reader — the scroll region below is
-     focusable, and it is the only thing that says what these blocks are. -->
+<!-- No card and no visible title: the strip reads inside the Plan card, under its
+     heading. The name stays for a screen reader — nothing else says what these are. -->
 <section>
 	<h3 class="sr-only">{m.day_timeline_title()}</h3>
 	{#if blocks.length === 0}
 		<p class="text-sm text-ty-secondary">{m.day_timeline_empty()}</p>
 	{:else}
-		<!-- Inside the strip: the legend names marks, and a day with none reads a
-		     sentence about nothing. -->
-		<p class="text-xs text-ty-silent">{m.day_timeline_legend()}</p>
 		<!-- The strip scrolls sideways in its own container and the DOCUMENT does not: the
 		     one place on either task screen that still scrolls at all. -->
 		<!-- svelte-ignore a11y_no_noninteractive_tabindex -- a scrollable region has to be
@@ -31,40 +27,41 @@
 			{@attach scrollByDrag}
 		>
 			<!-- The floor is the TRACK's width, so every block keeps its share of the day and
-			     the strip grows rather than a block shrinking below reading. It is the width
-			     the two lines a block never drops need — `--spacer-day-block`. -->
+			     the strip grows rather than one shrinking below reading — `--spacer-day-block`. -->
 			<div
-				class="relative h-24"
+				class="relative h-16"
 				style="width: max(100%, calc(var(--spacing-day-block) * {minimumBlockWidths}))"
 			>
 				{#each blocks as block (block.id)}
 					{@const label = bandLabel(block.band)}
-					<!-- Each block is its own query container, so what it prints is decided by
-					     the width it actually got rather than by the day's shape. -->
 					<div
-						class="@container absolute inset-y-0 flex flex-col gap-text-2xs rounded-md border bg-surface-inset px-box-3xs py-text-2xs"
+						class="absolute inset-y-0 flex flex-col gap-text-2xs rounded-md border bg-surface-inset px-box-3xs py-text-2xs"
 						class:opacity-60={block.isCompleted}
 						style="left: {share(block.startOffset) * 100}%; width: {share(block.hours) * 100}%"
 					>
+						<div class="flex items-baseline gap-text-3xs">
+							<p
+								class="capitalize min-w-0 flex-1 truncate text-2xs {block.isCompleted
+									? 'text-ty-silent line-through'
+									: 'text-ty-primary'}"
+							>
+								{#if !block.isCompleted}
+									<span class="text-flow">#{block.position}</span>
+								{/if}
+								{block.title}
+							</p>
+							<p class="shrink-0 text-2xs text-ty-secondary tabular-nums">
+								{formatDuration(block.hours)}
+							</p>
+						</div>
+						<!-- The ± is ϕ's own, so only the arrival carries one. The sentence wears the
+						     band its bar is filled with — the two are one reading — and a finished block
+						     goes quiet, since `opacity-60` takes a band under 4.5:1. -->
 						<p
-							class="truncate text-2xs {block.isCompleted
-								? 'text-ty-silent line-through'
-								: 'text-ty-primary'}"
+							class="truncate text-2xs {BAND_TEXT_CLASS[
+								block.isCompleted ? 'neutral' : block.band
+							]}"
 						>
-							{#if !block.isCompleted}
-								<span class="text-flow">#{block.position}</span>
-							{/if}
-							{block.title}
-						</p>
-						<p class="truncate text-2xs text-ty-secondary tabular-nums">
-							{formatDuration(block.hours)}
-						</p>
-						<!-- The narrowest blocks keep this sentence for a screen reader and drop it
-						     on screen: it is the one line carrying a duration it did not compute
-						     itself, so truncating it would print a figure nobody measured. The ± is
-						     ϕ's own, so only the arrival carries one — a band on the shortfall would
-						     read as the PLAN being unsure of the hours it chose. -->
-						<p class="truncate text-2xs text-ty-secondary @max-day-flow:sr-only">
 							{block.band === 'success'
 								? m.flow_reached({
 										duration: formatDurationBand(block.flowHours, block.flowHoursStd),
@@ -73,9 +70,8 @@
 										duration: formatDuration(block.flowHours - block.hours),
 									})}
 						</p>
-						<!-- How far the allocation gets toward flow arrival: the band's own fill,
-						     so the strip and the metric rows colour the same reading. `mt-auto`
-						     pins it to the block's floor, so the bars read against each other
+						<!-- How far the allocation gets toward flow arrival, in the band's own fill.
+						     `mt-auto` pins it to the block's floor, so the bars read against each other
 						     whether or not each block kept its sentence. -->
 						<div class="mt-auto h-1 w-full rounded-full bg-surface-card">
 							<div

@@ -16,19 +16,19 @@ export function isoDate(offsetDays: number): string {
 	return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
-/** The Tasks card — `card-shell` is the documented card surface (tokens.css) and this
+/** The Plan card — `card-shell` is the documented card surface (tokens.css) and this
  *  is the one that heads the list. Scoped, because the day's Load and Save read on
  *  this card's heading row and nowhere else on the page. */
 export const taskCard = (page: Page) =>
 	page.locator('.card-shell').filter({
 		has: page.getByRole('heading', {
-			name: 'Tasks',
+			name: 'Plan',
 			exact: true,
 		}),
 	});
 
 /** A task's row: the `<li>` holding both its lines and any editor it has open
- *  (`task-row-shell.svelte`). Scoped to the Tasks card, because the Lab's schedule list
+ *  (`task-row-shell.svelte`). Scoped to the Plan card, because the Lab's schedule list
  *  carries the same titles in list items of its own. */
 export const taskRow = (page: Page, title: string) =>
 	taskCard(page).getByRole('listitem').filter({
@@ -61,7 +61,7 @@ export async function setSlider(slider: Locator, target: number) {
 }
 
 /**
- * Open the add-task dialog. The `+` in the Tasks heading is always mounted and never
+ * Open the add-task dialog. The `+` in the Plan heading is always mounted and never
  * remounts, which is what this used to have to retry around: the form was keyed on
  * the loaded day, so a click could land on an opener the remount was about to
  * replace. Nothing here samples the day any more.
@@ -105,7 +105,7 @@ export async function closeTaskForm(page: Page) {
 	await expect(page.getByRole('dialog')).toBeHidden();
 }
 
-/** Save the day's whole list as a named routine, through the Tasks card's Save menu.
+/** Save the day's whole list as a named routine, through the Plan card's Save menu.
  *  Shared because the Lab suite needs a routine saved on `/` before it can load one. */
 export async function saveRoutine(page: Page, name: string) {
 	// "Save" exact is the trigger; the form's own button is "Save routine".
@@ -138,23 +138,23 @@ export async function setBudget(page: Page, hours: number) {
 	await budgetField(page).blur();
 }
 
-/** The Time Budget bar. A native `<details>`, so its own `open` attribute is the
+/** The Day Setup bar. A native `<details>`, so its own `open` attribute is the
  *  disclosure's state and the summary is what a click on it toggles. */
 export const timeBudgetBar = (page: Page) =>
 	page.locator('details').filter({
-		has: page.getByText('Time Budget', {
+		has: page.getByText('Day Setup', {
 			exact: true,
 		}),
 	});
 
-/** Expand the Time Budget bar, which collapses itself on a day that has hours.
+/** Expand the Day Setup bar, which collapses itself on a day that has hours.
  *  Takes the summary the loaded day should read: the bar re-samples its default
  *  when that day's values land, discarding a click made before they did. */
 export async function openTimeBudget(page: Page, loadedSummary: RegExp) {
 	await expect(page.getByText(loadedSummary)).toBeVisible();
 
 	await page
-		.getByText('Time Budget', {
+		.getByText('Day Setup', {
 			exact: true,
 		})
 		.click();

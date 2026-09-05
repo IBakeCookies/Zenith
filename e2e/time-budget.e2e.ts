@@ -35,7 +35,7 @@ test('setting the time budget feeds the plan', async ({ page }) => {
 
 	// summary renders only while the card is collapsed
 	await page
-		.getByText('Time Budget', {
+		.getByText('Day Setup', {
 			exact: true,
 		})
 		.click();

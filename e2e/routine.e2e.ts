@@ -7,7 +7,7 @@ import { AUTOSAVE_MS, addTask, isoDate, saveRoutine, taskCard, taskRow } from '.
 
 const ROUTINE_NAME = 'Morning block';
 
-test('the day’s Load and Save read on the Tasks card', async ({ page }) => {
+test('the day’s Load and Save read on the Plan card', async ({ page }) => {
 	await page.goto('/');
 	await addTask(page, 'Deep work');
 

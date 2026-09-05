@@ -44,7 +44,7 @@ test('logging time-to-flow badges the task and defers the model update', async (
 	await expect(page.getByText(/to start personalizing/)).toHaveCount(0);
 });
 
-/* The prompt for the ⚡ button once sat behind the collapsed Time Budget disclosure,
+/* The prompt for the ⚡ button once sat behind the collapsed Day Setup disclosure,
    so the measurement that personalizes the model was reachable only by accident; it
    is a card of its own now. Completing a task is when the user still knows the answer — so the whole path
    from "nothing logged" to a personalized fit has to work without ever pressing ⚡. */

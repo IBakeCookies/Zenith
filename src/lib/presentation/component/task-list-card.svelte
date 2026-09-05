@@ -39,8 +39,10 @@
      the last task. The list carries the group's name instead, and `ruled` divides the two
      at a weight the rows inside one do not use: presentation/AGENTS.md, "`/` reads the day
      as the two groups the plan makes". -->
+<!-- `pt-text-sm` — wider than the card's rhythm, and on the plain `<ul>` below too:
+     the strip is a picture of the day and the list is the day itemised. -->
 {#snippet group(label: string, items: Snippet, ruled: boolean)}
-	<div class="space-y-text-2xs {ruled ? 'border-t border-line-strong pt-text-sm' : ''}">
+	<div class="space-y-text-2xs pt-text-sm {ruled ? 'border-t border-line-strong' : ''}">
 		<p class="text-2xs font-semibold tracking-wider text-ty-silent uppercase">{label}</p>
 		<ul aria-label={label} class="divide-y divide-line-soft">{@render items()}</ul>
 	</div>
@@ -53,8 +55,7 @@
 				{m.list_title()}
 			</h3>
 			{#if form}
-				<!-- `mr-auto` takes the row's free space: the glyph stays next to the title
-			     and the caller's `heading` content keeps the other end. -->
+				<!-- `mr-auto` takes the free space: the glyph keeps the title's side. -->
 				<Dialog.Trigger
 					variant="ghost"
 					size="icon-xs"
@@ -66,11 +67,12 @@
 			{@render heading?.()}
 		</div>
 		{@render strip?.()}
+
 		{#if rows && split}
 			{@render group(split.firstLabel, rows, false)}
 			{@render group(split.restLabel, split.rest, true)}
 		{:else if rows}
-			<ul class="divide-y divide-line-soft">{@render rows()}</ul>
+			<ul class="divide-y divide-line-soft pt-text-sm">{@render rows()}</ul>
 		{:else}
 			<div class="flex flex-col items-center justify-center py-empty-state text-center">
 				<div class="text-ty-silent mb-text-xs">
