@@ -24,7 +24,7 @@ describe('day-constraints-bar.svelte', () => {
 			isOpen: true,
 		});
 
-		await page.getByText('Time Budget').click();
+		await page.getByText('Day Setup').click();
 
 		await rerender({
 			...props,

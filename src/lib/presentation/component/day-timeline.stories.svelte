@@ -1,7 +1,7 @@
 <script module lang="ts">
 	import { defineMeta } from '@storybook/addon-svelte-csf';
 	import { expect } from 'storybook/test';
-	import { BAND_BAR_CLASS } from '$lib/presentation/utils/band';
+	import { BAND_BAR_CLASS, BAND_TEXT_CLASS } from '$lib/presentation/utils/band';
 	import { buildDayTimeline, type DayBlock } from '$lib/presentation/utils/day-timeline';
 	import DayTimeline from '$lib/presentation/component/day-timeline.svelte';
 
@@ -77,12 +77,17 @@
 		await expect(canvas.getByText('Caution')).toBeInTheDocument();
 
 		// The band belongs to ϕ, and this sentence is the gap the plan left to it: the
-		// hours are the plan's own, so nothing here is uncertain.
-		await expect(canvas.getByText('short of flow by 15m')).toBeInTheDocument();
+		// hours are the plan's own, so nothing here is uncertain. Its band ink is what
+		// took the legend off the top of the strip — the sentence and the bar beneath it
+		// are one reading, so they carry one colour.
+		await expect(canvas.getByText('short of flow by 15m')).toHaveClass(
+			...BAND_TEXT_CLASS.warning.split(' '),
+		);
 
 		// A day that fits is untouched by the floor: the track is the container's own
 		// width and each block its share of the day.
-		const block = canvas.getByText('Write the PDF').parentElement!;
+		// The block, not the line inside it: the title and the hours share a flex row now.
+		const block = canvas.getByText('Write the PDF').parentElement!.parentElement!;
 		const track = block.parentElement!;
 
 		await expect(track.clientWidth).toBe(track.parentElement!.clientWidth);
@@ -97,34 +102,33 @@
 		// The day the strip exists for. The 15-minute allocation is BY CONSTRUCTION the block short of
 		// flow, and proportionally it is a colour sliver, so the strip carries a floor and scrolls
 		// inside its own container — never the document.
-		const shortest = canvas.getByText('Expense report 12').parentElement!;
-		const longest = canvas.getByText('Expense report 1').parentElement!;
+		const shortest = canvas.getByText('Expense report 12').parentElement!.parentElement!;
+		const longest = canvas.getByText('Expense report 1').parentElement!.parentElement!;
 		const track = shortest.parentElement!;
 		const strip = track.parentElement!;
 
-		// `#12`, its title and its duration are legible at the floor: 4rem, and
-		// `getByText` matched the line, which only holds while the title is a text node
-		// of its own.
-		await expect(shortest.getBoundingClientRect().width).toBeGreaterThanOrEqual(64);
+		// `#12` and its duration are legible at the floor: 5.5rem is what that line needs
+		// now that the hours share it. `getByText` matched the line, which only holds
+		// while the title is a text node of its own.
+		await expect(shortest.getBoundingClientRect().width).toBeGreaterThanOrEqual(88);
 
 		// To scale, floor or no floor: 1.25h reads five times the 15-minute block.
 		await expect(
 			longest.getBoundingClientRect().width / shortest.getBoundingClientRect().width,
 		).toBeCloseTo(5, 1);
 
-		// The floor is the width of a block that has dropped its sentence, so the sentence
-		// is what the narrowest block trades for its two remaining lines — while the block
-		// five times its width keeps it. Both still carry it for a screen reader.
+		// Every block prints its sentence, whatever width it got: the narrowest truncates
+		// it rather than dropping it, so a screen and a screen reader read the same strip.
 		const sentence = (block: Element) => block.querySelectorAll('p')[2];
 
 		await expect(sentence(longest)).toBeVisible();
-		await expect(sentence(longest).getBoundingClientRect().width).toBeGreaterThan(100);
-		await expect(sentence(shortest).getBoundingClientRect().width).toBeLessThanOrEqual(1);
+		await expect(sentence(shortest)).toBeVisible();
+		await expect(sentence(shortest).scrollWidth).toBeGreaterThan(sentence(shortest).clientWidth);
 		// No fit, so no band: the prior's spread describes the article's defaults.
 		await expect(sentence(shortest).textContent?.trim()).toBe('short of flow by 45m');
 
 		// The bars are the reading blocks are compared on, so they sit on one line across
-		// the strip whether or not each block above them kept its sentence.
+		// the strip whatever the lines above them did.
 		const bar = (block: Element) => block.querySelector('.mt-auto')!.getBoundingClientRect();
 
 		await expect(bar(shortest).top).toBeCloseTo(bar(longest).top, 0);
@@ -181,7 +185,7 @@
 	play={async ({ canvas }) => {
 		// The ledger's own done vocabulary, one row below the strip (task-row-shell.svelte).
 		const title = canvas.getByText('Boxing training');
-		const block = title.parentElement!;
+		const block = title.parentElement!.parentElement!;
 
 		await expect(block).toHaveClass('opacity-60');
 		await expect(title).toHaveClass('line-through');
@@ -193,6 +197,9 @@
 
 		// Both are readings of the plan, and the plan did not move when the box was ticked.
 		await expect(block.textContent).toContain('flow @ 1h 15m ± 21m');
+
+		// It reached flow and goes quiet about it: `opacity-60` takes a band under 4.5:1.
+		await expect(canvas.getByText(/^flow @/)).toHaveClass(...BAND_TEXT_CLASS.neutral.split(' '));
 
 		await expect(block.querySelector('.mt-auto')!.firstElementChild).toHaveClass(
 			BAND_BAR_CLASS.success,

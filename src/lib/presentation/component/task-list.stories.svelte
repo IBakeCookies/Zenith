@@ -161,7 +161,7 @@
 					level: 3,
 				})
 				.map((row) => row.textContent),
-		).toEqual(['Tasks', 'boxing', 'stretching', 'write the calibration section', 'inbox']);
+		).toEqual(['Plan', 'boxing', 'stretching', 'write the calibration section', 'inbox']);
 
 		await expect(canvas.getByText('#1')).toBeVisible();
 		await expect(canvas.getByText('#3')).toBeVisible();
@@ -251,7 +251,7 @@
 		// Nothing dropped is the common day: one plain group, and a heading over every row saying the
 		// same thing about all of them would say nothing
 		const heading = canvas.getByRole('heading', {
-			name: 'Tasks',
+			name: 'Plan',
 		});
 
 		const list = canvas.getByRole('list');
@@ -291,7 +291,7 @@
 		// The form this list is handed goes into the card's dialog, so passing one adds a way IN beside
 		// the heading and costs the ledger no height
 		const heading = canvas.getByRole('heading', {
-			name: 'Tasks',
+			name: 'Plan',
 		});
 
 		// The default day splits, so the funded group's list is the first of the two.

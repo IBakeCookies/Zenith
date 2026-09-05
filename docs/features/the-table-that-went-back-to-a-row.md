@@ -117,8 +117,7 @@ did. Every line names the file its test lands in.
 - `src/lib/presentation/utils/ledger-column.ts` — the column set. Deleted; it
   has no caller once the tables go.
 - `src/lib/presentation/style/tokens.css` — the `@utility` block the ledger's
-  cells and headers used, and `--container-day-flow`, whose floor is measured
-  against the longest arrival sentence.
+  cells and headers used.
 - `src/lib/presentation/utils/duration-format.ts` — `formatDuration`. The row
   and the strip both print ϕ, so the ± spelling belongs beside it, not in either
   caller (R3).
@@ -166,12 +165,14 @@ did. Every line names the file its test lands in.
   worse than no band, and a band on an unfitted default is a claim nothing
   measured.
 
-- **Only the arrival sentence gets the band, and the container floor moved with
-  it.** `--container-day-flow` gates that sentence to `sr-only` when the block
-  is too narrow to hold it; adding `± <duration>` to the sentence without
-  raising the floor would have let it truncate mid-duration and print a figure
-  nothing computed. Measured against the longest form, not guessed: 8.5rem →
-  11rem.
+- **Only the arrival sentence gets the band, and it carries the band as text
+  colour.** The sentence and the bar under it are one reading, so they share one
+  hue; a solid chip behind the words was built and rejected on sight. Band ink at
+  `text-2xs` on the block's recessed fill measures under 4.5:1 on about half the
+  46-theme catalogue, and it ships anyway — the `sr-only` band word and the bar's
+  own proportion are what carry the reading without colour (WCAG 1.4.1). Every
+  block prints the sentence at every width, truncating rather than dropping it,
+  so the strip on screen and the strip a screen reader walks are the same strip.
 
 - **The control group renders only when the row has a control.** A past day
   passes no instrument and no editor handler, and an empty box in their place

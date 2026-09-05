@@ -31,7 +31,7 @@
 		// heading's row rather than costing one of its own, and that the form is off the card entirely
 		// until the `+` asks for it.
 		const title = canvas.getByRole('heading', {
-			name: 'Tasks',
+			name: 'Plan',
 		});
 
 		const strip = canvas.getByText('the day');

@@ -66,8 +66,8 @@ test('an empty day offers the task form, and deploying one reveals the Lab', asy
 });
 
 /* The Lab is where the day is actually tuned, so the day's two menus read on its
-   Tasks card as well — a routine saved on the main page had no way in here. */
-test('the day’s Load and Save read on the Lab’s Tasks card', async ({ page }) => {
+   Plan card as well — a routine saved on the main page had no way in here. */
+test('the day’s Load and Save read on the Lab’s Plan card', async ({ page }) => {
 	await page.goto('/energy');
 	await addTask(page, 'Deep work');
 
@@ -91,7 +91,7 @@ test('the day’s Load and Save read on the Lab’s Tasks card', async ({ page }
 /* The session clock is one clock across both screens: the Lab is where a session is
    actually worked from, and the reading a stop leaves funds the 🪫 editor on whichever
    screen opens one first. Only an e2e sees the navigation, which is the whole point. */
-test('the Lab’s Tasks card offers the timer', async ({ page }) => {
+test('the Lab’s Plan card offers the timer', async ({ page }) => {
 	await page.goto('/energy');
 	await addTask(page, 'Deep work');
 
