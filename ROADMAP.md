@@ -458,16 +458,17 @@ instrument that would establish or kill its own number before any build.
     landed 2026-09-04 and re-based the whole ladder, so the sweep must be re-run
     before any of the six sites is re-quoted.
 
-37. **Two blind spots in the verification chain** — the Stop hook parses
-    `git status --porcelain` with a fixed slice, so a staged RENAME becomes the
-    string `old -> new`, fails the existence filter, empties the changed list and
-    takes the early exit: none of prettier, eslint, `check` or the six doc
-    scripts run. `git mv` is allowlisted and the last 200 commits carry ~97
-    renames. Separately, `scripts/` and `e2e/` are in no type-check program, and
-    a throwaway tsconfig over them is reported to print 4 errors, one live (a
-    probe importing a constant its module never re-exports, so it reads
-    `undefined` at runtime). Fix the hook with `-z` and NUL splitting, keeping the
-    FIRST field of a rename — the survivor, not the second.
+37. ~~**Two blind spots in the verification chain**~~ — FIXED 2026-09-06
+    ([the-rename-that-turned-off-every-check](docs/features/the-rename-that-turned-off-every-check.md)).
+    The hook reads `--porcelain -z` and keeps a rename's first record; the
+    quoted-path half of the same parse went with it. `tsconfig.tooling.json`
+    joins `npm run check` over `scripts/**/*.ts` and `e2e/**/*.ts` and printed
+    exactly the four errors the item predicted — the live one reads `undefined`
+    rather than throwing, because Vite's SSR transform makes an unexported name
+    a property access. The same repair closed a second route to that early exit
+    the item did not name: a stop whose only change is a **deletion** also
+    emptied the list, and a deleted module is what breaks `check`.
+    `scripts/**/*.mjs` stays unchecked — M103.
 
 38. **`satietyScale`'s conditioning error on the λ₀ fit, priced beside V_T's** —
     κ = `satietyScale`·O_ref is a bare 1 that the shipped λ₀ fit and the live
@@ -1066,6 +1067,19 @@ cited once it exists and none of these has been chosen yet.
   1px border colour change — the same shape M101 fixed, on a different control,
   which is why M101's own wrapper fix does not touch them. Split out of M101 on
   2026-09-06 when the fix was scoped against the code. Raised, not built.
+- **M103 — the `.mjs` half of `scripts/` is still in no type-check program.**
+  `tsconfig.tooling.json` (item 37) covers `scripts/**/*.ts` and `e2e/**/*.ts`
+  and sets `checkJs: false`, so all thirteen `.mjs` files stay unchecked: the six
+  doc scripts `npm run lint` runs, the four contrast instruments, the two
+  screenshot scripts, and `generate-fixture.mjs`. Turning `checkJs` on over them
+  prints 160 errors across 11 of the 13 — 84 implicit-`any` parameters, 39
+  `possibly null`, the rest a long tail. 85 of the 160 are in the four
+  instruments that drive a browser, where untyped `page.evaluate` globals are a
+  typing question before they are a defect question; the other **75 are in
+  pure-Node scripts**, and the single largest source is `generate-fixture.mjs`
+  at 34, which opens no browser at all. That is the half worth reading first.
+  None of the 160 was read as live; nobody has looked. Raised 2026-09-06, not
+  built.
 - **The funded-subset enumeration priced every subset it could not use —
   closed 2026-09-04,
   [`the-subsets-that-could-not-win`](docs/features/the-subsets-that-could-not-win.md).**

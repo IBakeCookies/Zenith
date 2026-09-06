@@ -1,0 +1,19 @@
+{
+	// SvelteKit's generated tsconfig includes `src`, `test`, `tests`, the vite
+	// config and its own generated `.d.ts` files — never `scripts/` or `e2e/`, so
+	// `npm run check` did not see the probes that produce every measured number in
+	// these docs, nor the specs that drive the app. A probe importing a name its
+	// module does not export reads `undefined` under Vite's SSR transform rather
+	// than throwing, so nothing else was going to catch it either.
+	"extends": "./tsconfig.json",
+	"compilerOptions": {
+		// `@types/node` is not in the app's ambient set; probes and Playwright specs
+		// both read the filesystem, `process` and `os`.
+		"types": ["node"],
+		// The `.mjs` half is a separate finding, not a separate rule: checking it
+		// prints 160 errors this change did not price (ROADMAP M103).
+		"checkJs": false,
+		"noEmit": true
+	},
+	"include": ["scripts/**/*.ts", "e2e/**/*.ts"]
+}

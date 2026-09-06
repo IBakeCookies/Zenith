@@ -27,9 +27,9 @@
  */
 
 import { describe, expect, it } from 'vitest';
+import { DEFAULT_USER_CONSTANTS } from '$lib/business/model/zenith';
 import {
 	DEFAULT_ENERGY_PARAMS,
-	DEFAULT_USER_CONSTANTS,
 	evaluateSchedule,
 	optimizeSchedule,
 	simulateReservoirs,

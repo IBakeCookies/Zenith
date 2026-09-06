@@ -65,6 +65,7 @@ interface Cell {
 function cell(Eu: number, betaU: number): Cell {
 	const { E, beta, a, p0, k, phi } = calculateTaskParams(
 		{
+			title: '',
 			difficulty: Eu,
 			enjoyment: betaU,
 		},

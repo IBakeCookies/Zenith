@@ -142,7 +142,7 @@ These define green, and CI (`.github/workflows/ci.yml`) runs all of them on
 every push/PR to `main`:
 
 ```sh
-npm run check      # svelte-check + tsc on the service worker — must be 0 errors
+npm run check      # svelte-check + tsc on the service worker and the tooling — must be 0 errors
 npm run lint       # prettier --check, eslint (layer-boundary rules), and the six script checks
 npm run depcheck   # dependency-cruiser: layer direction, no cycles, no orphans
 npm run test:unit -- --run
@@ -153,7 +153,7 @@ npm run test:e2e
 CI's.** Those two re-prove the whole tree to check one diff. The other three
 are cheap and one of them is load-bearing:
 
-- **`npm run check`** — 13 s, and the only type check there is. `eslint.config.js`
+- **`npm run check`** — 17 s, and the only type check there is. `eslint.config.js`
   enables `ts.configs.recommended` and no type-checked rule set, so nothing else
   in the repo sees a type error. Run it yourself rather than leaving it to the
   `Stop` hook below: the hook is the backstop, and a type error caught there
@@ -166,11 +166,14 @@ are cheap and one of them is load-bearing:
   user's: three projects, two of them real browsers.
 - **`npx prettier --write`** on the files you touched (never the tree).
 
-The costs above are this repo on a 4-core box, 2026-09-04; re-time them rather
-than trusting the figures if one starts to feel expensive. These two used to be
+The costs above are this repo on a 4-core box, 2026-09-04, except `check`:
+re-timed 2026-09-06 at 17 s, of which `tsconfig.tooling.json` is 2 s. The same
+box put the pre-tooling command at 15 s, so the 13 s this line used to carry was
+a different day's box, not a regression. Re-time them rather than trusting the
+figures if one starts to feel expensive. These two used to be
 excluded along with `lint` and `test:e2e`, on the argument that the five "cost
-minutes of tokens to sit through" — which was never true of a 13 s command and
-a 2 s one. What is true of `lint` and `test:e2e` is the other half of that
+minutes of tokens to sit through" — which was never true of a seventeen-second
+command and a two-second one. What is true of `lint` and `test:e2e` is the other half of that
 sentence: they re-prove the whole tree, and `test:e2e` drives a browser. That
 is the line, not the clock.
 
@@ -196,9 +199,12 @@ pass" means the file you ran; do not report a green tree you never saw. A
 change is not done until the five are green, but that gate is the user's to
 run, not the agent's to narrate.
 
-Three notes on `check`. It also type-checks `src/service-worker.ts` through
-`tsconfig.worker.json`, because SvelteKit's generated tsconfig `exclude`s that
-file and it would otherwise never be checked. And `svelte.config.js` exists
+Three notes on `check`. It also type-checks two things SvelteKit's generated
+tsconfig leaves out: `src/service-worker.ts`, which that config `exclude`s
+(`tsconfig.worker.json`), and `scripts/**/*.ts` with `e2e/**/*.ts`, which it
+never `include`s (`tsconfig.tooling.json`). Nothing else catches those — a probe
+importing a name its module does not export reads `undefined` under Vite's SSR
+transform rather than throwing. And `svelte.config.js` exists
 only so svelte-check and eslint compile in the same runes mode the build forces
 — `sveltekit()` takes its options inline in `vite.config.ts`, so the build
 ignores the file and says so. Keep `runes` in step across the two.
