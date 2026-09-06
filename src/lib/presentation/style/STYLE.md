@@ -300,6 +300,14 @@ Read this before touching markup, classes, or anything under
   field's own `outline-none focus:ring-0` stays: `outline-none` drops the UA
   outline the wrapper now replaces, and `ring-0` zeroes the ring
   `@tailwindcss/forms` gives every focused input, which is not a token colour.
+- **A raw instrument field rings on itself, in its own channel token.** The 🪫,
+  ☕ and ⚡ editors are bare `<input type="number">`, so each carries
+  `focus:ring-1 focus:ring-<channel>/60` beside its `focus:border-<channel>/60`
+  — `field-input`'s shape, at the border's own alpha so the ring reads as the
+  border it traces. `outline-none` does not leave such a field unringed: the
+  plugin ring above is painted regardless, and the token ring **displaces** it.
+  Three of the four recipes are `measurement-prompt.ts`; the ☕ length field is
+  inline, being the one `info` tint.
 - **An overflowing panel scrolls with `nice-scrollbar` (`base.css`), never the
   native bar** — the theme dropdown, the analytics log history, `/`'s day strip and
   the dialog and calendar bodies are all it. No palette reaches a UA scrollbar, so it renders as
