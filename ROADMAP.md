@@ -94,10 +94,9 @@ row. Neither needed a new solve.
 12. ~~**Prefix-aware mid-day re-plan**~~ — SHIPPED 2026-08-10 (MATH.md §35).
     [docs/features/prefix-aware-mid-day-replan.md](docs/features/prefix-aware-mid-day-replan.md)
 
-13. ~~**"You are here" on the run order**~~ — SHIPPED 2026-08-10 (MATH.md §35),
-    which also records the caveat left unfixed: the alternation has no memory of
-    what was just worked, and conditioning position 1 on the last session is a
-    change to §16's heuristic, not a patch.
+13. ~~**"You are here" on the run order**~~ — SHIPPED 2026-08-10. Caveat closed
+    2026-09-06: the alternation takes a predecessor.
+    [docs/features/the-alternation-that-forgot-what-you-just-worked.md](docs/features/the-alternation-that-forgot-what-you-just-worked.md)
 
 14. ~~**Executed capacity burn-down**~~ — SHIPPED 2026-08-12 (MATH.md §35).
     [docs/features/executed-capacity-burn-down.md](docs/features/executed-capacity-burn-down.md)

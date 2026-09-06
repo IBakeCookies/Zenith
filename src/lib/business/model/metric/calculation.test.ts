@@ -988,6 +988,92 @@ describe('calculateInterleavedOrder', () => {
 		const order = calculateInterleavedOrder([cognitive(2, 8), cognitive(1, 9), cognitive(3, 7)]);
 		expect(order.map((t) => t.id)).toEqual([1, 2, 3]);
 	});
+
+	const balanced = (id: number, priorityScore: number) =>
+		makeSuggested({
+			id,
+			title: `bal${id}`,
+			mentalDifficulty: 5,
+			physicalDifficulty: 5,
+			priorityScore,
+		});
+
+	// A pin, not a red test: every consumer that models a whole day from its start
+	// keeps calling the one-argument form, and this is what says their sequences
+	// did not move.
+	it.each([
+		[
+			[physical(1, 10), physical(2, 9), cognitive(3, 8), cognitive(4, 7), balanced(5, 6)],
+			[1, 3, 2, 4, 5],
+		],
+		[
+			[balanced(1, 9), physical(2, 8), physical(3, 7)],
+			[1, 2, 3],
+		],
+		[
+			[cognitive(1, 9), physical(2, 8)],
+			[1, 2],
+		],
+		[
+			[physical(1, 10), cognitive(2, 9), physical(3, 8), cognitive(4, 7), cognitive(5, 6)],
+			[1, 2, 3, 4, 5],
+		],
+		[
+			[
+				cognitive(1, 5),
+				cognitive(2, 9),
+				balanced(3, 7),
+				physical(4, 8),
+				physical(5, 6),
+				cognitive(6, 4),
+			],
+			[2, 4, 3, 5, 1, 6],
+		],
+	])('sequences from a clean slate when no predecessor is given', (tasks, expected) => {
+		expect(calculateInterleavedOrder(tasks).map((t) => t.id)).toEqual(expected);
+	});
+
+	it('opens on a nature that contrasts with the task just worked', () => {
+		const order = calculateInterleavedOrder([physical(1, 10), cognitive(2, 9), cognitive(3, 8)], {
+			nature: 'physical',
+			taskId: 99,
+		});
+
+		expect(order.map((t) => t.id)).toEqual([2, 1, 3]);
+	});
+
+	it('exempts the task just worked from its own contrast', () => {
+		// Continuing a session is not a context switch: a re-plan that funds more
+		// hours on the task in progress still names it.
+		const order = calculateInterleavedOrder([physical(1, 10), cognitive(2, 9), cognitive(3, 8)], {
+			nature: 'physical',
+			taskId: 1,
+		});
+
+		expect(order[0].id).toBe(1);
+	});
+
+	it('changes nothing after a balanced task', () => {
+		const tasks = [physical(1, 10), physical(2, 9), cognitive(3, 8)];
+
+		expect(
+			calculateInterleavedOrder(tasks, {
+				nature: 'balanced',
+				taskId: 99,
+			}).map((t) => t.id),
+		).toEqual(calculateInterleavedOrder(tasks).map((t) => t.id));
+	});
+
+	it('sequences two funded tasks against a predecessor instead of short-circuiting', () => {
+		// The `<= 2` shortcut is only sound from a clean slate, where the first
+		// pick is unconditionally the top priority.
+		const order = calculateInterleavedOrder([physical(1, 10), cognitive(2, 9)], {
+			nature: 'physical',
+			taskId: 99,
+		});
+
+		expect(order.map((t) => t.id)).toEqual([2, 1]);
+	});
 });
 
 describe('calculateHumanCapacity', () => {

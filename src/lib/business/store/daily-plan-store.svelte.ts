@@ -106,12 +106,20 @@ export class DailyPlanStore {
 		// The one definition of "hours per task, restricted to the day's tasks"
 		// (AGENTS.md R3). Today's logs reach this immediately: it is a gauge of the
 		// present, which is exempt from the causal fit window.
-		const worked = workedHoursByTask(
-			tasks,
-			this.#observations.drainObservations.filter((o) => o.date === this.#session.today),
+		const todaysObservations = this.#observations.drainObservations.filter(
+			(o) => o.date === this.#session.today,
 		);
 
+		const worked = workedHoursByTask(tasks, todaysObservations);
+
 		if (worked.size === 0) return null;
+
+		// What was just worked, so the re-plan's position 1 contrasts with it. Over
+		// the same rows the hours count, or the two disagree about which logs are
+		// work; non-empty because `worked` is.
+		const lastWorked = todaysObservations
+			.filter((o) => o.hours > 0)
+			.reduce((latest, o) => (o.createdAt > latest.createdAt ? o : latest));
 
 		return calculateRemainingDay({
 			tasks,
@@ -121,6 +129,7 @@ export class DailyPlanStore {
 			constants: this.#session.userConstants,
 			posterior: this.#session.constantsFit.posterior,
 			workedHours: worked,
+			lastWorkedTaskId: lastWorked.taskId,
 		});
 	});
 

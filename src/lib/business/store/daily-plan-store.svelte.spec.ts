@@ -684,5 +684,96 @@ describe('DailyPlanStore', () => {
 			// ...and the new reading did appear, so the freeze above is not vacuous.
 			expect(store.remainingDay?.workedHours).toBe(3);
 		});
+
+		it("seeds the re-plan from today's latest log, not the store's", () => {
+			// A restored backup can carry a larger `createdAt` on an older day; the
+			// seed reads the same today-filtered set the worked hours do.
+			const store = setup();
+			mockSession.availableHours = 8;
+
+			mockSession.tasks = [
+				// Finished and logged, so it is spent for funding and is still the
+				// thing that was just worked.
+				task(1, 'boxing', {
+					physicalDifficulty: 9,
+					mentalDifficulty: 1,
+					completed: true,
+				}),
+				task(2, 'rowing', {
+					physicalDifficulty: 8,
+					mentalDifficulty: 1,
+					enjoyment: 8,
+				}),
+				task(3, 'deep work'),
+			];
+
+			mockObservations.drainObservations = [
+				// Recency, not volume: the longer session came first today.
+				drainRecord({
+					date: today,
+					taskId: 3,
+					hours: 2,
+					createdAt: 50,
+				}),
+				drainRecord({
+					date: today,
+					taskId: 1,
+					hours: 1,
+					createdAt: 100,
+				}),
+				drainRecord({
+					date: '2026-07-19',
+					taskId: 3,
+					hours: 3,
+					createdAt: 999,
+				}),
+			];
+
+			flushSync();
+
+			// Today's log is the physical one, so the contrast is cognitive. Seeded
+			// from the older row instead, rowing would outrank it and be named.
+			expect(store.remainingDay?.nextTask?.id).toBe(3);
+		});
+
+		it('does not seed from a log carrying no hours', () => {
+			// A restore admits `hours: 0` where the form does not, and the hours
+			// reading drops such a row — the seed reads the same set.
+			const store = setup();
+			mockSession.availableHours = 8;
+
+			mockSession.tasks = [
+				task(1, 'boxing', {
+					physicalDifficulty: 9,
+					mentalDifficulty: 1,
+					completed: true,
+				}),
+				task(2, 'rowing', {
+					physicalDifficulty: 8,
+					mentalDifficulty: 1,
+					enjoyment: 8,
+				}),
+				task(3, 'deep work'),
+			];
+
+			mockObservations.drainObservations = [
+				drainRecord({
+					date: today,
+					taskId: 1,
+					hours: 1,
+					createdAt: 100,
+				}),
+				drainRecord({
+					date: today,
+					taskId: 3,
+					hours: 0,
+					createdAt: 200,
+				}),
+			];
+
+			flushSync();
+
+			expect(store.remainingDay?.nextTask?.id).toBe(3);
+		});
 	});
 });
