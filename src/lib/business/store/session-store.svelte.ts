@@ -1266,7 +1266,9 @@ export class SessionStore {
 		const routine: SavedRoutine = {
 			id: `routine-${Date.now()}`,
 			name,
-			tasks: this.#tasks.map((t) => ({
+			// `tags` is a nested $state proxy, and structuredClone (IndexedDB's put)
+			// throws DataCloneError on a Proxy — snapshot before building the record.
+			tasks: $state.snapshot(this.#tasks).map((t) => ({
 				title: t.title,
 				physicalDifficulty: t.physicalDifficulty,
 				mentalDifficulty: t.mentalDifficulty,

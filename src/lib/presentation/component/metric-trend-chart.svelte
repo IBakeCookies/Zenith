@@ -34,7 +34,7 @@
 	};
 	const innerW = CHART.w - CHART.left - CHART.right;
 	const innerH = CHART.h - CHART.top - CHART.bottom;
-	const yTicks = [0, 50, 100];
+	const yTicks = [0, 25, 50, 75, 100];
 	const yPos = (value: number) => CHART.top + innerH - (value / 100) * innerH;
 	// A single slot has no interval to spread over, so it sits in the middle
 	// rather than at a division by zero.

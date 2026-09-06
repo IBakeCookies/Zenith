@@ -1798,6 +1798,8 @@ describe('SessionStore task tags', () => {
 		const routine = updateRoutineMock.mock.calls[0][0];
 
 		expect(routine.tasks[0].tags).toEqual(['exercise']);
+		// IndexedDB's put() structured-clones the record, which throws on a $state proxy.
+		expect(() => structuredClone(routine)).not.toThrow();
 
 		store.importTasks(routine.tasks);
 		flushSync();

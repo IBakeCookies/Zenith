@@ -307,7 +307,7 @@
 	     calibration grid and the logs card sit outside this gate and the drain ranking may
 	     not render at all. All three charts are a fixed viewBox at `w-full`, so a ratio is what
 	     tracks their height. -->
-	{#each ['h-16', 'aspect-[800/240]', 'aspect-[800/180]', 'aspect-[800/180]', 'h-10', 'h-5', 'h-33'] as body, i (i)}
+	{#each ['h-16', 'aspect-[800/180]', 'aspect-[800/180]', 'aspect-[800/180]', 'h-10', 'h-5', 'h-33'] as body, i (i)}
 		<div class="card-shell mt-grid-xl rounded-xl p-box-lg" aria-hidden="true">
 			{@render skeletonBody(body)}
 		</div>
