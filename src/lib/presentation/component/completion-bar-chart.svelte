@@ -23,7 +23,7 @@
 	// Fixed viewBox, responsive via width: 100%
 	const CHART = {
 		w: 800,
-		h: 240,
+		h: 180,
 		top: 12,
 		right: 8,
 		bottom: 26,
