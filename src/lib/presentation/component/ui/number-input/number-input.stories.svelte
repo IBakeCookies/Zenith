@@ -79,6 +79,34 @@
 	{/snippet}
 </Story>
 
+<Story
+	name="Keyboard focus"
+	args={{
+		value: 6,
+		onchange: fn(),
+	}}
+	play={async ({ canvas, userEvent }) => {
+		// The state axe never sees: it reads a story at rest, so the ring is asserted here or
+		// nowhere. The ring is a box-shadow on the WRAPPER, and the field's own shadow chain
+		// stays all-zero — `@tailwindcss/forms` gives it one, which `focus:ring-0` zeroes.
+		const field = canvas.getByRole('spinbutton', {
+			name: 'Available hours',
+		});
+
+		const wrapper = field.parentElement!.parentElement!;
+
+		await expect(getComputedStyle(wrapper).boxShadow).not.toContain('0px 0px 0px 2px');
+
+		// The steppers are `tabindex={-1}`, so the field takes the first tab
+		await userEvent.tab();
+
+		await expect(field).toHaveFocus();
+		await expect(field.matches(':focus-visible')).toBe(true);
+		await expect(getComputedStyle(wrapper).boxShadow).toContain('0px 0px 0px 2px');
+		await expect(getComputedStyle(field).boxShadow).not.toMatch(/[1-9]\d*px/);
+	}}
+/>
+
 <Story name="Accents" asChild>
 	<div class="flex flex-wrap gap-grid-sm">
 		<div class="max-w-40">
