@@ -777,7 +777,10 @@ describe('Zenith Energy Model', () => {
 			// below this plan; the compound moves + drop-one seeds must dominate it.
 			// The witness is off the 45-min lattice, so this guards SEARCH
 			// reliability at the fine step it was written for; quantization loss
-			// has its own tests below.
+			// has its own tests below. The fine step costs ~1.1 s alone and 2.6 s
+			// under the server project, which fits the 5 s default until the
+			// browser projects run alongside it — so the timeout below is a hang
+			// detector, not a machine-speed gate, as on the quantization test.
 			const day = PROBE_DAY;
 
 			const handBuilt = evaluateSchedule(
@@ -804,7 +807,7 @@ describe('Zenith Energy Model', () => {
 			});
 
 			expect(result.evaluation.objective).toBeGreaterThanOrEqual(handBuilt.objective - 1e-9);
-		});
+		}, 20_000);
 
 		// The two enumerated frontier days whose optimum funds a set two smaller
 		// than the drop-one seeds reach (probe 2026-08-13, §8.6). Both optima are
