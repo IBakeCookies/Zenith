@@ -125,3 +125,43 @@
 		});
 	}}
 />
+
+<Story
+	name="Keyboard focus"
+	args={{
+		onsave: fn(),
+		oncancel: fn(),
+	}}
+	play={async ({ canvas, userEvent }) => {
+		// The state axe never sees: it reads a story at rest, so the ring is asserted here or
+		// nowhere. These are raw inputs, so each rings on itself — no wrapper, unlike
+		// `number-input.svelte`. The ring is asserted equal to the field's own focus border
+		// because that is the whole claim: `@tailwindcss/forms` already paints a 1px ring on
+		// every focused input, in a blue no theme declares, and the token ring displaces it.
+		const ring = (field: Element) => getComputedStyle(field).boxShadow;
+		const border = (field: Element) => getComputedStyle(field).borderColor;
+		const minutes = canvas.getByPlaceholderText('min');
+		const [mindBefore] = canvas.getAllByLabelText('Mind');
+		const [bodyBefore] = canvas.getAllByLabelText('Body');
+		// blue-600, which is what `@tailwindcss/forms` rings a focused input in
+		const PLUGIN_BLUE = 'oklch(0.546 0.245 262.881)';
+
+		await expect(ring(mindBefore)).toBe('none');
+
+		// The ☕ button focuses the length field on mount, so it is already the focused one
+		await expect(minutes).toHaveFocus();
+		await expect(ring(minutes)).toContain(`${border(minutes)} 0px 0px 0px 1px`);
+		await expect(ring(minutes)).not.toContain(PLUGIN_BLUE);
+
+		await userEvent.tab();
+
+		await expect(mindBefore).toHaveFocus();
+		await expect(ring(mindBefore)).toContain(`${border(mindBefore)} 0px 0px 0px 1px`);
+
+		await userEvent.tab();
+
+		await expect(bodyBefore).toHaveFocus();
+		await expect(ring(bodyBefore)).toContain(`${border(bodyBefore)} 0px 0px 0px 1px`);
+		await expect(ring(bodyBefore)).not.toContain(PLUGIN_BLUE);
+	}}
+/>

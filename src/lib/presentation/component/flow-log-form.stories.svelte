@@ -89,3 +89,27 @@
 		await expect(args.ondelete).toHaveBeenCalledOnce();
 	}}
 />
+
+<Story
+	name="Keyboard focus"
+	args={{
+		seed: 40,
+		focusMinutes: true,
+		onsave: fn(),
+		oncancel: fn(),
+	}}
+	play={async ({ canvas }) => {
+		// `MEASUREMENT_MINUTES_CLASS`, the one recipe of the four the ☕ editor's own
+		// story cannot reach — its length field carries the `info` tint inline. The
+		// state axe never sees, so the ring is asserted here or nowhere.
+		const minutes = canvas.getByPlaceholderText('min');
+
+		await expect(minutes).toHaveFocus();
+
+		const style = getComputedStyle(minutes);
+
+		await expect(style.boxShadow).toContain(`${style.borderColor} 0px 0px 0px 1px`);
+		// blue-600, which is what `@tailwindcss/forms` rings a focused input in
+		await expect(style.boxShadow).not.toContain('oklch(0.546 0.245 262.881)');
+	}}
+/>

@@ -94,7 +94,7 @@
 			{@attach (node) => node.focus()}
 			bind:value={draft.minutes}
 			required
-			class="w-14 rounded-sm border border-info/30 bg-input px-box-3xs py-text-3xs text-xs text-ty-primary outline-none focus:border-info/60"
+			class="w-14 rounded-sm border border-info/30 bg-input px-box-3xs py-text-3xs text-xs text-ty-primary outline-none focus:border-info/60 focus:ring-1 focus:ring-info/60"
 		/>
 	</label>
 	<span class="flex items-center gap-grid-2xs">

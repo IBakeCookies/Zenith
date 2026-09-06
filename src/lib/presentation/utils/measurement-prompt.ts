@@ -132,7 +132,7 @@ export const MEASUREMENT_FORM_CLASS =
 	'mt-text-xs flex flex-wrap items-center gap-x-grid-xs gap-y-grid-2xs rounded-lg border border-flow/20 bg-surface-page/40 px-box-xs py-box-2xs text-2xs text-ty-silent';
 
 export const MEASUREMENT_MINUTES_CLASS =
-	'w-14 rounded-sm border border-flow/30 bg-input px-box-3xs py-text-3xs text-xs text-ty-primary outline-none focus:border-flow/60';
+	'w-14 rounded-sm border border-flow/30 bg-input px-box-3xs py-text-3xs text-xs text-ty-primary outline-none focus:border-flow/60 focus:ring-1 focus:ring-flow/60';
 
 /* The 0–10 rating fields are the same field in two paints — mind and body — and the
    capacity is spelled into three classes each. Six copies of that pair had to be
@@ -140,6 +140,6 @@ export const MEASUREMENT_MINUTES_CLASS =
    Full literal strings and never `border-${channel}/30`: Tailwind's scanner cannot
    see an interpolated class name, so the tinted variants would emit nothing. */
 export const RATING_INPUT_CLASS = {
-	mind: 'w-12 rounded-sm border border-mind/30 bg-input px-box-3xs py-text-3xs text-xs text-ty-primary outline-none focus:border-mind/60',
-	body: 'w-12 rounded-sm border border-body/30 bg-input px-box-3xs py-text-3xs text-xs text-ty-primary outline-none focus:border-body/60',
+	mind: 'w-12 rounded-sm border border-mind/30 bg-input px-box-3xs py-text-3xs text-xs text-ty-primary outline-none focus:border-mind/60 focus:ring-1 focus:ring-mind/60',
+	body: 'w-12 rounded-sm border border-body/30 bg-input px-box-3xs py-text-3xs text-xs text-ty-primary outline-none focus:border-body/60 focus:ring-1 focus:ring-body/60',
 } as const;
