@@ -9,8 +9,8 @@
 		tags: ['autodocs'],
 	});
 
-	// <Story name="Default"> — The metric-label pattern: a dotted-underline trigger, tooltip to the
-	// side
+	// <Story name="Default"> — The metric-label pattern: a dotted-underline trigger, with `side`
+	// placing the content (the readings themselves take the default, above)
 
 	// <Story name="Open"> — Open on mount, so the content itself is reviewable without hovering
 

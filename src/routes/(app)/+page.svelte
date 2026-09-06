@@ -254,6 +254,17 @@
 		</div>
 	{/if}
 
+	<!-- A day that is not today says so before anything it changes: the banner is
+	     the first thing read, above the readings it qualifies. -->
+	{#if isViewingPast}
+		<div
+			class="p-box-md rounded-xl border border-warning/20 bg-warning/5 text-warning-strong text-sm"
+		>
+			<span class="font-medium">{m.banner_past_title()}</span>
+			{m.banner_past_body()}
+		</div>
+	{/if}
+
 	<!-- The verdict comes before the setup that produces it, so a returning user
 	     reads how today stands without scrolling past the plan — but only once
 	     there is a plan to judge. With no tasks or no budget all four tiles read
@@ -263,14 +274,7 @@
 		<MetricHeadlineStrip {metrics} momentum={daily.totalTasks > 0 ? daily.momentum : null} />
 	{/if}
 
-	{#if isViewingPast}
-		<div
-			class="p-box-md rounded-xl border border-warning/20 bg-warning/5 text-warning-strong text-sm"
-		>
-			<span class="font-medium">{m.banner_past_title()}</span>
-			{m.banner_past_body()}
-		</div>
-	{:else}
+	{#if !isViewingPast}
 		<!-- Keyed so each day asks once whether it needs its constraints open: the hours
 		     read 0 until a day lands (forever on the server, which has no IndexedDB), so
 		     asking any earlier opens the panel for every visitor. -->
