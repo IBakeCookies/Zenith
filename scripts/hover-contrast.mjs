@@ -83,12 +83,18 @@ const NO_GAP = new Set(['outline', 'destructive', 'ghost']);
 // would report. Every `ghost` in the catalogue clears 1.081.
 const MIN_RATIO = 1.03;
 
+/** @param {number[]} rgb */
 const lum = ([r, g, b]) => {
+	/** @param {number} c */
 	const f = (c) => ((c /= 255) <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
 
 	return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b);
 };
 
+/**
+ * @param {number[]} a
+ * @param {number[]} b
+ */
 const ratio = (a, b) => {
 	const [hi, lo] = [lum(a), lum(b)].sort((x, y) => y - x);
 
@@ -105,11 +111,12 @@ const page = await browser.newPage({
 });
 
 // any CSS colour -> sRGB, via the browser: these tokens are oklab/oklch
+/** @param {string} css */
 const toRgb = (css) =>
 	page.evaluate((c) => {
 		const cv = document.createElement('canvas');
 		cv.width = cv.height = 1;
-		const ctx = cv.getContext('2d');
+		const ctx = /** @type {CanvasRenderingContext2D} */ (cv.getContext('2d'));
 		ctx.fillStyle = c;
 		ctx.fillRect(0, 0, 1, 1);
 
@@ -121,6 +128,7 @@ const toRgb = (css) =>
 // rounded corner, or on one bright spot of a background photo, and reports a
 // change that is not there — it once put `glacier` ghost at 1.02 and
 // `glass-light` outline at 1.00, both of which read normally over their own area.
+/** @param {{ x: number; y: number; width: number; height: number }} clip */
 const sample = async (clip) => {
 	const png = (
 		await page.screenshot({
@@ -136,7 +144,7 @@ const sample = async (clip) => {
 
 		const img = await createImageBitmap(new Blob([buf]));
 		const cv = new OffscreenCanvas(img.width, img.height);
-		const ctx = cv.getContext('2d');
+		const ctx = /** @type {OffscreenCanvasRenderingContext2D} */ (cv.getContext('2d'));
 		ctx.drawImage(img, 0, 0);
 
 		const px = ctx.getImageData(0, 0, img.width, img.height).data;
@@ -148,6 +156,7 @@ const sample = async (clip) => {
 	}, png);
 };
 
+/** @type {string[]} */
 const fails = [];
 
 for (const theme of THEMES) {
@@ -158,6 +167,7 @@ for (const theme of THEMES) {
 		},
 	);
 
+	/** @type {string[]} */
 	const row = [];
 
 	for (const v of VARIANTS) {
@@ -167,6 +177,12 @@ for (const theme of THEMES) {
 		});
 
 		const box = await el.boundingBox();
+
+		// A locator that matches nothing times out rather than returning null, so null
+		// means the button is in the DOM with no box — a zero-size or hidden ancestor.
+		// Either way there is nothing to sample; say which button.
+		if (!box) throw new Error(`${theme} ${v}: button matched but has no box`);
+
 		const y = Math.round(box.y) + 4;
 		const height = Math.round(box.height) - 8;
 

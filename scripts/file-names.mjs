@@ -17,6 +17,7 @@ const KEBAB = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 // design artboards — the design tool derives an artboard's name from the
 // filename and looks for `Main.dc.html` by name, so kebab-casing one renames
 // the artboard and loses the entry point.
+/** @param {string} name */
 const isExempt = (name) => /^[+(.]/.test(name) || name.endsWith('.md') || name.endsWith('.dc.html');
 const CHECK = process.argv.includes('--check');
 

@@ -38,12 +38,13 @@ const RULE_DECLARATION = /^\*\*R(\d+)\s*—/;
 /** A citation of one. `\b` on both sides so a longer token never matches. */
 const RULE_CITATION = /\bR(\d+)\b/g;
 
+/** @param {string} path */
 function headingsOf(path) {
 	return new Set(
 		readFileSync(path, 'utf8')
 			.split('\n')
 			.map((line) => HEADING.exec(line))
-			.filter(Boolean)
+			.filter((match) => match !== null)
 			.map((match) => (match[3] ? `${match[2]}.${match[3]}` : match[2])),
 	);
 }
@@ -52,16 +53,21 @@ function headingsOf(path) {
 // pointing past AGENTS.md's last numbered heading passed `--check`. A named document
 // is checked against its own headings; only the nested AGENTS.md files have none, and
 // a section citation against one of those has nothing to resolve to and should say so.
+const mathHeadings = headingsOf('MATH.md');
+const agentsHeadings = headingsOf('AGENTS.md');
+
+// Any other document name really is absent, which is what the citation loop reads.
+/** @type {Record<string, Set<string> | undefined>} */
 const headings = {
-	'MATH.md': headingsOf('MATH.md'),
-	'AGENTS.md': headingsOf('AGENTS.md'),
+	'MATH.md': mathHeadings,
+	'AGENTS.md': agentsHeadings,
 };
 
 const rules = new Set(
 	readFileSync('AGENTS.md', 'utf8')
 		.split('\n')
 		.map((line) => RULE_DECLARATION.exec(line))
-		.filter(Boolean)
+		.filter((match) => match !== null)
 		.map((match) => match[1]),
 );
 
@@ -78,6 +84,7 @@ const files = execFileSync(
 
 let total = 0;
 let ruleTotal = 0;
+/** @type {string[]} */
 const offenders = [];
 
 for (const path of files) {
@@ -113,8 +120,8 @@ if (offenders.length > 0) {
 	if (CHECK) process.exit(1);
 } else {
 	console.log(
-		`${total} §-citations verified against MATH.md's ${headings['MATH.md'].size} sections ` +
-			`and AGENTS.md's ${headings['AGENTS.md'].size}; ` +
+		`${total} §-citations verified against MATH.md's ${mathHeadings.size} sections ` +
+			`and AGENTS.md's ${agentsHeadings.size}; ` +
 			`${ruleTotal} R-citations against its ${rules.size} hard rules`,
 	);
 }

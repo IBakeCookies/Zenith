@@ -28,6 +28,7 @@ const LABEL_RANGE_WIDTH = 19;
 const HEADING = /^(#{2,3}) (\d+)(?:\.(\d+))?\.? (.*)$/;
 /** The ratio the preamble states and every figure below is computed at. */
 const CHARS_PER_TOKEN = 4;
+/** @param {number} chars */
 const thousandTokens = (chars) => `~${Math.round(chars / CHARS_PER_TOKEN / 1000)}k`;
 
 /** Replace one preamble figure, or throw.
@@ -36,14 +37,25 @@ const thousandTokens = (chars) => `~${Math.round(chars / CHARS_PER_TOKEN / 1000)
  *  silent: a whole-document token figure written when the file was 257k chars
  *  survived four hand-edits of the sentence around it while the document grew past
  *  590k. So a miss is a build failure, not a no-op — and the patterns take `\s+`
- *  between words so re-wrapping the paragraph moves a figure rather than freezing it. */
+ *  between words so re-wrapping the paragraph moves a figure rather than freezing it.
+ *
+ *  @param {string} text
+ *  @param {RegExp} pattern
+ *  @param {string} replacement */
 function substitute(text, pattern, replacement) {
 	if (!pattern.test(text)) throw new Error(`section-index preamble no longer matches ${pattern}`);
 
 	return text.replace(pattern, replacement);
 }
 
+/** @typedef {{ line: number; depth: number; number: string; title: string; end: number; chars: number }} Head */
+
+/**
+ * @param {string[]} lines
+ * @param {number} eof
+ */
 function headsFor(lines, eof) {
+	/** @type {Head[]} */
 	const heads = [];
 
 	lines.forEach((line, index) => {
@@ -55,6 +67,9 @@ function headsFor(lines, eof) {
 				depth: match[1].length,
 				number: match[3] ? `${match[2]}.${match[3]}` : match[2],
 				title: match[4].replaceAll('**', '').replaceAll('`', ''),
+				// Both are filled in by the passes below, which reach every head.
+				end: 0,
+				chars: 0,
 			});
 	});
 
@@ -78,6 +93,7 @@ function headsFor(lines, eof) {
 	return heads;
 }
 
+/** @param {Head[]} heads */
 function rowsFor(heads) {
 	return heads.map((head) => {
 		const label = `${head.depth === 3 ? '  ' : ''}§${head.number}`;
@@ -88,7 +104,11 @@ function rowsFor(heads) {
 	});
 }
 
-/** The index with `rows` in its fence, and the row count and token figures above it. */
+/** The index with `rows` in its fence, and the row count and token figures above it.
+ *
+ *  @param {string[]} lines
+ *  @param {string[]} rows
+ *  @param {Head[]} heads */
 function spliced(lines, rows, heads) {
 	const open = lines.indexOf('```text', lines.indexOf(START));
 	const close = lines.indexOf('```', open + 1);

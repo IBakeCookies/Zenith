@@ -8,12 +8,13 @@
 	"extends": "./tsconfig.json",
 	"compilerOptions": {
 		// `@types/node` is not in the app's ambient set; probes and Playwright specs
-		// both read the filesystem, `process` and `os`.
-		"types": ["node"],
-		// The `.mjs` half is a separate finding, not a separate rule: checking it
-		// prints 160 errors this change did not price (ROADMAP M103).
-		"checkJs": false,
+		// both read the filesystem, `process` and `os`. `vite/client` is for one line
+		// of generated code: paraglide's Vite plugin emits a `runtime.js` reading
+		// `import.meta.env` where its CLI emits one that does not, so the file is clean
+		// under `npm run check` (which compiles first) and not under a bare `tsc` after
+		// the dev server has run.
+		"types": ["node", "vite/client"],
 		"noEmit": true
 	},
-	"include": ["scripts/**/*.ts", "e2e/**/*.ts"]
+	"include": ["scripts/**/*.ts", "scripts/**/*.mjs", "e2e/**/*.ts"]
 }

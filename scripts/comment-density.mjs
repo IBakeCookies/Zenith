@@ -28,6 +28,7 @@ const MIN_LINES = 40; // files shorter than this are not measured
 const SKIP = ['/component/ui/', '/paraglide/'];
 const CHECK = process.argv.includes('--check');
 
+/** @param {string} src */
 const countComments = (src) => {
 	let inBlock = false;
 	let comment = 0;
@@ -81,6 +82,7 @@ const over = measured.filter(
 	({ comment, ratio }) => comment > TOTAL || (comment >= FLOOR && ratio > RATIO),
 );
 
+/** @param {{ file: string; comment: number; total: number; ratio: number }} row */
 const say = ({ file, comment, total, ratio }) =>
 	`${String(Math.round(ratio * 100)).padStart(3)}%  ${String(comment).padStart(3)}/${String(total).padEnd(4)}  ${file}`;
 

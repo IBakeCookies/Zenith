@@ -22,6 +22,12 @@ import { writeFileSync } from 'node:fs';
 
 // ---------------------------------------------------------------- arguments
 
+/**
+ * @template T
+ * @param {string} name
+ * @param {T} fallback
+ * @returns {string | T}
+ */
 const arg = (name, fallback) => {
 	const index = process.argv.indexOf(`--${name}`);
 
@@ -46,6 +52,7 @@ const truePools = arg('true-pools', '');
  */
 const TRUE_POOLS = truePools ? parseTruePools(truePools) : null;
 
+/** @param {string} raw */
 function parseTruePools(raw) {
 	const [cognitive, physical] = raw.split(',').map(Number);
 
@@ -89,7 +96,9 @@ const MICRO_RECOVERY_FRACTION = 0.05;
 
 // -------------------------------------------------------------------- rng
 
-/** Mulberry32 — small, seeded, good enough for fixtures and fully reproducible. */
+/** Mulberry32 — small, seeded, good enough for fixtures and fully reproducible.
+ *
+ * @param {number} seed */
 function makeRandom(seed) {
 	let state = seed >>> 0;
 
@@ -104,19 +113,35 @@ function makeRandom(seed) {
 }
 
 const random = makeRandom(SEED);
+/**
+ * @param {number} lo
+ * @param {number} hi
+ */
 const between = (lo, hi) => lo + random() * (hi - lo);
+/** @param {string[]} list */
 const pick = (list) => list[Math.floor(random() * list.length)];
+/** @param {number} p */
 const chance = (p) => random() < p;
 
-/** Box–Muller, so ratings and ϕ carry gaussian noise rather than uniform. */
+/** Box–Muller, so ratings and ϕ carry gaussian noise rather than uniform.
+ *
+ * @param {number} sd */
 const gauss = (sd) =>
 	sd * Math.sqrt(-2 * Math.log(1 - random())) * Math.cos(2 * Math.PI * random());
 
+/**
+ * @param {number} x
+ * @param {number} lo
+ * @param {number} hi
+ */
 const clamp = (x, lo, hi) => Math.min(hi, Math.max(lo, x));
+/** @param {number} x */
 const quarter = (x) => Math.round(x / 0.25) * 0.25;
 // The capacity cap rounds DOWN: rounding to nearest would spend past the pool.
+/** @param {number} x */
 const flooredQuarter = (x) => Math.floor(x / 0.25 + 1e-9) * 0.25;
 // ------------------------------------------------------------------- dates
+/** @param {Date} date */
 const toISO = (date) => date.toISOString().slice(0, 10);
 
 const dates = (() => {
@@ -132,7 +157,9 @@ const dates = (() => {
 	return list;
 })();
 
+/** @param {string} iso */
 const epochOf = (iso) => new Date(`${iso}T09:00:00Z`).getTime();
+/** @param {string} iso */
 const weekdayOf = (iso) => new Date(`${iso}T00:00:00Z`).getUTCDay();
 
 // ------------------------------------------------------------- task catalogue
@@ -237,15 +264,25 @@ const ONE_OFFS = [
 
 // -------------------------------------------------------------- the model
 
-/** MATH.md §1 input mappings. */
+/** MATH.md §1 input mappings.
+ *
+ * @param {number} difficulty */
 const mapE = (difficulty) => (4 / 9) * difficulty + 5 / 9;
+/** @param {number} enjoyment */
 const mapBeta = (enjoyment) => (1 / 9) * enjoyment + 8 / 9;
 
-/** Effective difficulty, mirroring `getEffectiveDifficulty` (spillover 0.5). */
+/** Effective difficulty, mirroring `getEffectiveDifficulty` (spillover 0.5).
+ *
+ * @param {number} physical
+ * @param {number} mental */
 const effectiveDifficulty = (physical, mental) =>
 	clamp(Math.max(physical, mental) + 0.5 * Math.min(physical, mental), 1, 10);
 
-/** True ϕ for a task, before measurement noise. */
+/** True ϕ for a task, before measurement noise.
+ *
+ * @param {number} physical
+ * @param {number} mental
+ * @param {number} enjoyment */
 const truePhi = (physical, mental, enjoyment) =>
 	Math.max(
 		0.1,
@@ -263,6 +300,12 @@ const truePhi = (physical, mental, enjoyment) =>
  * and dropping it here made α̂ come back +13% with noise-free data, because the
  * fit then had to raise α to explain a drain the generator produced with less
  * recovery than the model assumes.
+ *
+ * @param {number} c0
+ * @param {number} hours
+ * @param {number} demand
+ * @param {number} alpha
+ * @param {number} recoveryRate
  */
 function reservoirAfter(c0, hours, demand, alpha, recoveryRate) {
 	const gate = 1 - (1 - MICRO_RECOVERY_FRACTION) * demand;
@@ -277,11 +320,17 @@ function reservoirAfter(c0, hours, demand, alpha, recoveryRate) {
 	return equilibrium + (c0 - equilibrium) * Math.exp(-total * hours);
 }
 
-/** Pure rest: demand 0, so the level relaxes toward 1 at r·multiplier. */
+/** Pure rest: demand 0, so the level relaxes toward 1 at r·multiplier.
+ *
+ * @param {number} c0
+ * @param {number} hours
+ * @param {number} recoveryRate */
 const reservoirAfterRest = (c0, hours, recoveryRate) =>
 	1 - (1 - c0) * Math.exp(-recoveryRate * REST_RECOVERY_MULTIPLIER * hours);
 
-/** A 0–10 drain rating from a reservoir level, with rating jitter. */
+/** A 0–10 drain rating from a reservoir level, with rating jitter.
+ *
+ * @param {number} level */
 const toRating = (level) =>
 	clamp(Math.round((1 - level) * 10 + gauss(TRUTH.drainNoisePoints)), 0, 10);
 
@@ -309,6 +358,9 @@ for (const date of dates) {
 	// Budget: weekday habit plus jitter, quantized to the quarter-hour the UI
 	// actually produces. Weekends are longer and more variable.
 	const budget = clamp(quarter(isWeekend ? between(1.5, 6) : between(1.5, 4.5)), 0.25, 12);
+	/** `frequency` is the catalogue's draw weight and is never read past this line.
+	 *
+	 *  @type {{ title: string; physical: number; mental: number; enjoyment: number }[]} */
 	const chosen = CATALOGUE.filter((entry) => chance(entry.frequency * (isWeekend ? 0.8 : 1)));
 
 	if (chance(0.25)) {

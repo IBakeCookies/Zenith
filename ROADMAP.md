@@ -468,7 +468,7 @@ instrument that would establish or kill its own number before any build.
     a property access. The same repair closed a second route to that early exit
     the item did not name: a stop whose only change is a **deletion** also
     emptied the list, and a deleted module is what breaks `check`.
-    `scripts/**/*.mjs` stays unchecked — M103.
+    `scripts/**/*.mjs` was left for M103, since closed.
 
 38. **`satietyScale`'s conditioning error on the λ₀ fit, priced beside V_T's** —
     κ = `satietyScale`·O_ref is a bare 1 that the shipped λ₀ fit and the live
@@ -1060,26 +1060,30 @@ cited once it exists and none of these has been chosen yet.
   wrong on its last clause**: the instrument inputs it named are raw
   `<input type="number">`, not `NumberInput`, so the wrapper ring cannot reach
   them — see M102.
-- **M102 — the instrument fields carry their own suppressed-outline recipe.**
-  The five `type="number"` inputs in `rest-log-form.svelte` and
-  `RATING_INPUT_CLASS` in `measurement-prompt.ts` are raw inputs whose whole
-  focus indicator is `outline-none focus:border-mind/60` (and `body`), i.e. a
-  1px border colour change — the same shape M101 fixed, on a different control,
-  which is why M101's own wrapper fix does not touch them. Split out of M101 on
-  2026-09-06 when the fix was scoped against the code. Raised, not built.
-- **M103 — the `.mjs` half of `scripts/` is still in no type-check program.**
-  `tsconfig.tooling.json` (item 37) covers `scripts/**/*.ts` and `e2e/**/*.ts`
-  and sets `checkJs: false`, so all thirteen `.mjs` files stay unchecked: the six
-  doc scripts `npm run lint` runs, the four contrast instruments, the two
-  screenshot scripts, and `generate-fixture.mjs`. Turning `checkJs` on over them
-  prints 160 errors across 11 of the 13 — 84 implicit-`any` parameters, 39
-  `possibly null`, the rest a long tail. 85 of the 160 are in the four
-  instruments that drive a browser, where untyped `page.evaluate` globals are a
-  typing question before they are a defect question; the other **75 are in
-  pure-Node scripts**, and the single largest source is `generate-fixture.mjs`
-  at 34, which opens no browser at all. That is the half worth reading first.
-  None of the 160 was read as live; nobody has looked. Raised 2026-09-06, not
-  built.
+- **M102 — the instrument fields answered a keyboard focus in a blue no theme
+  declares — fixed 2026-09-06,
+  [`the-ring-the-plugin-painted-blue`](docs/features/the-ring-the-plugin-painted-blue.md).**
+  Nine raw fields across the 🪫, ☕ and ⚡ editors take
+  `focus:ring-1 focus:ring-<channel>/60`, which is `field-input`'s shape. **The
+  finding's own diagnosis was wrong**: it read the
+  `outline-none focus:border-mind/60` recipe as the whole indicator, and the
+  measured focused state
+  carries `@tailwindcss/forms`' hardcoded blue-600 ring, which `outline-none`
+  does not touch. The repair displaces that ring rather than adding a first one.
+  Reported and not fixed: the ☕ length field's inline class is a second
+  definition of `MEASUREMENT_MINUTES_CLASS` modulo its tint, with no drift
+  test.
+- **M103 — the `.mjs` half of `scripts/` was in no type-check program — fixed
+  2026-09-06,
+  [`the-scripts-nothing-type-checked`](docs/features/the-scripts-nothing-type-checked.md).**
+  `tsconfig.tooling.json` drops `checkJs: false` and takes `scripts/**/*.mjs`;
+  all 160 errors across 11 of the 13 files are closed. **None was live** — the
+  question the finding left open. Two of them describe a reachable crash path,
+  `boundingBox()` returning null in the two storybook instruments, and those two
+  now throw naming the theme and the element; every other null is on a node
+  created three lines above and takes a cast, not a branch. `ink-contrast.mjs`
+  prints byte-identical output across the change, which is what licenses moving
+  its `best` field inside `page.evaluate`.
 - **The funded-subset enumeration priced every subset it could not use —
   closed 2026-09-04,
   [`the-subsets-that-could-not-win`](docs/features/the-subsets-that-could-not-win.md).**

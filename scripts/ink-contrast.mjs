@@ -50,10 +50,13 @@ const results = await page.evaluate(
 		const cv = document.createElement('canvas');
 		cv.width = cv.height = 1;
 
-		const ctx = cv.getContext('2d', {
-			willReadFrequently: true,
-		});
+		const ctx = /** @type {CanvasRenderingContext2D} */ (
+			cv.getContext('2d', {
+				willReadFrequently: true,
+			})
+		);
 
+		/** @param {string} css */
 		const srgb = (css) => {
 			ctx.fillStyle = '#000';
 			ctx.fillRect(0, 0, 1, 1);
@@ -63,6 +66,7 @@ const results = await page.evaluate(
 			return [...ctx.getImageData(0, 0, 1, 1).data].slice(0, 3);
 		};
 
+		/** @param {number[]} rgb */
 		const lum = (rgb) => {
 			const [r, g, b] = rgb.map((v) => {
 				const c = v / 255;
@@ -73,6 +77,10 @@ const results = await page.evaluate(
 			return 0.2126 * r + 0.7152 * g + 0.0722 * b;
 		};
 
+		/**
+		 * @param {number[]} a
+		 * @param {number[]} b
+		 */
 		const ratio = (a, b) => {
 			const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p);
 
@@ -101,24 +109,30 @@ const results = await page.evaluate(
 			document.documentElement.className = t.css.join(' ');
 
 			for (const s of STATES) {
-				const cs = getComputedStyle(document.getElementById(`ink-${s}`));
+				const cs = getComputedStyle(
+					/** @type {HTMLElement} */ (document.getElementById(`ink-${s}`)),
+				);
+
 				const ink = cs.color;
 				const fill = cs.backgroundColor;
-				const inkL = +ink.match(/oklch\(([\d.]+)/)?.[1];
+				const inkL = Number(ink.match(/oklch\(([\d.]+)/)?.[1]);
 				const hue = ink.match(/oklch\([\d.]+ [\d.]+ ([\d.]+)/)?.[1] ?? 0;
+				// both poles scored on the same fill, so the threshold can be
+				// re-derived from measurements rather than assumed
+				const dark = +ratio(srgb(`oklch(${DARK} 0.02 ${hue})`), srgb(fill)).toFixed(2);
+				const light = +ratio(srgb(`oklch(${LIGHT} 0.02 ${hue})`), srgb(fill)).toFixed(2);
 
 				out.push({
 					theme: t.name,
 					state: s,
 					fill,
 					ink,
-					fillL: +fill.match(/oklch\(([\d.]+)/)?.[1],
+					fillL: Number(fill.match(/oklch\(([\d.]+)/)?.[1]),
 					atPole: Math.abs(inkL - DARK) < 0.01 || Math.abs(inkL - LIGHT) < 0.01,
 					ratio: +ratio(srgb(ink), srgb(fill)).toFixed(2),
-					// both poles scored on the same fill, so the threshold can be
-					// re-derived from measurements rather than assumed
-					dark: +ratio(srgb(`oklch(${DARK} 0.02 ${hue})`), srgb(fill)).toFixed(2),
-					light: +ratio(srgb(`oklch(${LIGHT} 0.02 ${hue})`), srgb(fill)).toFixed(2),
+					dark,
+					light,
+					best: Math.max(dark, light),
 				});
 			}
 		}
@@ -138,7 +152,6 @@ const results = await page.evaluate(
 
 await browser.close();
 
-for (const r of results) r.best = Math.max(r.dark, r.light);
 console.log(`${themes.length} themes × ${STATES.length} fills = ${results.length} pairs`);
 
 const unresolved = results.filter((r) => !r.atPole);
