@@ -19,13 +19,29 @@
  *                         against the plan that knew the truth
  *
  * Why arm D exists. A and B score with `classicOverlap` (`plan-audit.ts`), and
- * on this fixture that instrument cannot rank a pool: at three of A's four
- * evaluable points it puts the KNOWN-CORRECT pool at or below declared 4/6
- * (Δ +0.0000, −0.0035, −0.0024, +0.0116), because a pool cannot bind on a day
+ * on this fixture that instrument cannot rank a pool: at seed 42, at three of
+ * A's four evaluable points it puts the KNOWN-CORRECT pool at or below declared
+ * 4/6 (Δ +0.0000, −0.0035, −0.0024, +0.0116), because a pool cannot bind on a day
  * shorter than itself and 4/6 binds on 9–16 of 60 days. Arm D is not exposed to
  * that failure — planning under the truth is the reference every other pool is
  * measured against — and it does not need the DECLARED pool to bind, since a
  * pool that is too generous is priced by the hours the true day could not hold.
+ *
+ * What arm A's seed sweep found (run 2026-09-06, seeds 42–53, today's
+ * constants): every one of those four-decimal Δ is smaller than the spread of
+ * its own cell across seeds, so none of them carries a sign. Per point, the
+ * range of the truth−4/6 Δ against the seed-42 cell the sentence above quotes:
+ * +0.0000 over a range of 0.0000 (both pools are inert — truth 4.00/5.97 h IS
+ * very nearly 4/6, and it binds on 9 of 60 days); −0.0035 over 0.0044, positive
+ * at 2 of 12 seeds; −0.0024 over 0.0129, positive at 6 of 12; +0.0116 over
+ * 0.0403, ranging −0.0170 to +0.0232 and positive at 9 of 12. The derived−4/6
+ * Δ moves further still — at α 0.7/0.45 it runs −0.0117 to +0.0108 (positive at
+ * 5 of 12), and the +0.0341 headline at α 0.95/0.6 runs −0.0283 to +0.0389
+ * (positive at 8 of 12). So "the control ranks the correct pool below 4/6" is
+ * one draw of a quantity centred near zero, not a property of the instrument,
+ * and the one favourable point is not a favourable point either. The sweep
+ * prints only seed 42's blocks, so it says nothing about how the binding counts
+ * beside them move; what it decides is the Δ, and the Δ decides nothing.
  *
  * What arm D found (run 2026-09-03, seed 42, same four α pairs): planning under
  * 4/6 loses 1.757% of the objective on average against planning under the
@@ -110,12 +126,21 @@ interface Fixture {
 	}[];
 }
 
-function generate(flags: string[]): Fixture {
+function generate(flags: string[], seed = 42): Fixture {
 	const out = join(mkdtempSync(join(tmpdir(), 'capacity-')), 'fixture.json');
 
 	execFileSync(
 		'node',
-		['scripts/generate-fixture.mjs', '--seed', '42', '--days', '365', '--out', out, ...flags],
+		[
+			'scripts/generate-fixture.mjs',
+			'--seed',
+			String(seed),
+			'--days',
+			'365',
+			'--out',
+			out,
+			...flags,
+		],
 		{
 			stdio: 'ignore',
 		},
@@ -196,6 +221,8 @@ function overlapUnder(fixture: Fixture, params: EnergyParams, pools: CapacityPoo
 }
 
 const hours = (value: number | null) => (value === null ? '  none' : value.toFixed(2).padStart(6));
+/** A Δ, always carrying its sign so a sweep's rows line up. */
+const signed = (value: number) => (value >= 0 ? '+' : '') + value.toFixed(4);
 
 /**
  * Scored days on which a pool could bind AT ALL: `Σ wᵢ·tᵢ ≤ Σ tᵢ ≤ budget`, so
@@ -350,7 +377,7 @@ function report(
 	truth: CapacityPools,
 	fixture: Fixture,
 	withTruthScoring = false,
-): string[] {
+): { lines: string[]; derivedDelta: number | null; truthDelta: number | null } {
 	const { params, pools } = derive(fixture);
 
 	const lines = [
@@ -363,7 +390,11 @@ function report(
 	if (pools === null) {
 		lines.push('    → no derived pool: α̂ below the §8.13 gate');
 
-		return lines;
+		return {
+			lines,
+			derivedDelta: null,
+			truthDelta: null,
+		};
 	}
 
 	const scored = auditDays(fixture, pools);
@@ -375,23 +406,27 @@ function report(
 		`    |4/6−truth|      cog ${gap(DEFAULT_CAPACITY_POOLS.cognitiveHours, truth.cognitiveHours)}` +
 			`  phys ${gap(DEFAULT_CAPACITY_POOLS.physicalHours, truth.physicalHours)}`,
 		`    classicOverlap   derived ${derivedOverlap.toFixed(4)}  vs 4/6 ${declaredOverlap.toFixed(4)}` +
-			`   (Δ ${(derivedOverlap - declaredOverlap >= 0 ? '+' : '') + (derivedOverlap - declaredOverlap).toFixed(4)})`,
+			`   (Δ ${signed(derivedOverlap - declaredOverlap)})`,
 		`    pool can bind on   derived ${bindableDays(scored, pools)}/${scored.length} days` +
 			`   4/6 ${bindableDays(scored, DEFAULT_CAPACITY_POOLS)}/${scored.length}` +
 			`${withTruthScoring ? `   truth ${bindableDays(scored, truth)}/${scored.length}` : ''}` +
 			`   (${windowSummary(fixture)})`,
 	);
 
-	if (withTruthScoring) {
-		const truthOverlap = overlapUnder(fixture, params, truth);
+	const truthOverlap = withTruthScoring ? overlapUnder(fixture, params, truth) : null;
 
+	if (truthOverlap !== null) {
 		lines.push(
 			`    classicOverlap   truth ${truthOverlap.toFixed(4)}` +
-				`   (vs 4/6 Δ ${(truthOverlap - declaredOverlap >= 0 ? '+' : '') + (truthOverlap - declaredOverlap).toFixed(4)})`,
+				`   (vs 4/6 Δ ${signed(truthOverlap - declaredOverlap)})`,
 		);
 	}
 
-	return lines;
+	return {
+		lines,
+		derivedDelta: derivedOverlap - declaredOverlap,
+		truthDelta: truthOverlap === null ? null : truthOverlap - declaredOverlap,
+	};
 }
 
 /**
@@ -427,6 +462,25 @@ const truePoolsOf = (
 			};
 };
 
+/**
+ * Arm A's seed sweep. A four-decimal Δ read on ONE fixture is a reading about
+ * that fixture until something says how far the next one moves; twelve seeds is
+ * what separates a margin from a coincidence at the ~0.003 the Δ table turns
+ * on. `SEEDS[0]` stays 42, so the blocks printed above the spread are the same
+ * run every earlier quote was read from.
+ */
+const SEEDS = [42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53];
+
+/** One swept Δ, as the spread that decides whether its sign means anything. */
+const spreadRow = (label: string, deltas: number[]) =>
+	deltas.length === 0
+		? `    ${label}   no pool at any seed`
+		: `    ${label}   n ${String(deltas.length).padStart(2)}` +
+			`   min ${signed(Math.min(...deltas))}   max ${signed(Math.max(...deltas))}` +
+			`   range ${(Math.max(...deltas) - Math.min(...deltas)).toFixed(4)}` +
+			`   mean ${signed(mean(deltas))}` +
+			`   Δ > 0 at ${deltas.filter((delta) => delta > 0).length}/${deltas.length} seeds`;
+
 /** The α pairs arms A and D generate self-consistent days from. */
 const SELF_CONSISTENT_GRID = [
 	[0.3, 0.25],
@@ -438,37 +492,71 @@ const SELF_CONSISTENT_GRID = [
 
 describe('capacity from the fitted drain rate (MATH.md §8.13)', () => {
 	it('A — self-consistent: the true pool IS the map of the true α', () => {
-		const blocks = SELF_CONSISTENT_GRID.map(([alphaCog, alphaPhys]) => {
+		const blocks: string[][] = [];
+		const spread: string[] = [];
+
+		for (const [alphaCog, alphaPhys] of SELF_CONSISTENT_GRID) {
 			const label = `α true  cog ${alphaCog}  phys ${alphaPhys}`;
 			const truth = truePoolsOf(alphaCog, alphaPhys, GENERATOR_RECOVERY);
 
 			if (truth === null) {
-				return [
+				blocks.push([
 					`  ${label}`,
 					'    → skipped: inside the §8.13 pole margin at the generator’s own recovery,',
 					'      so the map defines no true pool for this α to generate a day from',
-				];
+				]);
+
+				spread.push(`  ${label}   → skipped: inside the §8.13 pole margin`, '');
+				continue;
 			}
 
-			const fixture = generate([
-				'--alpha-cog',
-				String(alphaCog),
-				'--alpha-phys',
-				String(alphaPhys),
-				'--true-pools',
-				`${truth.cognitiveHours},${truth.physicalHours}`,
-			]);
+			const derivedDeltas: number[] = [];
+			const truthDeltas: number[] = [];
 
-			return report(label, truth, fixture, true);
-		});
+			for (const seed of SEEDS) {
+				const point = report(
+					label,
+					truth,
+					generate(
+						[
+							'--alpha-cog',
+							String(alphaCog),
+							'--alpha-phys',
+							String(alphaPhys),
+							'--true-pools',
+							`${truth.cognitiveHours},${truth.physicalHours}`,
+						],
+						seed,
+					),
+					true,
+				);
+
+				if (seed === SEEDS[0]) blocks.push(point.lines);
+
+				if (point.derivedDelta !== null) derivedDeltas.push(point.derivedDelta);
+
+				if (point.truthDelta !== null) truthDeltas.push(point.truthDelta);
+			}
+
+			spread.push(
+				`  ${label}`,
+				spreadRow('derived − 4/6', derivedDeltas),
+				spreadRow('truth   − 4/6', truthDeltas),
+				'',
+			);
+		}
 
 		console.log(
 			[
 				'',
 				"ARM A — self-consistent (true pools = §8.13 map of the true α, at the GENERATOR's recovery)",
-				`last ${DAY_CAP} audit-eligible days per point`,
+				`last ${DAY_CAP} audit-eligible days per point, seed ${SEEDS[0]}`,
 				'',
 				...blocks.flatMap((block) => [...block, '']),
+				`  SEED SPREAD of the classicOverlap Δ over seeds ${SEEDS[0]}–${SEEDS[SEEDS.length - 1]}`,
+				'  (n counts the seeds at which the pool being scored exists at all)',
+				'',
+				...spread,
 			].join('\n'),
 		);
 	});
@@ -511,7 +599,7 @@ describe('capacity from the fitted drain rate (MATH.md §8.13)', () => {
 							physicalHours: physical,
 						},
 						fixture,
-					),
+					).lines,
 				);
 			}
 		}

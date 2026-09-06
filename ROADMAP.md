@@ -235,19 +235,29 @@ other.**
     the cost of the map being WRONG about a user remains unmeasured. That is the
     remaining blocker, and it is a question about the floor's parameterization
     rather than about the reading.
-    **A second reason not to re-parameterize the gate yet, raised 2026-09-04 and
-    not yet run:** the Δ table that closed the first finding may not survive its
-    own fixture. A perturbed generator is reported to flip the sign of the
-    derived-vs-4/6 Δ at α 0.7/0.45 and to collapse the "+0.0116, derived beats
-    the truth itself" headline to a ~0.0035 margin — margins of ~0.003 moving by
-    ~0.006–0.024 under a seed-scale change. That reading came from an
-    UNCOMMITTED run and item 29's rule applies, so it is a lead: the first step
-    is a seed sweep of arm A at today's constants, reporting the spread of the
-    `classicOverlap` Δ per grid point against the margins
+    **A second reason not to re-parameterize the gate yet — the 2026-09-04 lead
+    was RUN on 2026-09-06, and the spread swamps the margins** —
+    [docs/features/the-margins-that-were-one-draw.md](docs/features/the-margins-that-were-one-draw.md).
+    `scripts/capacity-from-drain.probe.ts` takes a seed now (default 42, so
+    every earlier quote reproduces) and arm A sweeps seeds 42–53. Every
+    four-decimal Δ that closed the first finding is smaller than the spread of
+    its own cell: truth−4/6 −0.0035 over a range of 0.0044, −0.0024 over 0.0129,
+    and the "+0.0116, derived beats the truth itself" headline over 0.0403,
+    running −0.0170 to +0.0232 and positive at only 9 of 12 seeds. The
+    derived-vs-4/6 Δ at α 0.7/0.45 runs −0.0117 to +0.0108 and flips sign at 5
+    of 12 — so both halves of the lead reproduce under a committed run, by a
+    seed sweep rather than the lead's own perturbed generator. Only the α
+    0.4/0.3 cell is stable (+0.0000 at every seed), and it is stable because the
+    truth 4.00/5.97 h IS declared 4/6 to two decimals. The gate stays **void,
+    not failed**, with a stronger reason: three of the four cells that argued it
+    would have argued the opposite on another seed. Two consequences. First,
     [the-pool-the-drain-logs-might-know](docs/features/the-pool-the-drain-logs-might-know.md)
-    quotes. If the spread swamps them, that spec's kill/keep reading needs a
-    correction independent of this item, and no four-decimal table gets
-    re-quoted until it has one.
+    needs a correction independent of this item — it is a frozen dated record,
+    so its repair is its own change — and **no four-decimal cell from that table
+    may be re-quoted as a result until it has one**, only ever with the spread
+    that decides it beside it, as above. Second, arm D was not swept, so whether
+    its 1.757% / 0.970% is one draw is the obvious next measurement and was not
+    bought.
 
 Item 16 for the other two declared constraints, and the slot item 18 prefills
 into:
