@@ -10,9 +10,9 @@
    never prompt at all, while the main page prompted on every row. Each row now holds
    one editor PER MEASUREMENT and stacks them with that row's ✎, so nothing but this
    row's own open prompt can hold its own question back. The two calls differ only in
-   `measured`, which is the real difference between the quantities: ⚡ is one number
-   per day, 🪫 one per session. A predicate is also the only way this gets a unit
-   test; the rest of it is a route, where nothing can reach it. */
+   what `measured` reads — ⚡ the day's one number, 🪫 a log on the day being viewed.
+   A predicate is also the only way this gets a unit test; the rest of it is a route,
+   where nothing can reach it. */
 
 import type { Persisted, DrainObservationRecord } from '$lib/business/type';
 
@@ -25,9 +25,11 @@ export type CompletionPromptAction = 'open' | 'withdraw' | 'none';
 export function completionPromptAction(input: {
 	/** true when the click completes the task, false when it un-completes one */
 	finishing: boolean;
-	/** the task already carries the measurement being asked for — false for a
-	 *  per-SESSION measurement like 🪫 drain, where finishing a task ends a
-	 *  session an earlier rating says nothing about */
+	/** the task already carries the measurement being asked for. 🪫 is per session, so an
+	 *  earlier rating does not describe the session just ended — but a rated task was
+	 *  rated the way the timer is used (stop the clock, 🪫 with the minutes it counted,
+	 *  tick), where a second editor opens EMPTY, the reading already spent. A real second
+	 *  session logs from the row's 🪫 button, which a completed task keeps. */
 	measured: boolean;
 	/** this prompt's own editor is already open on the row being toggled, where
 	 *  opening again would reseed the draft. Only that one: the ✎ editor stacks

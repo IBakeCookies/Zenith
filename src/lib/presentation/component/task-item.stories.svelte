@@ -482,6 +482,7 @@
 
 		await expect(args.ontoggle).toHaveBeenCalledExactlyOnceWith(1);
 		await expect(args.onflowopen).toHaveBeenCalledExactlyOnceWith(1, 'completion');
+		await expect(args.ondrainopen).toHaveBeenCalledExactlyOnceWith(1, 'completion');
 		await expect(checkbox).toHaveFocus();
 	}}
 />
@@ -850,13 +851,12 @@
 />
 
 <Story
-	name="Completion asks both"
+	name="Completion holds the drain prompt back on a rated task"
 	args={{
 		drainLogs: [drainLog()],
 	}}
 	play={async ({ args, canvas, userEvent }) => {
-		// The tick asks for both: 🪫 is one per session, so a rating the day already holds does not
-		// silence its prompt the way ⚡ silences its own
+		// A rated task was rated from the stopped timer, so a second editor would open empty.
 		await userEvent.click(
 			canvas.getByRole('checkbox', {
 				name: 'Mark write the calibration section complete',
@@ -864,7 +864,15 @@
 		);
 
 		await expect(args.onflowopen).toHaveBeenCalledExactlyOnceWith(1, 'completion');
-		await expect(args.ondrainopen).toHaveBeenCalledExactlyOnceWith(1, 'completion');
+		await expect(args.ondrainopen).not.toHaveBeenCalled();
+
+		await userEvent.click(
+			canvas.getByRole('button', {
+				name: 'Log end-of-session drain',
+			}),
+		);
+
+		await expect(args.ondrainopen).toHaveBeenCalledExactlyOnceWith(1, 'button');
 	}}
 />
 
