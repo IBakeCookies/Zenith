@@ -11,6 +11,10 @@
 	--glass-height: calc(var(--glass-width) * 1.45);
 	--glass-right: clamp(1rem, 6vw, 7rem);
 	--glass-bottom: clamp(2rem, 6vh, 5rem);
+	/* each bulb's share of the glass — the two are equal, so the waist sits at
+	   what is left over and is derived rather than restated */
+	--bulb: 0.48;
+	--cap: 0.55rem;
 	--sand: oklch(0.7 0.11 72 / 0.7);
 	--frame: oklch(0.4 0.05 195 / 0.45);
 
@@ -33,10 +37,10 @@
 	   the level falls — the gradient stop is the surface */
 	.theme-helper-2 {
 		position: absolute;
-		bottom: calc(var(--glass-bottom) + var(--glass-height) * 0.52);
+		bottom: calc(var(--glass-bottom) + var(--glass-height) * (1 - var(--bulb)));
 		right: var(--glass-right);
 		width: var(--glass-width);
-		height: calc(var(--glass-height) * 0.48);
+		height: calc(var(--glass-height) * var(--bulb));
 		clip-path: polygon(4% 0, 96% 0, 55% 100%, 45% 100%);
 		background: linear-gradient(
 			to bottom,
@@ -54,7 +58,7 @@
 		bottom: var(--glass-bottom);
 		right: var(--glass-right);
 		width: var(--glass-width);
-		height: calc(var(--glass-height) * 0.48);
+		height: calc(var(--glass-height) * var(--bulb));
 		clip-path: polygon(45% 0, 55% 0, 96% 100%, 4% 100%);
 		background:
 			linear-gradient(var(--sand), var(--sand)) top center / 0.18rem
@@ -79,16 +83,16 @@
 		position: absolute;
 		left: -4%;
 		right: -4%;
-		height: 0.55rem;
+		height: var(--cap);
 		border-radius: 0.3rem;
 		background: var(--frame);
 	}
 
 	.theme-helper-4::before {
-		top: -0.55rem;
+		top: calc(var(--cap) * -1);
 	}
 
 	.theme-helper-4::after {
-		bottom: -0.55rem;
+		bottom: calc(var(--cap) * -1);
 	}
 }

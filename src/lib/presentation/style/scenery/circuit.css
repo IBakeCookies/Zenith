@@ -10,6 +10,10 @@
 	/* 240 (cold blue) → 30 (ember) */
 	--trace-hue: calc(240 - var(--heat) * 210);
 	--trace-line: oklch(0.72 calc(0.05 + var(--heat) * 0.1) var(--trace-hue));
+	/* the coarse trace pitch. The layer's tile, both its line gradients and the
+	   half-tile shift that lands its dot on the crossing all read this one
+	   number, so a wider board stays a board. */
+	--trace-grid: 9rem;
 
 	/* the fine etch grid over the whole board */
 	.theme-helper-1 {
@@ -29,14 +33,14 @@
 		opacity: calc(0.28 + var(--heat) * 0.42);
 		background-image:
 			radial-gradient(circle 0.16rem at 50% 50%, var(--trace-line) 98%, transparent),
-			repeating-linear-gradient(0deg, var(--trace-line) 0 2px, transparent 2px 9rem),
-			repeating-linear-gradient(90deg, var(--trace-line) 0 2px, transparent 2px 9rem);
+			repeating-linear-gradient(0deg, var(--trace-line) 0 2px, transparent 2px var(--trace-grid)),
+			repeating-linear-gradient(90deg, var(--trace-line) 0 2px, transparent 2px var(--trace-grid));
 		background-position:
-			-4.5rem -4.5rem,
+			calc(var(--trace-grid) / -2) calc(var(--trace-grid) / -2),
 			0 0,
 			0 0;
 		background-size:
-			9rem 9rem,
+			var(--trace-grid) var(--trace-grid),
 			auto,
 			auto;
 		/* keep the board quiet behind the content column */

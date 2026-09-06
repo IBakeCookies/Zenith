@@ -27,7 +27,7 @@ import {
 	migrateFromLocalStorageToIndexedDB,
 	migrateEnergyParamsFromLocalStorage,
 } from '$lib/data/migration/local-storage-migration';
-import { addDays, daysBetween, toISODate } from '$lib/business/utils/date';
+import { addDays, BEFORE_ANY_DATE, daysBetween, toISODate } from '$lib/business/utils/date';
 import {
 	calculateFlowStateTime,
 	DEFAULT_CAPACITY_POOLS,
@@ -72,9 +72,6 @@ import {
 	sanitizeSessions,
 	type FitSnapshot,
 } from '$lib/business/model/persisted';
-
-/** Sorts below every ISO date, so it is the open lower bound of a range read. */
-const BEFORE_ANY_DATE = '0000-01-01';
 
 /**
  * Run once per page that touches persistence: migrates any legacy

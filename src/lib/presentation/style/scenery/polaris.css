@@ -22,15 +22,19 @@
 	--pole-y: 50%;
 
 	/* rotating field stars: a square sheet big enough that its corners never
-	   leave the viewport at any angle (pole-to-corner < 1.42 * vmax) */
+	   leave the viewport at any angle (pole-to-corner < 1.42 * vmax). The
+	   negative margin has to be exactly half of it — that is what centres the
+	   sheet on the pole it turns about — so it is derived and not restated. */
+	--sheet: 290vmax;
+
 	.theme-helper-1,
 	.theme-helper-2 {
 		position: absolute;
 		left: var(--pole-x);
 		top: var(--pole-y);
-		width: 290vmax;
-		height: 290vmax;
-		margin: -145vmax;
+		width: var(--sheet);
+		height: var(--sheet);
+		margin: calc(var(--sheet) / -2);
 		transform: rotate(calc(var(--polaris-angle, 0) * 1deg));
 	}
 

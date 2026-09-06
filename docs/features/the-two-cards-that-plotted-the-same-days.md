@@ -1,6 +1,6 @@
 # The two cards that plotted the same days
 
-**Kind:** feature · **Status:** planning · **Roadmap:** none
+**Kind:** feature · **Status:** landed 2026-09-07 · **Roadmap:** none
 
 Frozen at land: this file says what was decided on the date it carries, never
 how the code works today — that is MATH.md and the area `AGENTS.md`.
@@ -9,10 +9,9 @@ how the code works today — that is MATH.md and the area `AGENTS.md`.
 
 `/analytics` draws the same daily completion rate twice: once as bars on
 **Completion rate**, once as a dashed reference line on **Yield and
-completion**. After this, one card holds both readings — completion rate as
-bars, Yield Index as a line on the same 0–100 axis — so the user can see
-whether a day's yield tracked what they finished without carrying a number
-between two cards.
+completion**. After this, one card holds both readings — both as lines on the
+same 0–100 axis — so the user can see whether a day's yield tracked what they
+finished without carrying a number between two cards.
 
 ## Scenarios
 
@@ -47,9 +46,9 @@ between two cards.
 - **Then** the yield line is still drawn (its path is present, not only the
   legend)
 
-### Scenario — a bar chart slot with no completed task draws no yield point
+### Scenario — a slot with no completed task draws no yield point
 
-`src/lib/presentation/component/completion-bar-chart.stories.svelte` (`play`)
+`src/lib/presentation/component/completion-yield-chart.stories.svelte` (`play`)
 
 - **Given** points whose middle slot has `line: null` and a non-null bar value
 - **When** the story renders
@@ -57,7 +56,7 @@ between two cards.
 
 ### Scenario — a lone recorded slot still draws its yield reading
 
-`src/lib/presentation/component/completion-bar-chart.stories.svelte` (`play`)
+`src/lib/presentation/component/completion-yield-chart.stories.svelte` (`play`)
 
 - **Given** points where exactly one slot has a non-null `line`
 - **When** the story renders
@@ -109,8 +108,8 @@ between two cards.
   `ana_completion_rate` card and the `ana_yield_trend` card), and the loading
   skeleton's per-card body list, which loses one entry
 - `src/lib/presentation/component/completion-bar-chart.svelte` — the surviving
-  chart: fixed 800×180 viewBox, `yTicks`, the 2px zero-stub, the full-slot hover
-  rect
+  chart (renamed `completion-yield-chart.svelte` at land): fixed 800×180
+  viewBox, `yTicks`, the full-slot hover rect
 - `src/lib/presentation/component/metric-trend-chart.svelte` — `runsOf`, the
   gap-splitting the line needs, and the legend markup (including the two-segment
   dashed swatch) to lift from
@@ -143,6 +142,23 @@ range carries a Yield reading` and `the range toggle reslices the stats` all
   they already build the slot. Rejected: a second `line: (number|null)[]` prop
   beside `points`, because two arrays that must stay the same length and order
   is exactly the desync `completion-chart-points.ts` was extracted to prevent.
+- **Both readings are lines, not bars plus a line — amended after the first
+  build.** The Goal above is a TRACKING read, and a tracking comparison is cheap
+  only when both series carry the same mark; a dot against a bar top is work.
+  This file first kept the bars and said nothing about the mark, which is the
+  gap that let a card be built against its own stated purpose. So completion
+  rate is a dashed `brand` line beside the solid `brand-counter` yield line —
+  the pairing the deleted card had already settled, two channels because several
+  themes give the two hues the same lightness. The bar affordances that were
+  worth keeping are kept: the full-slot hover rects, which carry the only
+  tasks-done reading on the page, and the monthly year slots. The 2px zero-stub
+  goes, because a line already draws a recorded 0 on the baseline and an
+  unrecorded day as a gap. Rejected: deleting the bar card and keeping the old
+  line card, which was the smaller diff but drops the tooltip and lays the year
+  out as 365 daily slots instead of 13 monthly ones.
+- **The component is renamed `completion-yield-chart.svelte`.** It draws no bars
+  after this, so `completion-bar-chart` is the same kind of quiet lie as
+  `MonthlyCompletion` below.
 - **The overlay is a required prop, not an optional one.** There is one caller
   and it always draws both series (AGENTS.md §0 — shape the interface at the
   first caller, no branch for a caller that does not exist). A bars-only story

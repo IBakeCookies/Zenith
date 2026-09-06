@@ -1,6 +1,6 @@
 <script module lang="ts">
 	import { defineMeta } from '@storybook/addon-svelte-csf';
-	import { expect, within } from 'storybook/test';
+	import { expect, fn, userEvent, within } from 'storybook/test';
 	import TagHoursCard from '$lib/presentation/component/tag-hours-card.svelte';
 	import { tagHours } from '$lib/business/model/tags';
 	import type { DailySession, DrainObservationRecord } from '$lib/business/type';
@@ -12,6 +12,11 @@
 		args: {
 			hasFailed: false,
 			locale: 'en-US',
+			onrename: () => {},
+			ondelete: fn(),
+			// The card asks its caller, which is `SessionStore.willMergeTag`; here
+			// the two rows the fixture below carries are the whole vocabulary.
+			willMerge: (from: string, draft: string) => draft !== from && draft === 'school',
 		},
 	});
 
@@ -101,5 +106,80 @@
 	play={async ({ canvas }) => {
 		// A range with no 🪫 sessions says so, rather than showing an empty box
 		await expect(canvas.getByText('No hours logged in this range.')).toBeInTheDocument();
+	}}
+/>
+
+<Story
+	name="Renaming onto an existing tag"
+	args={{
+		breakdown: twoTags,
+	}}
+	play={async ({ canvas }) => {
+		// The merge warning is the only thing standing between a typo fix and two rows
+		// silently becoming one
+		await userEvent.click(
+			canvas.getByRole('button', {
+				name: 'Rename exercise',
+			}),
+		);
+
+		const field = canvas.getByLabelText('New tag name');
+
+		await userEvent.clear(field);
+		await userEvent.type(field, 'school');
+
+		await expect(canvas.getByText('Saving merges these two tags into one.')).toBeInTheDocument();
+	}}
+/>
+
+<Story
+	name="Deleting asks first"
+	args={{
+		breakdown: twoTags,
+	}}
+	play={async ({ canvas, args }) => {
+		// A tag comes off every day it was ever put on, and nothing hands it back —
+		// so the first press only arms
+		await userEvent.click(
+			canvas.getByRole('button', {
+				name: 'Delete exercise',
+			}),
+		);
+
+		await expect(args.ondelete).not.toHaveBeenCalled();
+
+		await expect(
+			canvas.getByRole('button', {
+				name: 'Cancel',
+			}),
+		).toBeInTheDocument();
+
+		await userEvent.click(
+			canvas.getByRole('button', {
+				name: 'Delete exercise everywhere',
+			}),
+		);
+
+		await expect(args.ondelete).toHaveBeenCalledWith('exercise');
+	}}
+/>
+
+<Story
+	name="The pencil closes what it opened"
+	args={{
+		breakdown: twoTags,
+	}}
+	play={async ({ canvas }) => {
+		// The log rows' ✎ toggles; a second press here left the editor open, so the
+		// only way out was the ✕ beside it
+		const pencil = canvas.getByRole('button', {
+			name: 'Rename exercise',
+		});
+
+		await userEvent.click(pencil);
+		await expect(canvas.getByLabelText('New tag name')).toBeInTheDocument();
+
+		await userEvent.click(pencil);
+		await expect(canvas.queryByLabelText('New tag name')).not.toBeInTheDocument();
 	}}
 />

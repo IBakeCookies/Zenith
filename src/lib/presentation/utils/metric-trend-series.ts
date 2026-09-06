@@ -5,12 +5,12 @@
    reading as a plunge to zero.
 
    Colours are utility classes, not raw `var()` — STYLE.md's normal path, and
-   what `completion-bar-chart` and `energy-chart` already do. The locale tag is
+   what `completion-yield-chart` and `energy-chart` already do. The locale tag is
    a parameter for the reason `number-format.ts` gives. */
 
 import * as m from '$lib/paraglide/messages.js';
 import { addDays, fromISO } from '$lib/business/utils/date';
-import type { DaySummary, MetricTrendPoint } from '$lib/business/model/metric/history';
+import type { MetricTrendPoint } from '$lib/business/model/metric/history';
 
 export interface TrendSeries {
 	label: string;
@@ -27,14 +27,6 @@ export interface TrendSeries {
 
 export interface MetricTrendSeriesInput {
 	trend: MetricTrendPoint[];
-	rangeStart: string;
-	rangeDays: number;
-	/** BCP-47 tag — `getDateLocale()` at the call site */
-	locale: string;
-}
-
-export interface YieldTrendSeriesInput {
-	summaries: DaySummary[];
 	rangeStart: string;
 	rangeDays: number;
 	/** BCP-47 tag — `getDateLocale()` at the call site */
@@ -126,62 +118,6 @@ export function metricTrendSeries(input: MetricTrendSeriesInput): {
 					strokeClass: 'stroke-body',
 					fillClass: 'fill-body',
 					swatchClass: 'bg-body',
-				},
-				true,
-			),
-		],
-	};
-}
-
-/**
- * Yield Index per day, with Completion Rate beside it as the reference line —
- * a flat 100% yield on one task out of eight reads as a perfect day alone.
- *
- * Both readings are `DaySummary` fields and identical to the dashboard's: they
- * weight by `priorityScore`, which is intrinsic to the task (MATH.md §3), so
- * neither inherits `solveWithoutSwitchCost`'s allocation error.
- *
- * Yield breaks on a day that finished nothing — "of what you finished" has no
- * value then, which is the gate the dashboard's Yield tile carries — while
- * finishing none of the plan is a true Completion Rate of 0.
- */
-export function yieldTrendSeries(input: YieldTrendSeriesInput): {
-	labels: string[];
-	series: TrendSeries[];
-} {
-	const { slots, labels } = layOutRange(
-		input.summaries,
-		input.rangeStart,
-		input.rangeDays,
-		input.locale,
-	);
-
-	return {
-		labels,
-		series: [
-			line(
-				slots,
-				m.metric_yield_index(),
-				(day) => (day.completedTasks === 0 ? null : day.yieldIndex),
-				{
-					strokeClass: 'stroke-brand-counter',
-					fillClass: 'fill-brand-counter',
-					swatchClass: 'bg-brand-counter',
-				},
-			),
-			// The reference line is the theme's own `--brand`, and Yield above it the
-			// hue rotated off it (`--brand-counter`, base.css): the `--info`/`--brand`
-			// pairing this used to draw is the same blue on abyss, vectorframe,
-			// meridian and orbit. Dashed on top of that, like Physical Load above —
-			// two channels, so the pair survives a colour nobody can separate.
-			line(
-				slots,
-				m.metric_completion_rate(),
-				(day) => day.completionRate,
-				{
-					strokeClass: 'stroke-brand',
-					fillClass: 'fill-brand',
-					swatchClass: 'bg-brand',
 				},
 				true,
 			),

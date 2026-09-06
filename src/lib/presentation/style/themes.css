@@ -825,19 +825,24 @@
 	   The window itself is theme scenery (SVG tracery + god rays + jewel light
 	   pooling on the floor) — see scenery/cathedral.css.
 
-	   The window's top edge, and so the halo's centre one 10rem radius below it.
-	   Same reason as `eclipse`: the window is drawn in the scenery layer and its
-	   halo in this gradient, and a halo that does not follow the window is a
-	   bloom around nothing. Declared here because custom properties inherit
-	   downward only, so the shared one has to sit above both readers. */
+	   The window's top edge and its diameter, and so — half a diameter below
+	   that edge — the centre of both the window and the halo blooming around
+	   it. Same reason as `eclipse`: the window is drawn in the scenery layer
+	   and its halo in this gradient, and a halo that does not follow the window
+	   is a bloom around nothing. Declared here because custom properties
+	   inherit downward only, so the shared ones have to sit above every reader
+	   — the god rays in scenery/cathedral.css fall from that centre too.
+	   Move the window with the first, resize it with the second. */
 	--cathedral-window-y: -5rem;
+	--cathedral-window-size: 20rem;
+	--cathedral-window-mid: calc(var(--cathedral-window-y) + var(--cathedral-window-size) / 2);
 
 	--background-image:
 		/* candle glow rising from the nave floor */
 		radial-gradient(ellipse 90% 35% at 50% 112%, oklch(0.7 0.12 65 / 0.22), transparent 70%),
 		/* halo blooming over the stone around the window */
 		radial-gradient(
-				ellipse 55% 30% at 50% calc(var(--cathedral-window-y) + 10rem),
+				ellipse 55% 30% at 50% var(--cathedral-window-mid),
 				oklch(0.85 0.09 85 / 0.16),
 				transparent 70%
 			),
@@ -880,27 +885,42 @@
 	   a thin electric-blue atmosphere ring, first sunlight blooming on the limb.
 	   City lights, clouds, stars and aurora are theme scenery — see
 	   scenery/orbit.css. */
+	/* Where the planet is and how big it is. Both reach two files: this gradient
+	   paints the disc, and scenery/orbit.css hangs the surface haze, the star
+	   masks, the city lights, the satellite track and the aurora on the same
+	   limb. Custom properties inherit downward only, so the shared ones sit on
+	   the theme class, above both readers. --orbit-limb-y is the crest of the
+	   night side at centre-x, which is what every sunrise layer below is placed
+	   against — the sun rises out of the limb, not out of a viewport offset. */
+	--orbit-planet-y: 178vh;
+	--orbit-planet-r: 99vh;
+	--orbit-limb-y: calc(var(--orbit-planet-y) - var(--orbit-planet-r));
+
 	--background-image:
 		/* haze in front of the limb where the rising light scatters forward —
 		   the only sunrise layer painted over the planet, and it's faint */
-		radial-gradient(ellipse 16vh 5vh at 58% 77.5vh, oklch(0.95 0.09 75 / 0.2), transparent 70%),
+		radial-gradient(
+			ellipse 16vh 5vh at 58% calc(var(--orbit-limb-y) - 1.5vh),
+			oklch(0.95 0.09 75 / 0.2),
+			transparent 70%
+		),
 		/* the planet and its atmosphere ring. The night side is opaque, so it
 		   genuinely occludes the sun layers below; the ring's outer stops are
 		   semi-transparent, so the hidden sun shines through them. */
 		radial-gradient(
-				circle at 50% 178vh,
-				oklch(0.1 0.02 255) 0 99vh,
-				oklch(0.3 0.06 245) 100.2vh,
-				oklch(0.78 0.1 230 / 0.9) 100.9vh,
-				oklch(0.6 0.12 225 / 0.35) 102.5vh,
-				oklch(0.5 0.1 220 / 0.12) 105vh,
-				transparent 109vh
+				circle at 50% var(--orbit-planet-y),
+				oklch(0.1 0.02 255) 0 var(--orbit-planet-r),
+				oklch(0.3 0.06 245) calc(var(--orbit-planet-r) + 1.2vh),
+				oklch(0.78 0.1 230 / 0.9) calc(var(--orbit-planet-r) + 1.9vh),
+				oklch(0.6 0.12 225 / 0.35) calc(var(--orbit-planet-r) + 3.5vh),
+				oklch(0.5 0.1 220 / 0.12) calc(var(--orbit-planet-r) + 6vh),
+				transparent calc(var(--orbit-planet-r) + 10vh)
 			),
 		/* the sun itself, BEHIND the planet — center a couple vh below the
-		   limb (edge ≈78–80vh at x=58% on any aspect ratio), so the disc is
-		   swallowed and only its corona crests the edge through the ring */
+		   limb, so the disc is swallowed and only its corona crests the edge
+		   through the ring */
 		radial-gradient(
-				circle at 58% 81.5vh,
+				circle at 58% calc(var(--orbit-limb-y) + 2.5vh),
 				oklch(1 0.02 95) 0 2.5vh,
 				oklch(0.97 0.08 85 / 0.95) 5vh,
 				oklch(0.92 0.13 70 / 0.45) 10vh,
@@ -908,7 +928,11 @@
 				transparent 24vh
 			),
 		/* a single soft sun pillar rising from behind the arc */
-		radial-gradient(ellipse 5vh 15vh at 58% 69vh, oklch(0.96 0.08 82 / 0.1), transparent 70%),
+		radial-gradient(
+				ellipse 5vh 15vh at 58% calc(var(--orbit-limb-y) - 10vh),
+				oklch(0.96 0.08 82 / 0.1),
+				transparent 70%
+			),
 		/* deep space, faintly violet toward the horizon */
 		linear-gradient(oklch(0.07 0.012 275), oklch(0.11 0.03 265));
 
@@ -1314,9 +1338,10 @@
 	   bubblegum at 350 — and it is also what keeps this off sundial, whose brass
 	   this used to share to the degree.
 
-	   Translucent, against the usual verdict for a repeated motif. The grid is
-	   7rem and the blades 2.4rem, which is structure a 2rem blur softens but
-	   cannot average away, so a card over the field still shows which way the
+	   Translucent, against the usual verdict for a repeated motif. The grid and
+	   the blades (--vane-grid and --vane-len, scenery/weathervane.css) are
+	   structure a 2rem blur softens but cannot average away, so a card over the
+	   field still shows which way the
 	   vanes beneath it point — and unlike a texture, this backdrop MOVES, which
 	   is the other half of the same test. */
 	--background-image:

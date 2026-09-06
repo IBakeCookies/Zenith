@@ -14,7 +14,7 @@ import {
 	findBestDay,
 	loggedHours,
 	longestStreak,
-	monthlyCompletionRates,
+	monthlyRollups,
 	restSummary,
 	summarizeSession,
 	type DaySummary,
@@ -413,14 +413,19 @@ describe('restSummary', () => {
 	});
 });
 
-function day(date: string, completionRate: number, completedTasks = 1): DaySummary {
+function day(
+	date: string,
+	completionRate: number,
+	completedTasks = 1,
+	yieldIndex = 80,
+): DaySummary {
 	return {
 		date,
 		tasks: [],
 		totalTasks: Math.max(1, completedTasks),
 		completedTasks,
 		completionRate,
-		yieldIndex: 80,
+		yieldIndex,
 		quadrant: 'flow',
 		availableHours: 4,
 		switchCost: 0.25,
@@ -490,9 +495,9 @@ describe('countQuadrants', () => {
 	});
 });
 
-describe('monthlyCompletionRates', () => {
+describe('monthlyRollups', () => {
 	it('keeps a slot for months with no recorded day', () => {
-		const months = monthlyCompletionRates(
+		const months = monthlyRollups(
 			[day('2026-05-04', 40), day('2026-07-02', 80)],
 			'2026-05-01',
 			'2026-07-26',
@@ -503,12 +508,13 @@ describe('monthlyCompletionRates', () => {
 		expect(months[1]).toEqual({
 			month: '2026-06',
 			average: null,
+			yieldAverage: null,
 			dayCount: 0,
 		});
 	});
 
 	it('averages only the days recorded in each month', () => {
-		const months = monthlyCompletionRates(
+		const months = monthlyRollups(
 			[day('2026-07-02', 80), day('2026-07-03', 50), day('2026-07-04', 20)],
 			'2026-07-01',
 			'2026-07-26',
@@ -518,14 +524,35 @@ describe('monthlyCompletionRates', () => {
 			{
 				month: '2026-07',
 				average: 50,
+				yieldAverage: 80,
 				dayCount: 3,
 			},
 		]);
 	});
 
 	it('crosses the year boundary', () => {
-		const months = monthlyCompletionRates([day('2026-01-05', 60)], '2025-11-14', '2026-01-05');
+		const months = monthlyRollups([day('2026-01-05', 60)], '2025-11-14', '2026-01-05');
 		expect(months.map((month) => month.month)).toEqual(['2025-11', '2025-12', '2026-01']);
 		expect(months[2].average).toBe(60);
+	});
+
+	// The same gate the daily line holds: `yieldIndex` is 0 on a day that finished
+	// nothing, and averaging those zeroes in reads as a bad month, not an idle one.
+	it('averages yield over the days that completed something', () => {
+		const months = monthlyRollups(
+			[day('2026-07-02', 80, 1, 90), day('2026-07-03', 0, 0, 0)],
+			'2026-07-01',
+			'2026-07-26',
+		);
+
+		expect(months[0].yieldAverage).toBe(90);
+	});
+
+	it('leaves a month with no completing day without a yield reading', () => {
+		const months = monthlyRollups([day('2026-06-02', 0, 0, 0)], '2026-06-01', '2026-07-26');
+
+		// The slot the chart breaks its line at, never a 0.
+		expect(months[0].yieldAverage).toBeNull();
+		expect(months[1].yieldAverage).toBeNull();
 	});
 });

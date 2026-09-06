@@ -2,16 +2,17 @@
 	import { defineMeta } from '@storybook/addon-svelte-csf';
 	import { expect } from 'storybook/test';
 	import type { ChartPoint } from '$lib/presentation/utils/completion-chart-points';
-	import CompletionBarChart from '$lib/presentation/component/completion-bar-chart.svelte';
+	import CompletionYieldChart from '$lib/presentation/component/completion-yield-chart.svelte';
 
 	const WEEKDAYS = ['Sat', 'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
 
 	/** `null` is an unrecorded slot; 0 is a day that was planned and went nowhere. */
-	const week = (rates: (number | null)[]): ChartPoint[] =>
+	const week = (rates: (number | null)[], yields?: (number | null)[]): ChartPoint[] =>
 		rates.map((value, i) => ({
 			label: WEEKDAYS[i],
 			full: `${WEEKDAYS[i]}, Jul ${25 + i}`,
 			value,
+			line: yields ? yields[i] : null,
 			sub: value === null ? 'no data' : `${Math.round(value / 25)}/4 tasks done`,
 			showLabel: true,
 		}));
@@ -25,18 +26,19 @@
 				label: `Jul ${i + 1}`,
 				full: `Jul ${i + 1}`,
 				value: 30 + ((i * 17) % 70),
+				line: 40 + ((i * 11) % 55),
 				sub: '2/4 tasks done',
 				showLabel: i % 5 === 0,
 			}),
 		);
 
 	const { Story } = defineMeta({
-		title: 'Component/Completion Bar Chart',
-		component: CompletionBarChart,
+		title: 'Component/Completion & Yield Chart',
+		component: CompletionYieldChart,
 		tags: ['autodocs'],
 		args: {
-			points: week([80, 0, 55, null, 100, 40, 65]),
-			ariaLabel: 'Completion rate over the last 7 days',
+			points: week([80, 0, 55, null, 100, 40, 65], [90, null, 70, null, 95, 60, 75]),
+			ariaLabel: 'Completion rate and yield over the last 7 days',
 		},
 	});
 </script>
@@ -45,7 +47,7 @@
 	name="Week"
 	play={async ({ args, canvas, canvasElement }) => {
 		// The week view, with both of the cases that read alike if the geometry is wrong: Sunday is a
-		// real 0% (a 2px stub) and Tuesday is unrecorded (nothing at all)
+		// recorded 0% (a point on the baseline) and Tuesday is unrecorded (a gap)
 		// The aria-label is the plot's only accessible name
 		await expect(
 			canvas.getByRole('img', {
@@ -53,17 +55,25 @@
 			}),
 		).toBeInTheDocument();
 
-		// 7 slots, 6 bars: Tuesday (no data) draws nothing, Sunday (0%) keeps a
-		// 2px stub sitting on the baseline at 12 + 202 = 214
-		const bars = canvasElement.querySelectorAll('path.fill-brand');
-		await expect(bars).toHaveLength(6);
-		const baseline = bars[1].getAttribute('d')?.match(/^M[\d.]+,([\d.]+)/)?.[1];
-		await expect(Number(baseline)).toBeCloseTo(214, 0);
+		// Both readings are lines on one axis. Completion breaks only at Tuesday
+		// (no data), so it is two paths; Sunday is a recorded 0% and plots ON the
+		// baseline at 12 + 142 = 154, which is what separates it from the gap.
+		const rate = canvasElement.querySelectorAll('path.stroke-brand');
+		await expect(rate).toHaveLength(2);
+		await expect(rate[0].getAttribute('d')).toContain(',154.0');
+
+		// Dashed, which is the second channel separating it from Yield on a theme
+		// that gives both hues the same lightness.
+		await expect(rate[0].getAttribute('stroke-dasharray')).toBe('5 3');
+
+		// Yield is recorded on Sat, Mon and Wed–Fri: one path and two lone dots.
+		await expect(canvasElement.querySelectorAll('path.stroke-brand-counter')).toHaveLength(1);
+		await expect(canvasElement.querySelectorAll('circle.fill-brand-counter')).toHaveLength(2);
 
 		// Every slot is a full-height hover target, data or not
 		const slots = canvasElement.querySelectorAll('rect');
 		await expect(slots).toHaveLength(7);
-		await expect(slots[0].getAttribute('height')).toBe('202');
+		await expect(slots[0].getAttribute('height')).toBe('142');
 
 		// The tooltip carries the rate where there is one and "no data" where not
 		await expect(slots[0].querySelector('title')?.textContent).toBe(
@@ -75,7 +85,7 @@
 >
 	{#snippet template(args)}
 		<div class="card-shell max-w-3xl rounded-xl p-box-lg">
-			<CompletionBarChart {...args} />
+			<CompletionYieldChart {...args} />
 		</div>
 	{/snippet}
 </Story>
@@ -84,11 +94,11 @@
 	name="Month"
 	args={{
 		points: days(30),
-		ariaLabel: 'Completion rate over the last 30 days',
+		ariaLabel: 'Completion rate and yield over the last 30 days',
 	}}
 	play={async ({ canvasElement }) => {
-		// 30 slots: the bars narrow to the 65%-of-slot rule and only every fifth label is drawn, which
-		// is the width this axis was tuned for
+		// 30 slots: only every fifth label is drawn, which is the width this axis was
+		// tuned for
 		// Only the labels the axis asked for are printed
 		const labels = [...canvasElement.querySelectorAll('text')].map((node) =>
 			node.textContent?.trim(),
@@ -101,7 +111,7 @@
 >
 	{#snippet template(args)}
 		<div class="card-shell max-w-3xl rounded-xl p-box-lg">
-			<CompletionBarChart {...args} />
+			<CompletionYieldChart {...args} />
 		</div>
 	{/snippet}
 </Story>
@@ -109,14 +119,14 @@
 <Story
 	name="Two slots"
 	args={{
-		// Wide slots cap the bar at 24px rather than letting it become a block
-		points: week([80, 45]).slice(0, 2),
+		// Two slots: each reading is centred on its own half of the plot
+		points: week([80, 45], [90, 60]),
 		ariaLabel: 'Completion rate',
 	}}
 >
 	{#snippet template(args)}
 		<div class="card-shell max-w-3xl rounded-xl p-box-lg">
-			<CompletionBarChart {...args} />
+			<CompletionYieldChart {...args} />
 		</div>
 	{/snippet}
 </Story>
@@ -126,12 +136,12 @@
 	args={{
 		// Nothing recorded anywhere: the axis stays, so the plot reads as empty rather than broken
 		points: week([null, null, null, null, null, null, null]),
-		ariaLabel: 'Completion rate over the last 7 days',
+		ariaLabel: 'Completion rate and yield over the last 7 days',
 	}}
 >
 	{#snippet template(args)}
 		<div class="card-shell max-w-3xl rounded-xl p-box-lg">
-			<CompletionBarChart {...args} />
+			<CompletionYieldChart {...args} />
 		</div>
 	{/snippet}
 </Story>
@@ -144,7 +154,7 @@
 	}}
 	play={async ({ canvasElement }) => {
 		// No slots at all — the range has not resolved yet
-		await expect(canvasElement.querySelectorAll('path.fill-brand')).toHaveLength(0);
+		await expect(canvasElement.querySelectorAll('path.stroke-brand')).toHaveLength(0);
 		await expect(canvasElement.querySelectorAll('rect')).toHaveLength(0);
 
 		// The percentage axis stays, so the plot reads as empty rather than broken
@@ -157,7 +167,48 @@
 >
 	{#snippet template(args)}
 		<div class="card-shell max-w-3xl rounded-xl p-box-lg">
-			<CompletionBarChart {...args} />
+			<CompletionYieldChart {...args} />
+		</div>
+	{/snippet}
+</Story>
+
+<Story
+	name="Yield gap"
+	args={{
+		// A slot the completion line records and the yield line does not: a day that
+		// finished nothing has no yield reading, so the line breaks rather than
+		// crossing it
+		points: week([80, 0, 55, 90, 100], [90, 85, null, 70, 75]),
+		ariaLabel: 'Completion rate and yield',
+	}}
+	play={async ({ canvasElement }) => {
+		const paths = canvasElement.querySelectorAll('path.stroke-brand-counter');
+		await expect(paths).toHaveLength(2);
+	}}
+>
+	{#snippet template(args)}
+		<div class="card-shell max-w-3xl rounded-xl p-box-lg">
+			<CompletionYieldChart {...args} />
+		</div>
+	{/snippet}
+</Story>
+
+<Story
+	name="One yield reading"
+	args={{
+		// One recorded slot has no neighbour to draw a line to, so it is a dot —
+		// the reading a polyline-only chart would drop entirely
+		points: week([80, 0, 55], [null, null, 70]),
+		ariaLabel: 'Completion rate and yield',
+	}}
+	play={async ({ canvasElement }) => {
+		await expect(canvasElement.querySelectorAll('path.stroke-brand-counter')).toHaveLength(0);
+		await expect(canvasElement.querySelectorAll('circle.fill-brand-counter')).toHaveLength(1);
+	}}
+>
+	{#snippet template(args)}
+		<div class="card-shell max-w-3xl rounded-xl p-box-lg">
+			<CompletionYieldChart {...args} />
 		</div>
 	{/snippet}
 </Story>

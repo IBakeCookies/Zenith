@@ -5,7 +5,7 @@
 	import SeoHead from '$lib/presentation/component/seo-head.svelte';
 	import SegmentedToggle from '$lib/presentation/component/segmented-toggle.svelte';
 	import StatTile from '$lib/presentation/component/stat-tile.svelte';
-	import CompletionBarChart from '$lib/presentation/component/completion-bar-chart.svelte';
+	import CompletionYieldChart from '$lib/presentation/component/completion-yield-chart.svelte';
 	import MetricTrendChart from '$lib/presentation/component/metric-trend-chart.svelte';
 	import ParamTrend from '$lib/presentation/component/param-trend.svelte';
 	import QuadrantDistribution from '$lib/presentation/component/quadrant-distribution.svelte';
@@ -20,7 +20,7 @@
 	import { calibrationRows } from '$lib/presentation/utils/calibration-descriptor';
 	import { adherenceVerdict } from '$lib/presentation/utils/plan-audit-descriptor';
 	import { completionChartPoints } from '$lib/presentation/utils/completion-chart-points';
-	import { metricTrendSeries, yieldTrendSeries } from '$lib/presentation/utils/metric-trend-series';
+	import { metricTrendSeries } from '$lib/presentation/utils/metric-trend-series';
 	import { logHistory, type LogKind } from '$lib/presentation/utils/log-history';
 	import { removeLogWithUndo } from '$lib/presentation/utils/remove-log-with-undo';
 	import { fromISO } from '$lib/business/utils/date';
@@ -154,15 +154,6 @@
 				}),
 	);
 
-	const yieldTrend = $derived(
-		yieldTrendSeries({
-			summaries: analytics.summaries,
-			rangeStart: analytics.rangeStart,
-			rangeDays: analytics.rangeDays,
-			locale: getDateLocale(),
-		}),
-	);
-
 	// `rangeStart` alone bounds it: a measurement is stamped with the live clock, so
 	// none is ever dated ahead.
 	let allTime = $state(false);
@@ -217,6 +208,16 @@
 		closeEditor();
 	}
 
+	// Both stores hold the tag: the write is the session store's, and the loaded
+	// year is refreshed only once it lands.
+	async function renameTag(from: string, to: string) {
+		if (await session.renameTag(from, to)) analytics.renameTag(from, to);
+	}
+
+	async function deleteTag(tag: string) {
+		if (await session.deleteTag(tag)) analytics.deleteTag(tag);
+	}
+
 	function saveRestLog(
 		id: number,
 		entry: {
@@ -235,7 +236,7 @@
 		completionChartPoints({
 			range: analytics.range,
 			summaries: analytics.summaries,
-			monthlyRates: analytics.monthlyRates,
+			monthlyRollups: analytics.monthlyRollups,
 			rangeStart: analytics.rangeStart,
 			rangeDays: analytics.rangeDays,
 			today: analytics.today,
@@ -303,11 +304,11 @@
 			<div class="skeleton-block h-4 w-28"></div>
 		</div>
 	</div>
-	<!-- Bodies, in the order of the seven full-width GATED cards that always render — the
+	<!-- Bodies, in the order of the six full-width GATED cards that always render — the
 	     calibration grid and the logs card sit outside this gate and the drain ranking may
-	     not render at all. All three charts are a fixed viewBox at `w-full`, so a ratio is what
+	     not render at all. Both charts are a fixed viewBox at `w-full`, so a ratio is what
 	     tracks their height. -->
-	{#each ['h-16', 'aspect-[800/180]', 'aspect-[800/180]', 'aspect-[800/180]', 'h-10', 'h-5', 'h-33'] as body, i (i)}
+	{#each ['h-16', 'aspect-[800/180]', 'aspect-[800/180]', 'h-10', 'h-5', 'h-33'] as body, i (i)}
 		<div class="card-shell mt-grid-xl rounded-xl p-box-lg" aria-hidden="true">
 			{@render skeletonBody(body)}
 		</div>
@@ -416,6 +417,9 @@
 		breakdown={analytics.tagHours}
 		hasFailed={analytics.hasModelReportFailed}
 		locale={getDateLocale()}
+		onrename={renameTag}
+		ondelete={deleteTag}
+		willMerge={(from, draft) => session.willMergeTag(from, draft)}
 	/>
 
 	<div class="card-shell mt-grid-xl rounded-xl p-box-lg">
@@ -424,7 +428,7 @@
 			{analytics.range === 'year' ? m.ana_chart_hint_year() : m.ana_chart_hint_day()}
 		</p>
 
-		<CompletionBarChart
+		<CompletionYieldChart
 			points={chartPoints}
 			ariaLabel={m.ana_chart_aria({
 				range: RANGE_LABELS[analytics.range].label().toLowerCase(),
@@ -450,21 +454,6 @@
 				})}
 			/>
 		{/if}
-	</div>
-
-	<!-- Yield and completion over the range. No pending or failed branch: it reads
-	     `analytics.summaries`, which is what `hasData` above already gated on. -->
-	<div class="card-shell mt-grid-xl rounded-xl p-box-lg">
-		<h2 class="text-sm font-medium text-ty-primary">{m.ana_yield_trend()}</h2>
-		<p class="mt-text-3xs text-xs text-ty-silent">{m.ana_yield_trend_hint()}</p>
-
-		<MetricTrendChart
-			labels={yieldTrend.labels}
-			series={yieldTrend.series}
-			ariaLabel={m.ana_yield_trend_aria({
-				range: RANGE_LABELS[analytics.range].label().toLowerCase(),
-			})}
-		/>
 	</div>
 
 	<div class="card-shell mt-grid-xl rounded-xl p-box-lg">

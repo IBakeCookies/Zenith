@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { DaySummary, MonthlyCompletion } from '$lib/business/model/metric/history';
+import type { DaySummary, MonthlyRollup } from '$lib/business/model/metric/history';
 import {
 	completionChartPoints,
 	type CompletionChartInput,
@@ -21,7 +21,7 @@ const summary = (date: string, completionRate: number, completedTasks = 1): DayS
 const input = (over: Partial<CompletionChartInput> = {}): CompletionChartInput => ({
 	range: 'week',
 	summaries: [],
-	monthlyRates: [],
+	monthlyRollups: [],
 	rangeStart: '2026-07-25',
 	rangeDays: 7,
 	today: '2026-07-31',
@@ -85,15 +85,17 @@ describe('completionChartPoints', () => {
 	});
 
 	it('gives the year view one slot per month, always labelled', () => {
-		const monthlyRates: MonthlyCompletion[] = [
+		const monthlyRollups: MonthlyRollup[] = [
 			{
 				month: '2026-06',
 				average: 72,
+				yieldAverage: null,
 				dayCount: 12,
 			},
 			{
 				month: '2026-07',
 				average: null,
+				yieldAverage: null,
 				dayCount: 0,
 			},
 		];
@@ -101,7 +103,7 @@ describe('completionChartPoints', () => {
 		const points = completionChartPoints(
 			input({
 				range: 'year',
-				monthlyRates,
+				monthlyRollups,
 			}),
 		);
 
@@ -118,10 +120,11 @@ describe('completionChartPoints', () => {
 		const points = completionChartPoints(
 			input({
 				range: 'year',
-				monthlyRates: [
+				monthlyRollups: [
 					{
 						month: '2026-07',
 						average: 40,
+						yieldAverage: null,
 						dayCount: 1,
 					},
 				],
@@ -129,6 +132,35 @@ describe('completionChartPoints', () => {
 		);
 
 		expect(points[0].sub).toBe('1 active day');
+	});
+
+	// Yield reads what you finished against the best you could have finished, so a
+	// day that finished nothing has no reading and the line breaks rather than
+	// plunging to 0.
+	it('carries each day slot its yield reading, and none on a day that completed nothing', () => {
+		const points = completionChartPoints(
+			input({
+				summaries: [summary('2026-07-25', 60), summary('2026-07-26', 0, 0)],
+			}),
+		);
+
+		expect(points[0].line).toBe(80);
+		expect(points[1].line).toBeNull();
+		expect(points[2].line).toBeNull();
+	});
+
+	it('carries the same reading on the month range', () => {
+		const points = completionChartPoints(
+			input({
+				range: 'month',
+				rangeStart: '2026-07-02',
+				rangeDays: 30,
+				summaries: [summary('2026-07-02', 60)],
+			}),
+		);
+
+		expect(points[0].line).toBe(80);
+		expect(points[1].line).toBeNull();
 	});
 
 	it('reads no slots from an empty range', () => {

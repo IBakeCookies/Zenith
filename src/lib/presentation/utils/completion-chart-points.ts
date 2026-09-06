@@ -8,7 +8,7 @@
 
 import * as m from '$lib/paraglide/messages.js';
 import { addDays, fromISO } from '$lib/business/utils/date';
-import type { DaySummary, MonthlyCompletion } from '$lib/business/model/metric/history';
+import type { DaySummary, MonthlyRollup } from '$lib/business/model/metric/history';
 import type { AnalyticsRange } from '$lib/business/store/analytics-store.svelte';
 
 export type ChartPoint = {
@@ -18,6 +18,8 @@ export type ChartPoint = {
 	full: string;
 	/** `null` = no data for this slot, which is not the same as 0% */
 	value: number | null;
+	/** The slot's yield reading; `null` = none, which the chart breaks its line at */
+	line: number | null;
 	/** Second tooltip line: what the slot is made of */
 	sub: string;
 	/** Whether the x-axis prints this slot's label */
@@ -27,7 +29,7 @@ export type ChartPoint = {
 export interface CompletionChartInput {
 	range: AnalyticsRange;
 	summaries: DaySummary[];
-	monthlyRates: MonthlyCompletion[];
+	monthlyRollups: MonthlyRollup[];
 	rangeStart: string;
 	rangeDays: number;
 	today: string;
@@ -40,7 +42,7 @@ export function completionChartPoints(input: CompletionChartInput): ChartPoint[]
 	const { range, locale, today } = input;
 
 	if (range === 'year') {
-		return input.monthlyRates.map((month) => {
+		return input.monthlyRollups.map((month) => {
 			const first = fromISO(`${month.month}-01`);
 
 			return {
@@ -52,6 +54,7 @@ export function completionChartPoints(input: CompletionChartInput): ChartPoint[]
 					year: 'numeric',
 				}),
 				value: month.average,
+				line: month.yieldAverage,
 				sub: monthSub(month.dayCount),
 				showLabel: true,
 			};
@@ -87,6 +90,7 @@ export function completionChartPoints(input: CompletionChartInput): ChartPoint[]
 								day: 'numeric',
 							}),
 				value: summary ? summary.completionRate : null,
+				line: summary && summary.completedTasks > 0 ? summary.yieldIndex : null,
 				sub: summary
 					? m.ana_tasks_done_sub({
 							completed: summary.completedTasks,

@@ -5,11 +5,11 @@
 
 	.theme-helper-1 {
 		position: absolute;
-		/* themes.css .cathedral owns this — the halo in its gradient reads the
-		   same property, so the two cannot drift apart */
+		/* themes.css .cathedral owns these — the halo in its gradient and the
+		   rays below read the same properties, so the three cannot drift apart */
 		top: var(--cathedral-window-y);
 		left: 50%;
-		width: 20rem;
+		width: var(--cathedral-window-size);
 		aspect-ratio: 1;
 		translate: -50% 0;
 		filter: drop-shadow(0 0 2.5rem oklch(0.85 0.1 85 / 0.4));
@@ -17,12 +17,15 @@
 			center / contain no-repeat;
 	}
 
-	/* god rays falling from the window into the nave */
+	/* god rays falling from the window into the nave — out of the hub, two rem
+	   past it so the fan clears the tracery, and fading in at the hub's own
+	   height. Both follow --cathedral-window-mid: rays that stay put when the
+	   window moves fall out of nothing. */
 	.theme-helper-2 {
 		position: absolute;
 		inset: 0;
 		background: conic-gradient(
-			from 143deg at 50% 7rem,
+			from 143deg at 50% calc(var(--cathedral-window-mid) + 2rem),
 			transparent 0deg,
 			oklch(0.92 0.08 85 / 0.09) 6deg,
 			transparent 12deg,
@@ -35,7 +38,12 @@
 			oklch(0.92 0.08 85 / 0.09) 68deg,
 			transparent 74deg
 		);
-		mask-image: linear-gradient(to bottom, transparent 5rem, black 16rem 55%, transparent 85%);
+		mask-image: linear-gradient(
+			to bottom,
+			transparent var(--cathedral-window-mid),
+			black 16rem 55%,
+			transparent 85%
+		);
 		animation: cathedral-rays 9s ease-in-out infinite alternate;
 	}
 

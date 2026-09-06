@@ -315,14 +315,16 @@ test('stats and chart come off the stored days', async ({ page }) => {
 	// One of two tasks done, priority-weighted — a real percentage reaches the copy
 	await expect(page.getByText(/\d+% of planned tasks/)).toBeVisible();
 
-	// The chart drew a bar for the seeded day
+	// The chart drew the seeded day
 	await expect(
 		page.getByRole('heading', {
-			name: 'Completion rate',
+			name: 'Completion & yield',
 		}),
 	).toBeVisible();
 
-	await expect(page.locator('svg path.fill-brand')).not.toHaveCount(0);
+	// One recorded day is a run of one on both series, so each draws a dot rather
+	// than a path — the reading a polyline-only chart would drop.
+	await expect(page.locator('svg path.stroke-brand, svg circle.fill-brand')).not.toHaveCount(0);
 
 	await expect(
 		page.getByRole('heading', {
@@ -331,7 +333,8 @@ test('stats and chart come off the stored days', async ({ page }) => {
 	).toBeVisible();
 });
 
-test('the range carries a Yield reading', async ({ page }) => {
+/** A day with one of two tasks done, viewed on /analytics. */
+async function seedCompletedDay(page: Page) {
 	await seedDay(page, 0, ['write the calibration section', 'inbox sweep']);
 
 	await page
@@ -344,28 +347,36 @@ test('the range carries a Yield reading', async ({ page }) => {
 	await page.waitForTimeout(AUTOSAVE_MS);
 
 	await page.goto('/analytics');
+}
 
+test('one card holds both readings', async ({ page }) => {
+	await seedCompletedDay(page);
+
+	await expect(
+		page.getByRole('heading', {
+			name: 'Completion & yield',
+		}),
+	).toBeVisible();
+
+	// The second card is gone, not renamed around a chart that still draws twice.
 	await expect(
 		page.getByRole('heading', {
 			name: 'Yield and completion',
 		}),
-	).toBeVisible();
+	).toHaveCount(0);
 
-	// Its own accessible name: an <svg role="img"> has no other one, and the bar
-	// chart directly above is also about completion rate.
+	// Its own accessible name: an <svg role="img"> has no other one.
 	await expect(
 		page.getByRole('img', {
-			name: 'Line chart of yield index and completion rate over the last 7 days',
+			name: 'Line chart of completion rate and yield index over the last 7 days',
 		}),
 	).toHaveCount(1);
+});
 
-	await expect(
-		page.getByRole('img', {
-			name: 'Bar chart of completion rate over the last 7 days',
-		}),
-	).toHaveCount(1);
+test('the merged card names both series', async ({ page }) => {
+	await seedCompletedDay(page);
 
-	// The legend names both lines. Exact: the bar card's heading is "Completion rate".
+	// Exact: the card's heading is "Completion & yield", not either label.
 	await expect(
 		page.getByText('Yield Index', {
 			exact: true,
@@ -377,6 +388,24 @@ test('the range carries a Yield reading', async ({ page }) => {
 			exact: true,
 		}),
 	).toBeVisible();
+});
+
+test('the year view keeps both series on monthly slots', async ({ page }) => {
+	await seedCompletedDay(page);
+
+	await page
+		.getByRole('button', {
+			name: 'Last 12 months',
+		})
+		.click();
+
+	await expect(page.getByText(/Monthly average of the priority-weighted/)).toBeVisible();
+
+	// Drawn, not merely legended. One recorded month has no neighbour to draw a
+	// line to, so the run of one is a dot — the same reading the trend chart plots.
+	await expect(
+		page.locator('svg path.stroke-brand-counter, svg circle.fill-brand-counter'),
+	).not.toHaveCount(0);
 });
 
 test('the range toggle reslices the stats', async ({ page }) => {
@@ -403,9 +432,7 @@ test('the range toggle reslices the stats', async ({ page }) => {
 	await expect(activeDays).toContainText('/ 365');
 
 	// The year view switches the chart from days to monthly averages
-	await expect(
-		page.getByText('Monthly average of the priority-weighted daily completion rate'),
-	).toBeVisible();
+	await expect(page.getByText(/Monthly average of the priority-weighted/)).toBeVisible();
 
 	await page
 		.getByRole('button', {
@@ -415,9 +442,7 @@ test('the range toggle reslices the stats', async ({ page }) => {
 
 	await expect(activeDays).toContainText('/ 7');
 
-	await expect(
-		page.getByText('Priority-weighted completion rate per day — hover a bar for details'),
-	).toBeVisible();
+	await expect(page.getByText(/Priority-weighted completion rate per day/)).toBeVisible();
 });
 
 test('a planned future day is not counted as an active day', async ({ page }) => {
