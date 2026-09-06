@@ -122,8 +122,7 @@
 	// else opens it.
 	let isEditing = $state(false);
 
-	// `completed` is a prop, read BEFORE the parent flips it. `measured: false` for 🪫:
-	// a rating is per session, so an earlier one never silences the next prompt.
+	// `completed` is a prop, read BEFORE the parent flips it.
 	function onCompletionChange() {
 		const flowAction = completionPromptAction({
 			finishing: !completed,
@@ -134,7 +133,7 @@
 
 		const drainAction = completionPromptAction({
 			finishing: !completed,
-			measured: false,
+			measured: drainLogs.length > 0,
 			editorOpenOnThisRow: drainDraft !== null,
 			promptOpenForThisTask: drainDraft?.promptedByCompletion ?? false,
 		});

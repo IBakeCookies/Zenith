@@ -122,11 +122,10 @@ Untestable at every level is the signal.
   `autofocus`.** The attribute is inert on any node inserted after load (the
   document's autofocus-processed flag), so all three editors that used it — ⚡,
   🪫, ☕ — silently never focused. The attachment also makes the choice
-  conditional, which matters where an editor opens itself: completing a task
-  asks for both measurements (`task-row-shell.svelte` reports the two prompts,
-  the page opens them) and a draft opened by the prompt leaves `focusMinutes`
-  false, so ticking tasks off with the keyboard cannot yank the caret into a
-  number field.
+  conditional, which matters where an editor opens itself: a draft opened by the
+  completion prompt (`task-row-shell.svelte` reports it, the page opens it)
+  leaves `focusMinutes` false, so ticking tasks off with the keyboard cannot
+  yank the caret into a number field.
 - **A `DropdownMenu.Item` never contains a focusable child, and an input inside
   menu content stops the keys it needs.** Two separate bits-ui facts, both of
   which shipped as mouse-only UI in `day-actions.svelte`'s routine rows. First:
@@ -526,11 +525,12 @@ be withheld from a screen (ROADMAP, "Worked-hours instrument on `/`").
 owns, and otherwise opens its own.** A reading owns the editor seeded from it, so
 clicking the reading the editor is open on closes it while clicking a different
 chip switches to that session — the switch arm exists only for 🪫, since ⚡ has
-one reading, which is why its badge reads as a plain toggle. The 🪫 button owns
-the APPEND editor (the one with no `recordId`) and nothing else: over a
-correction it opens a blank one rather than closing a rating the user is
-amending. The button is **not** hidden on a completed task — finishing one is
-the commonest way a session ends. Each editor then drops what it opened on (🗑).
+one reading. The 🪫 button owns the APPEND editor (the one with no `recordId`)
+and nothing else: over a correction it opens a blank one rather than closing a
+rating the user is amending, and it is **not** hidden on a completed task:
+finishing one is the commonest way a session ends. **Completion asks for 🪫 only
+where the day holds no log for that task yet** (`measurement-prompt.ts`, on why)
+— the button is the way back. Each editor drops what it opened on (🗑).
 
 **Both editors are open only while the PAGE holds a draft for that task** — the
 shell renders the two forms and owns neither. 🪫 has to be the page's, since a
