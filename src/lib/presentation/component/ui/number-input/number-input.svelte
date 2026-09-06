@@ -62,7 +62,7 @@
 </script>
 
 <div
-	class="flex items-stretch rounded-lg border border-line-strong bg-input transition-colors {accent}"
+	class="flex items-stretch rounded-lg border border-line-strong bg-input transition-colors has-focus-visible:ring-2 has-focus-visible:ring-ring/50 {accent}"
 >
 	<button
 		type="button"
