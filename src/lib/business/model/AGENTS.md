@@ -332,6 +332,13 @@ with drain (§8 charges no cost for it), so it moves Burnout Risk by >5 points
 on 30% of days in no consistent direction. Do not re-open without a reason that
 isn't "the optimizer should beat the heuristic".
 
+The alternation now takes an optional predecessor: the mid-day re-plan seeds it
+with the day's `createdAt`-latest drain log, so position 1 contrasts with what
+was just worked — that log's own task excepted, because continuing a session is
+not a switch. The greedy rule, its priority sort and its fallback are untouched
+— only `prevNature`'s starting value and that one exemption — so the decision
+stands.
+
 ### ϕ stays one plane for all tasks — no per-task offsets
 
 Settled 2026-08-04. Hierarchical partial pooling `ϕ = c·x + δ_task`

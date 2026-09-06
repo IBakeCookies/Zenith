@@ -142,7 +142,7 @@ export type SuggestedTask = Task & {
  * by the same intrinsic P̄(T*) before it is rescaled into a priority score
  * (MATH.md §3) — any monotone rescale orders identically.
  */
-type OrderableTask = Pick<Task, 'physicalDifficulty' | 'mentalDifficulty'> & {
+type OrderableTask = Pick<Task, 'id' | 'physicalDifficulty' | 'mentalDifficulty'> & {
 	suggestedHours: number;
 	priorityScore: number;
 };
@@ -965,6 +965,12 @@ export function calculateQuickWins(tasks: SuggestedTask[]): number {
 	return tasks.filter((t) => getEffectiveDifficulty(t) <= 3 && t.enjoyment >= 5).length;
 }
 
+/** What was worked immediately before the sequence starts, and is therefore exempt from its own contrast. */
+export type InterleavedPredecessor = {
+	nature: ReturnType<typeof getTaskNature>;
+	taskId: number;
+};
+
 /**
  * Suggested run order: alternate cognitive and physical tasks.
  *
@@ -989,26 +995,33 @@ export function calculateQuickWins(tasks: SuggestedTask[]): number {
  * consumers: the `#N` badges, burnout's block sequence, the mid-day re-plan's
  * next-up task and `EnergyLabStore`'s classic schedule.
  *
- * The alternation has **no memory of what was just worked** — it starts from a
- * clean slate every time, so on the re-plan it can open with the same nature the
- * user finished a moment ago. Same limitation on the morning badges, where the
- * sequence is read whole and the previous task is the row above.
+ * The alternation takes an optional predecessor, so position 1 can contrast with
+ * a task outside the list — and that task is exempt from the contrast, because
+ * continuing a session is not a switch. The morning badges pass none: the
+ * sequence is read whole from the day's start, so each row's predecessor is the
+ * row above; only the mid-day re-plan has one.
  */
-export function calculateInterleavedOrder<T extends OrderableTask>(tasks: T[]): T[] {
+export function calculateInterleavedOrder<T extends OrderableTask>(
+	tasks: T[],
+	predecessor?: InterleavedPredecessor,
+): T[] {
 	const remaining = tasks
 		.filter((t) => t.suggestedHours > 0)
 		.sort((a, b) => b.priorityScore - a.priorityScore);
 
-	if (remaining.length <= 2) return remaining;
+	if (!predecessor && remaining.length <= 2) return remaining;
 
 	const order: T[] = [];
-	let prevNature: ReturnType<typeof getTaskNature> | null = null;
+	let prevNature: ReturnType<typeof getTaskNature> | null = predecessor?.nature ?? null;
+	let exemptTaskId: number | null = predecessor?.taskId ?? null;
 
 	while (remaining.length > 0) {
 		// Prefer the best task that contrasts with the previous nature;
 		// 'balanced' contrasts with everything, and anything follows 'balanced'.
 		let pick = remaining.findIndex((t) => {
 			if (prevNature === null || prevNature === 'balanced') return true;
+
+			if (t.id === exemptTaskId) return true;
 
 			const nature = getTaskNature(t);
 
@@ -1020,6 +1033,7 @@ export function calculateInterleavedOrder<T extends OrderableTask>(tasks: T[]): 
 		const task = remaining.splice(pick, 1)[0];
 		order.push(task);
 		prevNature = getTaskNature(task);
+		exemptTaskId = null;
 	}
 
 	return order;

@@ -24,6 +24,7 @@ import {
 import {
 	calculateInterleavedOrder,
 	calculatePoolSaturation,
+	getTaskNature,
 	toPooledInputs,
 } from '$lib/business/model/metric/calculation';
 import type { Task } from '$lib/data/type';
@@ -38,6 +39,8 @@ export interface RemainingDayInput {
 	posterior?: FitPosterior;
 	/** Hours logged against each of today's tasks so far (🪫), by task id. */
 	workedHours: ReadonlyMap<number, number>;
+	/** The task the day's latest log names, so position 1 contrasts with it. An id no longer on the day seeds nothing. */
+	lastWorkedTaskId?: number;
 }
 
 export interface RemainingDay {
@@ -155,6 +158,10 @@ export function calculateRemainingDay(input: RemainingDayInput): RemainingDay | 
 		}
 	});
 
+	// Read off the day's tasks, so there is one ±3 definition (AGENTS.md R3) and a
+	// task that has left the day supplies no nature and no seed.
+	const lastWorked = tasks.find((task) => task.id === input.lastWorkedTaskId);
+
 	return {
 		workedHours: workedTotal,
 		remainingHours: Math.max(0, budget - workedTotal),
@@ -163,7 +170,14 @@ export function calculateRemainingDay(input: RemainingDayInput): RemainingDay | 
 		// Over `funded`, not `candidates`: a task ticked done without a log keeps an
 		// accounting share that is deliberately never reported, and naming it would
 		// send the user back to work they just finished.
-		nextTask: calculateInterleavedOrder(funded)[0] ?? null,
+		nextTask:
+			calculateInterleavedOrder(
+				funded,
+				lastWorked && {
+					nature: getTaskNature(lastWorked),
+					taskId: lastWorked.id,
+				},
+			)[0] ?? null,
 		capacity: {
 			limitType: binding.limitType,
 			percentSpent: binding.percent,

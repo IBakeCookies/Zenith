@@ -6,6 +6,7 @@ import {
 import {
 	calculateInterleavedOrder,
 	calculateSuggestedTasks,
+	getTaskNature,
 } from '$lib/business/model/metric/calculation';
 import { DEFAULT_CAPACITY_POOLS, DEFAULT_USER_CONSTANTS } from '$lib/business/model/zenith';
 import type { Task } from '$lib/data/type';
@@ -59,6 +60,14 @@ const EMAIL = makeTask({
 	mentalDifficulty: 3,
 	physicalDifficulty: 1,
 	enjoyment: 2,
+});
+
+const BOXING = makeTask({
+	id: 4,
+	title: 'Boxing',
+	mentalDifficulty: 1,
+	physicalDifficulty: 9,
+	enjoyment: 8,
 });
 
 describe('calculateRemainingDay', () => {
@@ -380,6 +389,117 @@ describe('calculateRemainingDay', () => {
 		// 0.8 × 2 + 0.1 × 1 = 1.7 cognitive against 0.1 × 2 + 0.8 × 1 = 1.0 physical.
 		expect(remaining?.capacity.limitType).toBe('cognitive');
 		expect(remaining?.capacity.percentSpent).toBeCloseTo(42.5, 9);
+	});
+
+	describe('the task just worked', () => {
+		// Recency, not volume: the store hands over the `createdAt`-latest log's
+		// task, and more hours elsewhere does not outvote it.
+		it('seeds position 1 from the named task, not the most-worked one', () => {
+			// GYM is finished and logged, so it is spent for funding and still the
+			// thing that was just worked. BOXING is what the remainder would open on.
+			const day = [
+				SPEC,
+				{
+					...GYM,
+					completed: true,
+				},
+				EMAIL,
+				BOXING,
+			];
+
+			const worked: [number, number][] = [
+				[SPEC.id, 3.5],
+				[GYM.id, 0.5],
+			];
+
+			const cold = calculateRemainingDay(input(day, worked));
+
+			const seeded = calculateRemainingDay(
+				input(day, worked, {
+					lastWorkedTaskId: GYM.id,
+				}),
+			);
+
+			expect(cold!.nextTask!.id).toBe(BOXING.id);
+			expect(getTaskNature(seeded!.nextTask!)).not.toBe('physical');
+		});
+
+		it('funds the day identically with and without the seed', () => {
+			for (const worked of [1, 2.5, 4] as const) {
+				const cold = calculateRemainingDay(input([SPEC, GYM, EMAIL], [[SPEC.id, worked]]))!;
+
+				const seeded = calculateRemainingDay(
+					input([SPEC, GYM, EMAIL], [[SPEC.id, worked]], {
+						lastWorkedTaskId: SPEC.id,
+					}),
+				)!;
+
+				expect([...seeded.hoursByTask]).toEqual([...cold.hoursByTask]);
+				expect(seeded.plannedHours).toBe(cold.plannedHours);
+				expect(seeded.remainingHours).toBe(cold.remainingHours);
+				expect(seeded.workedHours).toBe(cold.workedHours);
+				expect(seeded.capacity).toEqual(cold.capacity);
+			}
+		});
+
+		it('ignores a seed naming a task that has left the day', () => {
+			// Nature is read off the day's tasks, so a deleted task supplies none —
+			// the same rows `workedHoursByTask` already drops.
+			const worked: [number, number][] = [[GYM.id, 1]];
+			const cold = calculateRemainingDay(input([SPEC, GYM, EMAIL], worked));
+
+			const seeded = calculateRemainingDay(
+				input([SPEC, GYM, EMAIL], worked, {
+					lastWorkedTaskId: 404,
+				}),
+			);
+
+			expect(seeded!.nextTask!.id).toBe(cold!.nextTask!.id);
+		});
+
+		it('names piano after running, not the higher-priority gym', () => {
+			// The day that found this: five tasks, a 6h45m budget, and 1h45m logged
+			// against running — exactly what the morning plan suggested for it.
+			// Gym outranks piano on raw priority and only sits at #3 in the morning
+			// order because the alternation refuses to put it behind running.
+			const day = (
+				[
+					[1, 'Running', 1, 7, 9],
+					[2, 'Piano', 6, 1, 6],
+					[3, 'Gym', 1, 7, 5],
+					[4, 'Guitar', 6, 2, 5],
+					[5, 'Reading', 4, 0, 4],
+				] as const
+			).map(([id, title, mentalDifficulty, physicalDifficulty, enjoyment]) =>
+				makeTask({
+					id,
+					title,
+					mentalDifficulty,
+					physicalDifficulty,
+					enjoyment,
+				}),
+			);
+
+			const morning = calculateInterleavedOrder(calculateSuggestedTasks(day, 6.75));
+
+			expect(morning.map((task) => task.title)).toEqual([
+				'Running',
+				'Piano',
+				'Gym',
+				'Guitar',
+				'Reading',
+			]);
+
+			const remaining = calculateRemainingDay(
+				input(day, [[1, 1.75]], {
+					availableHours: 6.75,
+					lastWorkedTaskId: 1,
+				}),
+			);
+
+			expect(remaining!.hoursByTask.has(1)).toBe(false);
+			expect(remaining!.nextTask!.title).toBe('Piano');
+		});
 	});
 
 	it('never plans more hours than are left', () => {
