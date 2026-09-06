@@ -70,11 +70,12 @@
 	}
 
 	/* the pivots — the fixed lattice the blades turn on, and the only part of
-	   the field that never moves */
+	   the field that never moves. Three quarters of the blade ink: the same
+	   colour a shade back, which is a mix and not a second literal. */
 	.theme-helper-3 {
 		background-image: radial-gradient(
 			circle 0.1rem at 50% 50%,
-			oklch(0.38 0.04 305 / 0.24) 0 55%,
+			color-mix(in oklch, var(--vane-ink) 75%, transparent) 0 55%,
 			transparent 70%
 		);
 	}

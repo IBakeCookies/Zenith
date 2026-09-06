@@ -1,6 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import type { DailySession, DrainObservationRecord, Task } from '$lib/data/type';
-import { collectTags, tagHours, toStoredTags } from '$lib/business/model/tags';
+import {
+	collectTags,
+	removeTagFromTasks,
+	renameTagInTasks,
+	tagHours,
+	toStoredTags,
+} from '$lib/business/model/tags';
 import { loggedHours } from '$lib/business/model/metric/history';
 
 const RANGE_START = '2026-07-14';
@@ -192,5 +198,88 @@ describe('collectTags', () => {
 		];
 
 		expect(collectTags(days)).toEqual(['exercise', 'school']);
+	});
+});
+
+describe('renameTagInTasks', () => {
+	// The two cases a task can be in, over random lists: it carries the old
+	// spelling (alone or beside the new one) or it does not. A rename onto a tag
+	// the task already has must leave one tag, not a duplicate the card would
+	// count twice; a day no task of which carries the old spelling must come back
+	// identical, because that is what tells the caller not to write it.
+	it('leaves `to` exactly once on any task that carried either', () => {
+		let seed = 11;
+		const random = () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648;
+		const vocabulary = ['dep work', 'deep work', 'school', 'exercise'];
+
+		for (let round = 0; round < 200; round++) {
+			const tasks = Array.from(
+				{
+					length: 1 + Math.floor(random() * 4),
+				},
+				(_, index) => {
+					const picked = vocabulary.filter(() => random() < 0.4);
+
+					return task(index + 1, picked.length > 0 ? picked : undefined);
+				},
+			);
+
+			const renamed = renameTagInTasks(tasks, 'dep work', 'deep work');
+
+			if (!tasks.some((t) => t.tags?.includes('dep work'))) {
+				expect(renamed).toBe(tasks);
+				continue;
+			}
+
+			expect(renamed).not.toBe(tasks);
+
+			for (const [index, after] of renamed.entries()) {
+				const before = tasks[index].tags ?? [];
+
+				if (!before.includes('dep work')) {
+					expect(after).toBe(tasks[index]);
+					continue;
+				}
+
+				expect(after.tags?.filter((tag) => tag === 'deep work')).toEqual(['deep work']);
+				expect(after.tags).not.toContain('dep work');
+			}
+		}
+	});
+
+	// Reachable through `$importAllStores`, which puts a restored record back
+	// unvalidated: `tagHours` keys on the normalized tag but adds the row's hours
+	// once per raw one, so two spellings left side by side count the day twice.
+	it('leaves one spelling behind when the task already carried `to` in another case', () => {
+		const renamed = renameTagInTasks([task(1, ['dep work', 'Deep Work'])], 'dep work', 'deep work');
+
+		expect(renamed[0].tags).toEqual(['deep work']);
+	});
+});
+
+describe('removeTagFromTasks', () => {
+	// Identity when nothing carries the tag, for the reason the rename has it: it is
+	// what tells the caller not to write that day.
+	it('returns the list unchanged when no task carries the tag', () => {
+		const tasks = [task(1, ['school']), task(2)];
+
+		expect(removeTagFromTasks(tasks, 'errand')).toBe(tasks);
+	});
+
+	// `toStoredTags` says a tagless task carries no `tags` field, not `[]` — the
+	// delete has to leave the record in the shape a read validates.
+	it('takes the tag off, and the field with it when nothing is left', () => {
+		const tasks = [task(1, ['errand', 'school']), task(2, ['errand']), task(3, ['school'])];
+		const left = removeTagFromTasks(tasks, 'errand');
+
+		expect(left[0].tags).toEqual(['school']);
+		expect('tags' in left[1]).toBe(false);
+		expect(left[2]).toBe(tasks[2]);
+	});
+
+	// Matched the way `tagHours` reads one, or the row the user pressed ✕ on would
+	// come back on the next reload (the rename fold's argument, same fold).
+	it('matches every spelling of the tag', () => {
+		expect(removeTagFromTasks([task(1, ['  Errand '])], 'errand')[0].tags).toBeUndefined();
 	});
 });

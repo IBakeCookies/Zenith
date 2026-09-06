@@ -230,18 +230,21 @@ becomes visible, which asks the writer for `pending` so an unlanded edit is not
 overwritten by the stored day — reachable because a hidden tab that rolls over
 midnight re-loads and re-arms the autosave.
 
-### Three write sites carry the whole day, so a new field lands in all three
+### Four write sites carry the whole day, so a new field lands in all four
 
 `SessionStore` writes a `DailySession` from the autosave payload, from
-`toggleTask`'s past-day branch and from `moveTaskToTomorrow` — each a whole
-record, so every field one of them does not carry is a field it erases.
-`#persistSession` cannot catch that: it takes the payload already built.
-A field that reached only two of the three once reset a past day's value when a
-task was ticked off there
+`toggleTask`'s past-day branch, from `moveTaskToTomorrow` and from
+`#rewriteTagInHistory` (the rename and the delete) —
+each a whole record, so every field one of them does not carry is a field it
+erases. `#persistSession` cannot catch that: it takes the payload already built.
+A field that reached only two of the first three once reset a past day's value
+when a task was ticked off there
 ([the-plan-that-had-no-clock.md](../../../docs/features/the-plan-that-had-no-clock.md)).
 The destination write also reads its OWN day's values through `#readDestination`
 and defaults nothing: a fallback there stamps a value onto a day that never
-chose one.
+chose one. `#rewriteTagInHistory` is the one that carries every field for free,
+and only because it spreads the record it read RAW — a tag rewrite taken off
+`sanitizeSessions`' output would drop whatever a future field adds.
 
 ### `SessionStore` has a second day source, and it reaches no storage
 
@@ -255,7 +258,8 @@ which of the two flags a site takes is the whole of it:
   yesterday effect and the `visibilitychange` re-read stand down.
 - `#isShowingDemo` — whether the fixture is on screen. Gates the WRITES:
   `#persistSession`, the auto-save effect, `logFlow`, `saveCurrentAsRoutine`,
-  `deleteRoutine`, `moveTaskToTomorrow`, and the two remaining reads a click can
+  `deleteRoutine`, `moveTaskToTomorrow`, `#rewriteTagInHistory`, and the two
+  remaining reads a click can
   still reach (`readDeferDestination`, `importFromDate`). Leaving the demo drops
   the param while the fixture is still in `#tasks`, and a URL-keyed auto-save ran
   in exactly that gap and saved all six.

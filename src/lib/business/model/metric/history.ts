@@ -337,25 +337,29 @@ export function countQuadrants(summaries: DaySummary[]): Record<DailyQuadrant, n
 	return counts;
 }
 
-export type MonthlyCompletion = {
+export type MonthlyRollup = {
 	/** YYYY-MM */
 	month: string;
 	/** Mean completion rate of the days recorded in the month; null = no data */
 	average: number | null;
+	/** Mean yield of the days that completed something; null = no such day */
+	yieldAverage: number | null;
 	dayCount: number;
 };
 
 /**
- * Completion rate averaged per calendar month, from `rangeStart`'s month
- * through `today`'s month INCLUSIVE. Months with no recorded day still get an
- * entry so the year chart keeps a slot for them rather than silently closing
- * the gap.
+ * The year chart's two readings per calendar month — completion rate and yield
+ * — from `rangeStart`'s month through `today`'s month INCLUSIVE. Months with no
+ * recorded day still get an entry so the chart keeps a slot for them rather
+ * than silently closing the gap. Yield averages only the days that completed
+ * something: `yieldIndex` is 0 on a day that finished nothing, and averaging
+ * those in reads as a bad month rather than an idle one.
  */
-export function monthlyCompletionRates(
+export function monthlyRollups(
 	summaries: DaySummary[],
 	rangeStart: string,
 	today: string,
-): MonthlyCompletion[] {
+): MonthlyRollup[] {
 	const buckets = new Map<string, DaySummary[]>();
 
 	for (const summary of summaries) {
@@ -370,16 +374,23 @@ export function monthlyCompletionRates(
 		buckets.set(key, [summary]);
 	}
 
-	const months: MonthlyCompletion[] = [];
+	const months: MonthlyRollup[] = [];
 	const lastMonth = today.slice(0, 7);
 	let month = rangeStart.slice(0, 7);
 
 	while (month <= lastMonth) {
 		const daysIn = buckets.get(month) ?? [];
+		const completingDays = daysIn.filter((day) => day.completedTasks > 0);
 
 		months.push({
 			month,
 			average: daysIn.length > 0 ? averageCompletionRate(daysIn) : null,
+			yieldAverage:
+				completingDays.length > 0
+					? Math.round(
+							completingDays.reduce((sum, day) => sum + day.yieldIndex, 0) / completingDays.length,
+						)
+					: null,
 			dayCount: daysIn.length,
 		});
 

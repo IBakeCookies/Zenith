@@ -1,5 +1,13 @@
 import { expect, test, type Page } from '@playwright/test';
-import { addTask, AUTOSAVE_MS, drainChips, isoDate, logDrain, openTaskForm } from './helpers';
+import {
+	addTask,
+	AUTOSAVE_MS,
+	drainChips,
+	isoDate,
+	logDrain,
+	openTaskForm,
+	taskRow,
+} from './helpers';
 
 /* Tags are typed on the task and read on /analytics, which is two stores and a join
    apart — nothing below the browser exercises the whole path. */
@@ -145,4 +153,233 @@ test('a tag reaches the card from the day it was typed on', async ({ page }) => 
 	});
 
 	await expect(row).toContainText('1');
+});
+
+/** An empty profile with the planner settled, so a `page.evaluate` seeding IndexedDB
+ *  is not raced by the navigation that is still in flight. */
+async function openEmptyPlanner(page: Page) {
+	await page.goto('/');
+	await expect(page.getByText('No tasks deployed yet')).toBeVisible();
+	// The empty state paints before the service worker has finished registering, and
+	// the reload that follows one destroys the seeding evaluate's execution context.
+	await page.waitForLoadState('networkidle');
+}
+
+/** The rename editor on one tag's row: the ✎ opens it, and the field is the row's. */
+async function openRenameEditor(page: Page, tag: string) {
+	await tagRows(page)
+		.filter({
+			hasText: tag,
+		})
+		.getByRole('button', {
+			name: `Rename ${tag}`,
+		})
+		.click();
+
+	return page.getByLabel('New tag name');
+}
+
+/** Both stored days in view: `week` is 7 days and the fixtures are further apart. */
+async function showThirtyDays(page: Page) {
+	await page
+		.getByRole('button', {
+			name: 'Last 30 days',
+		})
+		.click();
+}
+
+test('a mistyped tag is respelled on every day it appears', async ({ page }) => {
+	await openEmptyPlanner(page);
+	await writeTaggedDay(page, isoDate(-3), 'dep work', 2);
+	await writeTaggedDay(page, isoDate(-10), 'dep work', 3);
+
+	await page.goto('/analytics');
+	await showThirtyDays(page);
+
+	await expect(
+		tagRows(page).filter({
+			hasText: 'dep work',
+		}),
+	).toHaveCount(1);
+
+	const field = await openRenameEditor(page, 'dep work');
+
+	await field.fill('deep work');
+	await field.press('Enter');
+
+	const renamed = tagRows(page).filter({
+		hasText: 'deep work',
+	});
+
+	await expect(renamed).toHaveCount(1);
+	// Both days' logged hours, or the rename only reached the day in the week view.
+	await expect(renamed).toContainText('5');
+});
+
+test('a rename onto a tag already in use says so before it runs', async ({ page }) => {
+	await openEmptyPlanner(page);
+	await writeTaggedDay(page, isoDate(-3), 'deep work', 2);
+	await writeTaggedDay(page, isoDate(-10), 'dep work', 3);
+
+	await page.goto('/analytics');
+	await showThirtyDays(page);
+
+	const field = await openRenameEditor(page, 'dep work');
+
+	await field.fill('deep work');
+
+	await expect(page.getByText('Saving merges these two tags into one.')).toBeVisible();
+});
+
+test('the merge folds the two rows into one', async ({ page }) => {
+	await openEmptyPlanner(page);
+	await writeTaggedDay(page, isoDate(-3), 'deep work', 2);
+	await writeTaggedDay(page, isoDate(-10), 'dep work', 3);
+
+	await page.goto('/analytics');
+	await showThirtyDays(page);
+
+	const field = await openRenameEditor(page, 'dep work');
+
+	await field.fill('deep work');
+	await field.press('Enter');
+
+	await expect(
+		tagRows(page).filter({
+			hasText: 'dep work',
+		}),
+	).toHaveCount(0);
+
+	await expect(
+		tagRows(page).filter({
+			hasText: 'deep work',
+		}),
+	).toContainText('5');
+});
+
+test('the planner’s tag suggestions offer the new spelling', async ({ page }) => {
+	await openEmptyPlanner(page);
+	await writeTaggedDay(page, isoDate(-3), 'dep work', 2);
+
+	await page.goto('/analytics');
+
+	const field = await openRenameEditor(page, 'dep work');
+
+	await field.fill('deep work');
+	await field.press('Enter');
+
+	await expect(
+		tagRows(page).filter({
+			hasText: 'deep work',
+		}),
+	).toHaveCount(1);
+
+	// Client-side back to the planner: the vocabulary the form offers is the one the
+	// live store holds, which a reload would rebuild from storage instead.
+	await page
+		.getByRole('link', {
+			name: 'Today',
+		})
+		.click();
+
+	await openTaskForm(page);
+	await page.getByLabel('Tags').focus();
+
+	const offered = await page
+		.locator('datalist option')
+		.evaluateAll((options) => options.map((option) => (option as HTMLOptionElement).value));
+
+	expect(offered).toContain('deep work');
+	expect(offered).not.toContain('dep work');
+});
+
+test('the live day keeps the new spelling through the next autosave', async ({ page }) => {
+	await openEmptyPlanner(page);
+	await writeTaggedDay(page, isoDate(0), 'dep work', 2);
+
+	// Reloaded so the store holds today's stored task in memory — the tasks the
+	// autosave writes back over the rename if it never reached them.
+	await page.goto('/');
+	await expect(taskRow(page, 'Morning run')).toBeVisible();
+
+	await page
+		.getByRole('link', {
+			name: 'Analytics',
+		})
+		.click();
+
+	const field = await openRenameEditor(page, 'dep work');
+
+	await field.fill('deep work');
+	await field.press('Enter');
+
+	await expect(
+		tagRows(page).filter({
+			hasText: 'deep work',
+		}),
+	).toHaveCount(1);
+
+	await page
+		.getByRole('link', {
+			name: 'Today',
+		})
+		.click();
+
+	await addTask(page, 'Unrelated');
+	await page.waitForTimeout(AUTOSAVE_MS);
+
+	await page
+		.getByRole('link', {
+			name: 'Analytics',
+		})
+		.click();
+
+	const renamed = tagRows(page).filter({
+		hasText: 'deep work',
+	});
+
+	await expect(renamed).toHaveCount(1);
+
+	await expect(
+		tagRows(page).filter({
+			hasText: 'dep work',
+		}),
+	).toHaveCount(0);
+});
+
+test('a tag is dropped from every day it appears on', async ({ page }) => {
+	await openEmptyPlanner(page);
+	await writeTaggedDay(page, isoDate(-3), 'errand', 2);
+	await writeTaggedDay(page, isoDate(-10), 'errand', 3);
+
+	await page.goto('/analytics');
+	await showThirtyDays(page);
+
+	const row = tagRows(page).filter({
+		hasText: 'errand',
+	});
+
+	await expect(row).toHaveCount(1);
+
+	await row
+		.getByRole('button', {
+			name: 'Delete errand',
+		})
+		.click();
+
+	await row
+		.getByRole('button', {
+			name: 'Delete errand everywhere',
+		})
+		.click();
+
+	await expect(row).toHaveCount(0);
+
+	// The hours are not gone with the tag: both days' logs now answer to nothing,
+	// which is the untagged row's whole job.
+	await expect(
+		tagRows(page).filter({
+			hasText: 'Untagged',
+		}),
+	).toContainText('5');
 });

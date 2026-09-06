@@ -59,6 +59,77 @@ export function collectTags(sessions: DailySession[]): string[] {
 }
 
 /**
+ * One tag respelled across a list of tasks. Returns the list — and each task —
+ * unchanged by IDENTITY when nothing carries `from`, which is what tells a
+ * caller not to write that day. A task already carrying `to` keeps it once, or
+ * the card would count its hours twice.
+ *
+ * Matched — and deduped — on the NORMALIZED tag, the way `tagHours` reads one: a
+ * stored spelling that only a restored backup can carry (`Deep Work`) shows up
+ * under the row the user is renaming, so a rename that missed it would leave the
+ * row it was told to fix standing, and one left beside `to` would have the task's
+ * hours counted under it twice.
+ */
+export function renameTagInTasks(tasks: Task[], from: string, to: string): Task[] {
+	const oldTag = normalizeTag(from);
+	const newTag = normalizeTag(to);
+	let hasChanged = false;
+
+	const renamed = tasks.map((task) => {
+		if (!task.tags?.some((tag) => normalizeTag(tag) === oldTag)) return task;
+
+		hasChanged = true;
+
+		const tags: string[] = [];
+
+		for (const tag of task.tags) {
+			const kept = normalizeTag(tag) === oldTag ? newTag : tag;
+
+			if (!tags.some((held) => normalizeTag(held) === normalizeTag(kept))) tags.push(kept);
+		}
+
+		return {
+			...task,
+			tags,
+		};
+	});
+
+	return hasChanged ? renamed : tasks;
+}
+
+/**
+ * One tag taken off a list of tasks — the card's delete. Identity on both levels
+ * where nothing carried it, like the rename above, and normalized the same way.
+ * A task left with no tag loses the field rather than keeping `[]`, which is the
+ * shape `toStoredTags` says a stored task has.
+ */
+export function removeTagFromTasks(tasks: Task[], tag: string): Task[] {
+	const dropped = normalizeTag(tag);
+	let hasChanged = false;
+
+	const left = tasks.map((task) => {
+		if (!task.tags?.some((held) => normalizeTag(held) === dropped)) return task;
+
+		hasChanged = true;
+
+		const tags = task.tags.filter((held) => normalizeTag(held) !== dropped);
+
+		const kept: Task = {
+			...task,
+			tags,
+		};
+
+		// Deleted, not set to `undefined`: a stored task that kept the key would
+		// carry an empty claim, which is the shape `toStoredTags` refuses.
+		if (tags.length === 0) delete kept.tags;
+
+		return kept;
+	});
+
+	return hasChanged ? left : tasks;
+}
+
+/**
  * The range's 🪫-logged hours per tag, most first, plus what was logged on
  * tasks carrying none. A task with two tags counts its hours under both, so the
  * rows can add up to more than the total.

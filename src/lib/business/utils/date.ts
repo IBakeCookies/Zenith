@@ -10,6 +10,13 @@
 const pad = (n: number) => String(n).padStart(2, '0');
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
+/** Sorts below every ISO date, so it is the open lower bound of a range read. */
+export const BEFORE_ANY_DATE = '0000-01-01';
+
+/** And above every one: `moveTaskToTomorrow` puts tagged tasks on future days,
+ *  so a whole-history read has to be unbounded in both directions. */
+export const AFTER_ANY_DATE = '9999-12-31';
+
 /** First day of the week as an ISO weekday: Mon=1 … Sun=7. */
 export type WeekStart = 1 | 2 | 3 | 4 | 5 | 6 | 7;
 

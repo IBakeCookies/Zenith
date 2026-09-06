@@ -401,6 +401,11 @@ Read this before touching markup, classes, or anything under
   rotation takes outside its palette (`terminal`). The second line is dashed as
   well (`TrendSeries.isDashed`) — hue is the separation, the dash is what
   survives a colour-blind reading of it.
+- **A length two files both draw from is a custom property on the theme class**
+  (properties inherit downward only, so that is the one place above both
+  readers) **and anything that must follow it is a `calc()` off it** — see
+  `eclipse`, `cathedral`, `orbit`. Same inside one file for a number read more
+  than twice; a colour that is another dimmed is a `color-mix`.
 - Adding a theme touches four places: the catalogue in
   `business/model/theme.ts`, a `@custom-variant` in `tokens.css`, a palette
   block in `themes.css`, and (if animated) a file under `style/scenery/`. A

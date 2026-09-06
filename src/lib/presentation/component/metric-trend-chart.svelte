@@ -1,18 +1,12 @@
 <script lang="ts">
-	/* The analytics line cards: one slot per day of the viewed range, every series
-	   on the same 0–100% axis its readings are already given on.
+	/* The analytics Load trend card: one slot per day of the viewed range, every
+	   series on the same 0–100% axis its readings are already given on.
 
-	   The case worth the code is the gap. A slot with no reading arrives as
-	   `null`, and neither obvious drawing of it is honest: joining across it
-	   invents a reading, and plotting a 0 invents a day that went well. So each
-	   series is split into runs of consecutive recorded days — a run of two or
-	   more is a line, a run of one is a dot, which is the reading a polyline-only
-	   chart would drop entirely.
-
-	   Fixed viewBox at `w-full`, like `completion-bar-chart` above it on the same
+	   Fixed viewBox at `w-full`, like `completion-yield-chart` above it on the same
 	   page. Colours are utility classes, not raw `var()` (STYLE.md). */
 
 	import type { TrendSeries } from '$lib/presentation/utils/metric-trend-series';
+	import { runsOf } from '$lib/presentation/utils/series-runs';
 
 	interface Props {
 		/** One per slot; `''` on the slots the axis does not print. */
@@ -41,34 +35,9 @@
 	const xPos = (index: number, count: number) =>
 		count <= 1 ? CHART.left + innerW / 2 : CHART.left + (index / (count - 1)) * innerW;
 
-	/** Consecutive recorded days, split at every unrecorded one. */
-	function runsOf(values: (number | null)[]): { x: number; y: number }[][] {
-		const runs: { x: number; y: number }[][] = [];
-		let run: { x: number; y: number }[] = [];
-
-		values.forEach((value, index) => {
-			if (value === null) {
-				if (run.length) runs.push(run);
-
-				run = [];
-
-				return;
-			}
-
-			run.push({
-				x: xPos(index, values.length),
-				y: yPos(value),
-			});
-		});
-
-		if (run.length) runs.push(run);
-
-		return runs;
-	}
-
 	const plotted = $derived(
 		series.map((line) => {
-			const runs = runsOf(line.values);
+			const runs = runsOf(line.values, (index) => xPos(index, line.values.length), yPos);
 
 			return {
 				...line,

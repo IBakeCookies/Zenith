@@ -2059,6 +2059,30 @@ describe('SessionStore demo mode', () => {
 		setHidden(false); // this describe's own cleanup: the next test loads a day
 	});
 
+	// A tag rewrite touches every stored day, so it is the one write that does not
+	// go near the viewed day's guards. `toBe(false)` is what carries the assertion:
+	// the guard returns before the range read, and the read's default answer is an
+	// empty history, over which an unguarded rename reports success.
+	it('refuses a tag rename', async () => {
+		const store = mount();
+
+		await vi.waitFor(() => expect(store.isLoading).toBe(false));
+
+		expect(await store.renameTag('deep work', 'focus')).toBe(false);
+		expect(updateSessionMock).not.toHaveBeenCalled();
+	});
+
+	// Same write, second verb: the demo's tags are the fixture's, and dropping one
+	// would write the visitor's history out of a day they never planned.
+	it('refuses a tag delete', async () => {
+		const store = mount();
+
+		await vi.waitFor(() => expect(store.isLoading).toBe(false));
+
+		expect(await store.deleteTag('deep work')).toBe(false);
+		expect(updateSessionMock).not.toHaveBeenCalled();
+	});
+
 	// The bug this pins: the exit navigation drops the param, so a guard on the URL
 	// alone leaves the auto-save effect running over a `#tasks` that is still the
 	// fixture — and it saved all six of them onto the visitor's real day.

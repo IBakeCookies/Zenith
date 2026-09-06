@@ -6,6 +6,11 @@
 .synthwave .theme-scenery {
 	display: block;
 
+	/* the floor grid's row pitch. sw-grid-scroll advances by exactly one of it,
+	   which is the whole reason the wrap is invisible — two readings of one
+	   number, never two numbers. */
+	--sw-rung-tile: 2.4rem;
+
 	/* stars above the horizon — static tile, twinkling subset on ::before */
 	.theme-helper-1 {
 		position: absolute;
@@ -86,11 +91,11 @@
 		inset: 58% -20% -10% -20%;
 		overflow: hidden;
 		background-image:
-			/* rungs: magenta, one tile = 2.4rem */
+			/* rungs: magenta, one tile = --sw-rung-tile */
 			repeating-linear-gradient(
 				to bottom,
 				oklch(0.75 0.22 335 / 0.55) 0 2px,
-				transparent 2px 2.4rem
+				transparent 2px var(--sw-rung-tile)
 			),
 			/* rails: cyan, one tile = 3rem, never animated so x is free */
 			repeating-linear-gradient(to right, oklch(0.78 0.16 200 / 0.4) 0 2px, transparent 2px 3rem);
@@ -149,12 +154,12 @@
 	}
 }
 
-/* rungs scroll down by exactly one tile (2.4rem) — the wrap is seamless
+/* rungs scroll down by exactly one tile (--sw-rung-tile) — the wrap is seamless
    because repeating-linear-gradient is mathematically periodic, so this
    reads as an unbroken stream of rungs racing toward the viewer */
 @keyframes sw-grid-scroll {
 	to {
-		background-position-y: 2.4rem, 0;
+		background-position-y: var(--sw-rung-tile), 0;
 	}
 }
 

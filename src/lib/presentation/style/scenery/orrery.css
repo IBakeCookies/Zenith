@@ -12,6 +12,11 @@
 	--sun-y: 50%;
 	--r-day: 10rem;
 	--r-week: 20rem;
+	/* how far each arm oversizes its orbit, and so how far down the square its
+	   planet disc sits: the arm's width is the diameter plus twice this, its
+	   margin pulls back the radius plus this, and the disc is drawn exactly
+	   this far from the top edge. Three readings of one clearance. */
+	--planet-pad: 1rem;
 
 	/* orbit rings + the week-start tick at the top of the outer ring */
 	.theme-helper-1 {
@@ -37,8 +42,8 @@
 			);
 	}
 
-	/* rotating planet arms: squares centered on the sun, 1rem oversize so the
-	   planet disc at the top edge never clips; rotation = the real angle */
+	/* rotating planet arms: squares centered on the sun, --planet-pad oversize
+	   so the planet disc at the top edge never clips; rotation = the real angle */
 	.theme-helper-2,
 	.theme-helper-3 {
 		position: absolute;
@@ -48,12 +53,12 @@
 
 	/* week planet — steel-blue */
 	.theme-helper-2 {
-		width: calc(var(--r-week) * 2 + 2rem);
-		height: calc(var(--r-week) * 2 + 2rem);
-		margin: calc(-1 * var(--r-week) - 1rem);
+		width: calc(var(--r-week) * 2 + var(--planet-pad) * 2);
+		height: calc(var(--r-week) * 2 + var(--planet-pad) * 2);
+		margin: calc(-1 * var(--r-week) - var(--planet-pad));
 		transform: rotate(calc(var(--orrery-week, 0) * 1deg));
 		background: radial-gradient(
-			circle 0.42rem at 50% 1rem,
+			circle 0.42rem at 50% var(--planet-pad),
 			oklch(0.76 0.09 250) 55%,
 			oklch(0.76 0.09 250 / 0.25) 75%,
 			transparent
@@ -62,12 +67,12 @@
 
 	/* day planet — rose */
 	.theme-helper-3 {
-		width: calc(var(--r-day) * 2 + 2rem);
-		height: calc(var(--r-day) * 2 + 2rem);
-		margin: calc(-1 * var(--r-day) - 1rem);
+		width: calc(var(--r-day) * 2 + var(--planet-pad) * 2);
+		height: calc(var(--r-day) * 2 + var(--planet-pad) * 2);
+		margin: calc(-1 * var(--r-day) - var(--planet-pad));
 		transform: rotate(calc(var(--orrery-day, 0) * 1deg));
 		background: radial-gradient(
-			circle 0.3rem at 50% 1rem,
+			circle 0.3rem at 50% var(--planet-pad),
 			oklch(0.74 0.12 20) 55%,
 			oklch(0.74 0.12 20 / 0.25) 75%,
 			transparent

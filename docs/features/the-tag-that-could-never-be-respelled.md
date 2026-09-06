@@ -1,6 +1,6 @@
 # The tag that could never be respelled
 
-**Kind:** feature · **Status:** planning 2026-09-06 · **Roadmap:** item `none`
+**Kind:** feature · **Status:** landed 2026-09-07 · **Roadmap:** item `none`
 
 Frozen at land: this file says what was decided on the date it carries, never
 how the code works today — that is MATH.md and the area `AGENTS.md`. When later
@@ -193,6 +193,39 @@ frozen days changes no fit, no plan and no metric.
   the case this feature exists for.
 - **Rename only.** Delete is a second verb on the same method; §0 says ship the
   ask.
+
+## What landed, and what moved that this file did not plan
+
+- **The two open bounds live in `business/utils/date.ts`, not in
+  `session-history.ts`.** `session-store.svelte.spec.ts` mocks
+  `$lib/business/session-history` with a factory exporting two functions, so a
+  named import of a constant from there fails the whole spec file at import.
+  They are a pure ISO-date fact, which is what `utils/` holds, and the facade
+  now imports `BEFORE_ANY_DATE` from there — still one definition (R3).
+- **The merge warning is `SessionStore.willMergeTag`, not an `AnalyticsStore`
+  read of the card's own rows.** Asked of the tag rows, the warning's scope is
+  the viewed range while the rename's scope is every stored day: `school`
+  logged five weeks ago and `dep work` logged yesterday merge silently on the
+  default week view. `#tagVocabulary` is the boot read's tags — every stored day
+  up to today — which is far closer to the question the editor is asking. It is
+  not exact: it does not carry a tag only a future day holds, so a rename onto
+  one of those merges unwarned, and closing that costs a second unbounded read
+  `session-history.ts` refuses by name. The card takes the answer as a prop for
+  the reason the spec gave — a component may not value-import a model.
+- **The fold matches on the NORMALIZED tag, not on the stored string.**
+  `tagHours` normalizes on the way in, so a stored `Deep Work` — reachable
+  through `$importAllStores`, which puts a restored record back unvalidated —
+  displays under the row being renamed. Comparing raw would have left the very
+  row the user was told to fix standing, and a reload would have brought its
+  hours back under the old spelling.
+- **The write skips a day whose `tasks` is not an array.** Same unvalidated
+  path: the read is raw by this file's own decision, so the one field the fold
+  walks is checked rather than trusted (R4). Without it a single corrupt record
+  throws with half the days already written, and every retry aborts at it — a
+  rename that could never be finished.
+- **The card gained two props, not one.** `onrename` and `willMerge`.
+- **The ✎ sits at the far end of the row, past the hours**, where the log rows
+  put theirs — the position a delete would take too.
 
 ## Open questions
 

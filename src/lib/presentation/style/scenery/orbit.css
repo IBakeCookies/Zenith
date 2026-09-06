@@ -1,7 +1,9 @@
 /* Orbit: the planet turns beneath the station. City lights and clouds slide
    west across the night side, stars keep watch, aurora breathes on the limb.
-   Geometry must match layout.css's .orbit disc: circle at 50% 178vh, limb
-   at 99–101vh from center (disc crest ≈ 78vh at center-x). */
+   Every limb here is --orbit-planet-y / --orbit-planet-r / --orbit-limb-y from
+   the .orbit block of themes.css, which paints the disc these layers ride on:
+   two files' geometry that has to agree, so it is one set of properties and
+   not a copy. Offsets in vh below are distances from that limb. */
 .orbit .theme-scenery {
 	display: block;
 
@@ -13,15 +15,23 @@
 		position: absolute;
 		inset: 0;
 		background:
-			radial-gradient(ellipse 30rem 9rem at 38% 90vh, oklch(0.55 0.04 250 / 0.1), transparent 70%),
 			radial-gradient(
-				circle at 50% 178vh,
-				transparent 0 82vh,
-				oklch(0.4 0.04 255 / 0.12) 94vh,
-				oklch(0.55 0.06 245 / 0.22) 99vh,
-				transparent 100vh
+				ellipse 30rem 9rem at 38% calc(var(--orbit-limb-y) + 11vh),
+				oklch(0.55 0.04 250 / 0.1),
+				transparent 70%
+			),
+			radial-gradient(
+				circle at 50% var(--orbit-planet-y),
+				transparent 0 calc(var(--orbit-planet-r) - 17vh),
+				oklch(0.4 0.04 255 / 0.12) calc(var(--orbit-planet-r) - 5vh),
+				oklch(0.55 0.06 245 / 0.22) var(--orbit-planet-r),
+				transparent calc(var(--orbit-planet-r) + 1vh)
 			);
-		mask-image: radial-gradient(circle at 50% 178vh, black 0 98.5vh, transparent 100vh);
+		mask-image: radial-gradient(
+			circle at 50% var(--orbit-planet-y),
+			black 0 calc(var(--orbit-planet-r) - 0.5vh),
+			transparent calc(var(--orbit-planet-r) + 1vh)
+		);
 	}
 
 	/* stars everywhere above the limb, clipped by the planet's disc:
@@ -41,7 +51,11 @@
 		background-size: 34rem 27rem;
 		/* seed lever: static star field — both axes free to offset per user */
 		background-position: var(--orbit-stars-1, 0 0);
-		mask-image: radial-gradient(circle at 50% 178vh, transparent 0 99vh, black 101vh);
+		mask-image: radial-gradient(
+			circle at 50% var(--orbit-planet-y),
+			transparent 0 var(--orbit-planet-r),
+			black calc(var(--orbit-planet-r) + 2vh)
+		);
 	}
 
 	.theme-helper-1::before {
@@ -64,7 +78,7 @@
 	}
 
 	/* a satellite riding the planet's arc, nav lights blinking. Track is a
-	   circle concentric with the disc, 5vh above the limb; offset-rotate
+	   circle concentric with the disc, 7vh out from the limb; offset-rotate
 	   keeps the body tangent to the path */
 	.theme-helper-1::after {
 		content: '';
@@ -73,7 +87,7 @@
 		height: 3px;
 		border-radius: 2px;
 		background: linear-gradient(oklch(0.97 0.005 230), oklch(0.72 0.02 230));
-		offset-path: circle(106vh at 50% 178vh);
+		offset-path: circle(calc(var(--orbit-planet-r) + 7vh) at 50% var(--orbit-planet-y));
 		animation:
 			orbit-satellite 180s linear infinite,
 			orbit-sat-lights 4.5s steps(1) infinite;
@@ -127,7 +141,11 @@
 		background-repeat: repeat-x;
 		background-size: 40rem 100%;
 		mask-image:
-			radial-gradient(circle at 50% 178vh, black 0 97vh, transparent 99vh),
+			radial-gradient(
+				circle at 50% var(--orbit-planet-y),
+				black 0 calc(var(--orbit-planet-r) - 2vh),
+				transparent var(--orbit-planet-r)
+			),
 			linear-gradient(to right, black 0 38%, oklch(0 0 0 / 0.3) 55%, transparent 72%);
 		mask-composite: intersect;
 		animation: orbit-glide 140s linear infinite;
@@ -183,11 +201,11 @@
 		position: absolute;
 		inset: 0;
 		background: radial-gradient(
-			circle at 50% 178vh,
-			transparent 0 99.5vh,
-			oklch(0.75 0.16 150 / 0.3) 101vh,
-			oklch(0.7 0.15 160 / 0.12) 104vh,
-			transparent 108vh
+			circle at 50% var(--orbit-planet-y),
+			transparent 0 calc(var(--orbit-planet-r) + 0.5vh),
+			oklch(0.75 0.16 150 / 0.3) calc(var(--orbit-planet-r) + 2vh),
+			oklch(0.7 0.15 160 / 0.12) calc(var(--orbit-planet-r) + 5vh),
+			transparent calc(var(--orbit-planet-r) + 9vh)
 		);
 		mask-image: linear-gradient(to right, transparent 2%, black 12% 34%, transparent 48%);
 		animation: orbit-aurora 9s ease-in-out infinite alternate;
@@ -200,11 +218,11 @@
 		position: absolute;
 		inset: 0;
 		background: radial-gradient(
-			circle at 50% 178vh,
-			transparent 0 101.8vh,
-			oklch(0.78 0.1 145 / 0.14) 103vh,
-			oklch(0.75 0.1 150 / 0.05) 104.5vh,
-			transparent 106.5vh
+			circle at 50% var(--orbit-planet-y),
+			transparent 0 calc(var(--orbit-planet-r) + 2.8vh),
+			oklch(0.78 0.1 145 / 0.14) calc(var(--orbit-planet-r) + 4vh),
+			oklch(0.75 0.1 150 / 0.05) calc(var(--orbit-planet-r) + 5.5vh),
+			transparent calc(var(--orbit-planet-r) + 7.5vh)
 		);
 		mask-image: linear-gradient(to right, transparent 6%, black 24% 44%, transparent 58%);
 	}
@@ -216,11 +234,15 @@
 		position: absolute;
 		inset: 0;
 		background: radial-gradient(
-			ellipse 6rem 2.2rem at 31% 90vh,
+			ellipse 6rem 2.2rem at 31% calc(var(--orbit-limb-y) + 11vh),
 			oklch(0.92 0.06 285 / 0.6),
 			transparent 70%
 		);
-		mask-image: radial-gradient(circle at 50% 178vh, black 0 97vh, transparent 99vh);
+		mask-image: radial-gradient(
+			circle at 50% var(--orbit-planet-y),
+			black 0 calc(var(--orbit-planet-r) - 2vh),
+			transparent var(--orbit-planet-r)
+		);
 		opacity: 0;
 		animation: orbit-lightning 23s linear infinite;
 		animation-delay: var(--orbit-lightning-phase, 0s);

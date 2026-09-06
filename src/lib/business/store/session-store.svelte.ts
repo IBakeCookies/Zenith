@@ -16,7 +16,13 @@ import * as sessionRepository from '$lib/data/repository/session-repository';
 import * as routineRepository from '$lib/data/repository/routine-repository';
 import * as flowObservationRepository from '$lib/data/repository/flow-observation-repository';
 import { liveToday } from '$lib/business/state/today.svelte';
-import { addDays, daysBetween, isISODate } from '$lib/business/utils/date';
+import {
+	addDays,
+	AFTER_ANY_DATE,
+	BEFORE_ANY_DATE,
+	daysBetween,
+	isISODate,
+} from '$lib/business/utils/date';
 import {
 	sanitizeFlowObservations,
 	sanitizeRoutines,
@@ -31,7 +37,12 @@ import {
 	type DemoTaskTitles,
 } from '$lib/business/demo-day';
 import { suggestTitles, type TitleRating } from '$lib/business/model/title-memory';
-import { toStoredTags } from '$lib/business/model/tags';
+import {
+	normalizeTag,
+	removeTagFromTasks,
+	renameTagInTasks,
+	toStoredTags,
+} from '$lib/business/model/tags';
 import {
 	prefillBudgetFor,
 	summarizeBudgetHistory,
@@ -459,9 +470,11 @@ export class SessionStore {
 		this.#isShowingDemo = true;
 	}
 
-	// Every session read goes through here, so a new read site cannot quietly skip
-	// the validation (AGENTS.md R4). A day that fails it reads as absent: the day
-	// loads empty, and the next edit overwrites the broken record.
+	// Every session read a day is LOADED from goes through here, so a new one
+	// cannot quietly skip the validation (AGENTS.md R4). A day that fails it reads
+	// as absent: the day loads empty, and the next edit overwrites the broken
+	// record. `#rewriteTagInHistory` is the exception and says why it has to be: it
+	// rewrites records rather than loading them, so it may not read through a rebuild.
 	async #readSession(date: string): Promise<DailySession | null> {
 		return sanitizeSession(await sessionRepository.$readSessionByDate(date));
 	}
@@ -1254,6 +1267,108 @@ export class SessionStore {
 			logError('Failed to reset flow observations', e);
 			this.#reporter.report('save-failed');
 		}
+	}
+
+	/**
+	 * One tag rewritten everywhere it was ever used — every stored day and the
+	 * loaded one, which is the only write in this store that touches days other
+	 * than the viewed one. The two verbs below differ in the fold and in what
+	 * they leave `#tagVocabulary`; everything else is this method.
+	 *
+	 * Raw in, raw out: `sanitizeSession` rebuilds a record field by field, so
+	 * writing its output back would drop whatever a future field adds — the same
+	 * failure mode as the whole-day write sites (business/AGENTS.md).
+	 */
+	async #rewriteTagInHistory(fold: (tasks: Task[]) => Task[]): Promise<boolean> {
+		// The fixture's tasks carry tags, and this write never goes near the viewed
+		// day's guards — so it is refused here, like every other write.
+		if (this.#isShowingDemo) return false;
+
+		try {
+			// Unbounded in both directions: `moveTaskToTomorrow` puts tagged tasks on
+			// future days, which would otherwise keep the old spelling.
+			const sessions = await sessionRepository.$readSessionsByDateRange(
+				BEFORE_ANY_DATE,
+				AFTER_ANY_DATE,
+			);
+
+			for (const session of sessions) {
+				// The one field this fold reads, checked rather than trusted: the read is
+				// raw, `$importAllStores` puts a restored record back unvalidated, and a
+				// day whose `tasks` is not an array would throw with half the days
+				// already written — a rewrite no retry could ever finish (AGENTS.md R4).
+				if (!Array.isArray(session.tasks)) continue;
+
+				const tasks = fold(session.tasks);
+
+				if (tasks === session.tasks) continue;
+
+				await this.#persistSession({
+					...session,
+					tasks,
+				});
+			}
+
+			// The loaded day is held in memory the whole time /analytics is open, so a
+			// rewrite that stopped at storage is undone by the next auto-save.
+			this.#tasks = fold(this.#tasks);
+
+			return true;
+		} catch (e) {
+			logError('Failed to rewrite a tag', e);
+			this.#reporter.report('save-failed');
+
+			return false;
+		}
+	}
+
+	/** Respell one tag everywhere it was ever used — the analytics card's rename.
+	 *  Merging onto a tag already in use is allowed and folds the two. */
+	async renameTag(from: string, to: string): Promise<boolean> {
+		const oldTag = normalizeTag(from);
+		const newTag = normalizeTag(to);
+
+		if (newTag.length === 0 || oldTag === newTag) return false;
+
+		if (!(await this.#rewriteTagInHistory((tasks) => renameTagInTasks(tasks, oldTag, newTag))))
+			return false;
+
+		this.#tagVocabulary = [
+			// eslint-disable-next-line svelte/prefer-svelte-reactivity -- spread straight back out, never held
+			...new Set(this.#tagVocabulary.map((tag) => (tag === oldTag ? newTag : tag))),
+		].sort((a, b) => a.localeCompare(b));
+
+		return true;
+	}
+
+	/** Take one tag off every task it was ever put on — the card's delete. The
+	 *  hours stay logged and fall to the breakdown's untagged row. */
+	async deleteTag(tag: string): Promise<boolean> {
+		const dropped = normalizeTag(tag);
+
+		if (dropped.length === 0) return false;
+
+		if (!(await this.#rewriteTagInHistory((tasks) => removeTagFromTasks(tasks, dropped))))
+			return false;
+
+		this.#tagVocabulary = this.#tagVocabulary.filter((held) => held !== dropped);
+
+		return true;
+	}
+
+	/**
+	 * Whether saving `draft` over `from` folds two tags into one — the rename
+	 * editor's warning. Answered over `#tagVocabulary`, not over the card's viewed
+	 * range, because the rename itself is over all of history: a warning scoped to
+	 * the rows on screen stays silent on exactly the merges nothing else on the
+	 * page would show. That vocabulary is the boot read's, so it covers the stored
+	 * days up to today and not a tag only a future day carries — narrower than the
+	 * rewrite, which reads unbounded.
+	 */
+	willMergeTag(from: string, draft: string): boolean {
+		const newTag = normalizeTag(draft);
+
+		return newTag !== normalizeTag(from) && this.#tagVocabulary.includes(newTag);
 	}
 
 	// ----- Routines -----

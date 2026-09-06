@@ -13,7 +13,12 @@ import { getContext, onMount, setContext } from 'svelte';
 import { logError } from '$lib/logger';
 import * as fitSnapshotRepository from '$lib/data/repository/fit-snapshot-repository';
 import { rankDrainByTask, type DrainRanking } from '$lib/business/model/energy-calibration';
-import { tagHours, type TagHoursBreakdown } from '$lib/business/model/tags';
+import {
+	removeTagFromTasks,
+	renameTagInTasks,
+	tagHours,
+	type TagHoursBreakdown,
+} from '$lib/business/model/tags';
 import {
 	averageCompletionRate,
 	calculateMetricTrend,
@@ -23,11 +28,11 @@ import {
 	findBestDay,
 	loggedHours,
 	longestStreak,
-	monthlyCompletionRates,
+	monthlyRollups,
 	restSummary,
 	type DaySummary,
 	type MetricTrendPoint,
-	type MonthlyCompletion,
+	type MonthlyRollup,
 	type RestSummary,
 } from '$lib/business/model/metric/history';
 import type { EnergyParams } from '$lib/business/model/zenith-energy';
@@ -354,8 +359,8 @@ export class AnalyticsStore {
 		return countQuadrants(this.#summaries);
 	}
 	/** Per-calendar-month averages for the year chart; empty months keep a slot. */
-	get monthlyRates(): MonthlyCompletion[] {
-		return monthlyCompletionRates(this.#summaries, this.#rangeStart, this.#today);
+	get monthlyRollups(): MonthlyRollup[] {
+		return monthlyRollups(this.#summaries, this.#rangeStart, this.#today);
 	}
 	get metricTrend(): MetricTrendPoint[] | null {
 		return this.#metricTrend;
@@ -372,6 +377,37 @@ export class AnalyticsStore {
 	/** Covers every card the report feeds: none may report a count instead. */
 	get hasModelReportFailed(): boolean {
 		return this.#hasModelReportFailed;
+	}
+
+	/**
+	 * Re-apply a tag rewrite `SessionStore` has already written, to the loaded
+	 * year, rather than re-reading it — which costs a year of summaries plus the
+	 * audit's two planner runs per day. `tasks` is the only field on a
+	 * `DaySummary` any reading takes a tag out of, and every number the page
+	 * shows is tag-independent, so the rewrite is exact for everything on screen.
+	 * `suggestedTasks` carries the plan's own copy of each task and keeps the old
+	 * spelling; nothing reads a tag off it, and re-folding it would be a second
+	 * rewrite serving no reader.
+	 */
+	#refoldTasks(fold: (tasks: DaySummary['tasks']) => DaySummary['tasks']): void {
+		this.#all = this.#all.map((day) => {
+			const tasks = fold(day.tasks);
+
+			return tasks === day.tasks
+				? day
+				: {
+						...day,
+						tasks,
+					};
+		});
+	}
+
+	renameTag(from: string, to: string): void {
+		this.#refoldTasks((tasks) => renameTagInTasks(tasks, from, to));
+	}
+
+	deleteTag(tag: string): void {
+		this.#refoldTasks((tasks) => removeTagFromTasks(tasks, tag));
 	}
 }
 

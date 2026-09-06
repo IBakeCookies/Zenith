@@ -629,6 +629,15 @@ them and outside the load gate — Flow Calibration and Drain Calibration, half
 each, directly above the log history they were fitted from, and absent rather
 than empty until their own two stores answer.
 
+### Completion rate and Yield Index are one card, and both are lines
+
+The page drew the same daily completion rate twice, on two cards. They answer
+one question — did a day's yield track what was finished — and that reads
+cheaply only when both series carry the SAME mark, so both are lines on one
+0–100 axis, separated by hue and by the dash. Yield breaks on a day that
+finished nothing while a completion rate of 0 is true, and a month's yield
+average covers only the days that completed something.
+
 ### A correction rewrites the quantities the user rated and nothing else
 
 This is the reason the ✎ can be there at all. Every measurement
