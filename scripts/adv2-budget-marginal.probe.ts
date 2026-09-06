@@ -211,6 +211,7 @@ describe('the marginal of the budget', () => {
 			const column = funded.map((row) => {
 				const { a, p0, k } = calculateTaskParams(
 					{
+						title: '',
 						difficulty: getEffectiveDifficulty(row),
 						enjoyment: row.enjoyment,
 					},

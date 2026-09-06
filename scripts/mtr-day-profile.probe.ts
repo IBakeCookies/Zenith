@@ -415,6 +415,7 @@ describe('Day Profile over a day space', () => {
 				tasks: d.tasks,
 				availableHours: d.availableHours,
 				switchCost: d.switchCost,
+				updatedAt: 0,
 			});
 
 			if (dashboard === null && summary.quadrant === null) return;
