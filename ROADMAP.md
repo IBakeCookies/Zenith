@@ -1050,19 +1050,22 @@ cited once it exists and none of these has been chosen yet.
   style, so it printed the label's best case. The corrected run puts five light
   themes under AA. The colour repair is deliberately a separate change, sized
   from that run.
-- **M101 — `NumberInput` is the one focused control with no ring.** It sets
-  `outline-none focus:ring-0` and leaves a single 1px border as the entire focus
-  indicator, where every button, badge and tab in the app carries
-  `focus-visible:ring-3 ring-ring/50`. It reaches ~15 fields (the four
-  day-constraint inputs, nine Lab param rows, two accented Lab fields) plus the
-  instrument inputs in `measurement-prompt.ts` and `rest-log-form.svelte`. No
-  measurement is owed — it is a grep and an R3 reading, and the fix adopts a
-  recipe already shipped across 46 themes. axe never caught it because it has no
-  rule for a suppressed outline and only ever sees a story's REST state, which is
-  the same blindness the ink repair above documents. Keep it to `ring-2` on the
-  wrapper and check the 4-up bar's geometry: STYLE.md already records the
-  importance control needing `has-focus-visible:z-10` so a neighbour cannot clip
-  a ring. Raised 2026-09-04, not built.
+- **M101 — `NumberInput` was the one focused control with no ring — fixed
+  2026-09-06,
+  [`the-field-that-answered-a-tab-with-a-border`](docs/features/the-field-that-answered-a-tab-with-a-border.md).**
+  The wrapper rings at `ring-2`; the 4-up bar needed no `has-focus-visible:z-10`,
+  its columns being gapped rather than joined. A story `play` asserts the focused
+  state, which is the state axe never reads. **The finding's reach sentence was
+  wrong on its last clause**: the instrument inputs it named are raw
+  `<input type="number">`, not `NumberInput`, so the wrapper ring cannot reach
+  them — see M102.
+- **M102 — the instrument fields carry their own suppressed-outline recipe.**
+  The five `type="number"` inputs in `rest-log-form.svelte` and
+  `RATING_INPUT_CLASS` in `measurement-prompt.ts` are raw inputs whose whole
+  focus indicator is `outline-none focus:border-mind/60` (and `body`), i.e. a
+  1px border colour change — the same shape M101 fixed, on a different control,
+  which is why M101's own wrapper fix does not touch them. Split out of M101 on
+  2026-09-06 when the fix was scoped against the code. Raised, not built.
 - **The funded-subset enumeration priced every subset it could not use —
   closed 2026-09-04,
   [`the-subsets-that-could-not-win`](docs/features/the-subsets-that-could-not-win.md).**

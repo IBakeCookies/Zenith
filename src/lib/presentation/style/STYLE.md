@@ -292,6 +292,14 @@ Read this before touching markup, classes, or anything under
   dropped**: the two bare-`border` inputs in `day-actions.svelte` inherit their
   border colour from its base layer. Give them explicit token borders first,
   then remove it.
+- **A composite field rings on its wrapper, not on the input.**
+  `number-input.svelte` is a row of two `tabindex={-1}` steppers around a field,
+  so the ring is `has-focus-visible:ring-2 has-focus-visible:ring-ring/50` on
+  that row — `ring-2` rather than the `ring-3` a button carries, because it
+  traces a border the caller may already be tinting through `accent`. The
+  field's own `outline-none focus:ring-0` stays: `outline-none` drops the UA
+  outline the wrapper now replaces, and `ring-0` zeroes the ring
+  `@tailwindcss/forms` gives every focused input, which is not a token colour.
 - **An overflowing panel scrolls with `nice-scrollbar` (`base.css`), never the
   native bar** — the theme dropdown, the analytics log history, `/`'s day strip and
   the dialog and calendar bodies are all it. No palette reaches a UA scrollbar, so it renders as
