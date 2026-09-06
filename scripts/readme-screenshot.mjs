@@ -17,6 +17,7 @@ const baseUrl = process.env.BASE_URL ?? 'http://localhost:5173';
 const fixture = join(tmpdir(), 'fallow-readme-fixture.json');
 // Today, because the app plans the current day and nothing else.
 const now = new Date();
+/** @param {number} n */
 const pad = (n) => String(n).padStart(2, '0');
 const date = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
 

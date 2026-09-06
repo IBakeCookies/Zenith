@@ -45,10 +45,16 @@ const { sides, drifted, translucent } = await page.evaluate(
 		const cv = document.createElement('canvas');
 		cv.width = cv.height = 1;
 
-		const ctx = cv.getContext('2d', {
-			willReadFrequently: true,
-		});
+		const ctx = /** @type {CanvasRenderingContext2D} */ (
+			cv.getContext('2d', {
+				willReadFrequently: true,
+			})
+		);
 
+		/**
+		 * @param {string} css
+		 * @param {string} under
+		 */
 		const srgb = (css, under) => {
 			ctx.fillStyle = under;
 			ctx.fillRect(0, 0, 1, 1);
@@ -58,6 +64,7 @@ const { sides, drifted, translucent } = await page.evaluate(
 			return [...ctx.getImageData(0, 0, 1, 1).data].slice(0, 3);
 		};
 
+		/** @param {number[]} rgb */
 		const lum = (rgb) => {
 			const [r, g, b] = rgb.map((v) => {
 				const c = v / 255;
@@ -68,6 +75,10 @@ const { sides, drifted, translucent } = await page.evaluate(
 			return 0.2126 * r + 0.7152 * g + 0.0722 * b;
 		};
 
+		/**
+		 * @param {number[]} a
+		 * @param {number[]} b
+		 */
 		const ratio = (a, b) => {
 			const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p);
 
@@ -90,9 +101,13 @@ const { sides, drifted, translucent } = await page.evaluate(
 
 		document.body.appendChild(holder);
 
-		const paint = (n) => getComputedStyle(document.getElementById(`s-${n}`)).backgroundColor;
+		/** @param {string | number} n */
+		const paint = (n) =>
+			getComputedStyle(/** @type {HTMLElement} */ (document.getElementById(`s-${n}`)))
+				.backgroundColor;
 
 		// Straight colour and alpha, recovered from the two paints above.
+		/** @param {string | number} n */
 		const layer = (n) => {
 			const onWhite = srgb(paint(n), '#fff');
 			const onBlack = srgb(paint(n), '#000');
@@ -104,10 +119,17 @@ const { sides, drifted, translucent } = await page.evaluate(
 			};
 		};
 
+		/**
+		 * @param {{ rgb: number[]; a: number }} fg
+		 * @param {number[]} bg
+		 */
 		const over = (fg, bg) => fg.rgb.map((v, i) => fg.a * v + (1 - fg.a) * bg[i]);
 		const original = document.documentElement.className;
+		/** @type {Record<string, { themes: string[]; rows: { fill: string; label: number; block: number }[] }>} */
 		const sides = {};
+		/** @type {string[]} */
 		const drifted = [];
+		/** @type {string[]} */
 		const translucent = [];
 
 		for (const t of themes) {

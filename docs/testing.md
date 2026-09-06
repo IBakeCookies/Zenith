@@ -167,9 +167,12 @@ are cheap and one of them is load-bearing:
 - **`npx prettier --write`** on the files you touched (never the tree).
 
 The costs above are this repo on a 4-core box, 2026-09-04, except `check`:
-re-timed 2026-09-06 at 17 s, of which `tsconfig.tooling.json` is 2 s. The same
-box put the pre-tooling command at 15 s, so the 13 s this line used to carry was
-a different day's box, not a regression. Re-time them rather than trusting the
+re-timed 2026-09-06 at 17 s on an idle box, of which `tsconfig.tooling.json` is
+3.8 s. Its thirteen `.mjs` files are **not measurable** against that: three runs
+each, with the glob 3.84/3.63/3.74 s and without it 3.85/3.65/3.55 s. Nor is the
+box: the same command read 19 s with a dev server up and 15 s before the tooling
+program existed, so read anything inside that spread as load, not as a
+regression, and re-time rather than trusting this line. Re-time them rather than trusting the
 figures if one starts to feel expensive. These two used to be
 excluded along with `lint` and `test:e2e`, on the argument that the five "cost
 minutes of tokens to sit through" — which was never true of a seventeen-second

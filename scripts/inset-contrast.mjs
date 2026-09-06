@@ -60,12 +60,18 @@ const THEMES = [
 const MIN_STEP = 1.03;
 const MIN_CR = 4.5;
 
+/** @param {number[]} rgb */
 const lum = ([r, g, b]) => {
+	/** @param {number} c */
 	const f = (c) => ((c /= 255) <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
 
 	return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b);
 };
 
+/**
+ * @param {number[]} a
+ * @param {number[]} b
+ */
 const ratio = (a, b) => {
 	const [hi, lo] = [lum(a), lum(b)].sort((x, y) => y - x);
 
@@ -86,12 +92,16 @@ const page = await browser.newPage({
 // `--ty-primary` at 70% over transparent (base.css). Painting it on a bare
 // canvas returns the un-premultiplied colour, i.e. the label as if it were
 // opaque, so the background it is actually drawn over has to go down first.
+/**
+ * @param {string} css
+ * @param {number[]} bg
+ */
 const composite = (css, bg) =>
 	page.evaluate(
 		([c, b]) => {
 			const cv = document.createElement('canvas');
 			cv.width = cv.height = 1;
-			const ctx = cv.getContext('2d');
+			const ctx = /** @type {CanvasRenderingContext2D} */ (cv.getContext('2d'));
 			ctx.fillStyle = `rgb(${b[0]} ${b[1]} ${b[2]})`;
 			ctx.fillRect(0, 0, 1, 1);
 			ctx.fillStyle = c;
@@ -99,13 +109,14 @@ const composite = (css, bg) =>
 
 			return [...ctx.getImageData(0, 0, 1, 1).data].slice(0, 3);
 		},
-		[css, bg.map(Math.round)],
+		/** @type {[string, number[]]} */ ([css, bg.map(Math.round)]),
 	);
 
 // mean sRGB over a clip, decoded by the same browser rather than by a decoder
 // here. A patch and not one pixel, for hover-contrast's reason: a single sample
 // lands on antialiasing at a rounded corner or on one bright spot of a
 // background photo and reports a change that is not there.
+/** @param {{ x: number; y: number; width: number; height: number }} clip */
 const sample = async (clip) => {
 	const png = (
 		await page.screenshot({
@@ -121,7 +132,7 @@ const sample = async (clip) => {
 
 		const img = await createImageBitmap(new Blob([buf]));
 		const cv = new OffscreenCanvas(img.width, img.height);
-		const ctx = cv.getContext('2d');
+		const ctx = /** @type {OffscreenCanvasRenderingContext2D} */ (cv.getContext('2d'));
 		ctx.drawImage(img, 0, 0);
 
 		const px = ctx.getImageData(0, 0, img.width, img.height).data;
@@ -151,6 +162,10 @@ for (const theme of THEMES) {
 	const wellBox = await well.boundingBox();
 	const cardBox = await card.boundingBox();
 
+	// A locator that matches nothing times out rather than returning null, so null
+	// means the element is in the DOM with no box — a zero-size or hidden ancestor.
+	if (!wellBox || !cardBox) throw new Error(`${theme}: inset-well or inset-card has no box`);
+
 	// The strip between the two labels: inside the well, clear of its rounded
 	// corners and of both label glyphs.
 	const inset = {
@@ -177,7 +192,9 @@ for (const theme of THEMES) {
 	const cardPx = await sample(around);
 
 	const ink = await composite(
-		await well.evaluate((n) => getComputedStyle(n.firstElementChild).color),
+		await well.evaluate(
+			(n) => getComputedStyle(/** @type {Element} */ (n.firstElementChild)).color,
+		),
 		insetPx,
 	);
 

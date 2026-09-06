@@ -37,7 +37,7 @@ function listed() {
 		.slice(open, close)
 		.split('\n')
 		.map((line) => ROW.exec(line)?.[1])
-		.filter(Boolean);
+		.filter((name) => name !== undefined);
 }
 
 /** Probe basenames in `scripts/`. */
