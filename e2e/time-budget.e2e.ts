@@ -6,6 +6,7 @@ import {
 	isoDate,
 	openTimeBudget,
 	setBudget,
+	statValue,
 	timeBudgetBar,
 } from './helpers';
 
@@ -171,4 +172,86 @@ test('the day strip prints no clock', async ({ page }) => {
 
 	await expect(timeline.getByText('#1 Deep work')).toBeVisible();
 	await expect(timeline.getByText(/\d{2}:\d{2}/)).toHaveCount(0);
+});
+
+// The window field is the one thing standing between a fresh profile and a plan,
+// and it is a card away on a desktop and three on a phone. The prompt in the
+// empty plan card is the only thing pointing at it, so it has to go there.
+test('the empty plan card sends you to the day window', async ({ page }) => {
+	await page.goto('/energy');
+	await addTask(page, 'Deep work');
+
+	// The plan card carries no work/free summary and no chart/schedule switch yet:
+	// both read a plan that does not exist.
+	await expect(page.getByText('0m work · 0m free')).toHaveCount(0);
+
+	await expect(
+		page.getByRole('button', {
+			name: 'Chart',
+		}),
+	).toHaveCount(0);
+
+	await page
+		.getByRole('button', {
+			name: 'Set a day window above 0 hours.',
+		})
+		.click();
+
+	await expect(page.getByLabel('Day window')).toBeFocused();
+});
+
+// Settled 2026-07-29: neither mode is the better one, so neither owns the day's
+// hours. The window and Available Hours are one persisted value — the Lab's
+// PARAMS stay its own, which the reload test below still pins.
+test('the day window and the main page’s budget are one value', async ({ page }) => {
+	await page.goto('/');
+	await addTask(page, 'Deep work');
+	await setBudget(page, 8);
+	await page.waitForTimeout(AUTOSAVE_MS);
+
+	await page.goto('/energy');
+	await expect(page.getByLabel('Day window')).toHaveValue('8');
+
+	await page.getByLabel('Day window').fill('5');
+	await page.getByLabel('Day window').blur();
+	await expect(statValue(page, 'Planned work')).toBeVisible();
+	await page.waitForTimeout(AUTOSAVE_MS);
+
+	// It reached the session, not just the Lab's own view of it. The bar collapses
+	// itself on a day that has hours, so open it to read the field.
+	await page.goto('/');
+	await openTimeBudget(page, /5h budget/);
+	await expect(budgetField(page)).toHaveValue('5');
+});
+
+// One value edited by two steppers, so they must agree on its granularity: the
+// number input rounds to its own step's decimals, so a coarser step here would
+// round a quarter-hour day set on the main page (6.25 → 6.75 → "6.8") and write
+// that back. Neither page can afford to mangle the other's number.
+test('the window stepper moves the shared budget in the main page’s increments', async ({
+	page,
+}) => {
+	await page.goto('/');
+	await addTask(page, 'Deep work');
+	await setBudget(page, 6.25);
+	await page.waitForTimeout(AUTOSAVE_MS);
+
+	await page.goto('/energy');
+	await expect(page.getByLabel('Day window')).toHaveValue('6.25');
+
+	// The steppers flank the input, so its grandparent is the one control.
+	await page
+		.locator('#window-hours')
+		.locator('xpath=../..')
+		.getByRole('button', {
+			name: 'Increase',
+		})
+		.click();
+
+	await expect(page.getByLabel('Day window')).toHaveValue('6.5');
+	await page.waitForTimeout(AUTOSAVE_MS);
+
+	await page.goto('/');
+	await openTimeBudget(page, /6\.5h budget/);
+	await expect(budgetField(page)).toHaveValue('6.5');
 });

@@ -25,7 +25,7 @@ const tagRows = (page: Page) =>
 
 /** A stored day carrying one tagged task, and the 🪫 session logged against it. No UI
  *  path dates either in the past — past days are read-only — so both are written
- *  straight into IndexedDB, the way `analytics.e2e.ts` seeds its drain rows. */
+ *  straight into IndexedDB, the way `drain-rating.e2e.ts` seeds its drain rows. */
 async function writeTaggedDay(page: Page, date: string, tag: string, hours: number) {
 	await page.evaluate(
 		({ date, tag, hours }) =>

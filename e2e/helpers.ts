@@ -364,3 +364,80 @@ export const setIndexedDBFailing = (page: Page, failing: boolean) =>
 		([key, on]) => (on === '1' ? sessionStorage.setItem(key, '1') : sessionStorage.removeItem(key)),
 		[FAIL_SWITCH, failing ? '1' : '0'],
 	);
+
+/* Row-scoped: two rows can hold an open editor at once, which `drainForm` would both
+   match. */
+export const rowDrainForm = (page: Page, title: string) =>
+	taskRow(page, title).locator('form').filter({
+		hasText: 'After the session',
+	});
+
+// A parameter's fit reading, named off the stepper's own id — the fit sits on the
+// row it fits, not on the calibration card.
+export const paramFit = (page: Page, id: string) => page.locator(`#${id}-fit`);
+
+// A stat tile renders as <p>value</p><p>label</p>, so the value is the label's
+// preceding sibling — the only way to read one without a test id.
+export const statValue = (page: Page, label: string) =>
+	page
+		.getByText(label, {
+			exact: true,
+		})
+		.locator('xpath=preceding-sibling::p[1]');
+
+/** A calibration card, by the title in its heading — never by its text: every card
+ *  renders the same shell and the pending-log copy repeats between them, so a text
+ *  match resolves the wrong card. */
+export const calibrationCard = (page: Page, title: string) =>
+	page.locator('.card-shell').filter({
+		has: page.getByRole('heading', {
+			name: title,
+		}),
+	});
+
+/** Plan a day. Past days are read-only, so seeding uses today or a day ahead. */
+export async function seedDay(page: Page, offset: number, titles: string[]) {
+	await page.goto(offset === 0 ? '/' : `/?date=${isoDate(offset)}`);
+
+	for (const title of titles) {
+		await addTask(page, title);
+	}
+
+	await page.waitForTimeout(AUTOSAVE_MS);
+}
+
+/** A second ⚡ dated `date`, copied off the one already logged. No UI path dates a flow
+ *  log in the past — the record carries the viewed day and past days are read-only — so
+ *  the store is written directly, which is also all this needs: the row under test reads
+ *  the log back out. */
+export async function copyFlowLogToDate(page: Page, date: string) {
+	await page.evaluate(
+		(date) =>
+			new Promise<void>((resolve, reject) => {
+				const request = indexedDB.open('zenith-db');
+				request.onerror = () => reject(request.error);
+
+				request.onsuccess = () => {
+					const transaction = request.result.transaction('flowObservations', 'readwrite');
+					const store = transaction.objectStore('flowObservations');
+					const all = store.getAll();
+
+					all.onerror = () => reject(all.error);
+
+					all.onsuccess = () => {
+						const [first] = all.result as Record<string, unknown>[];
+						delete first.id;
+
+						store.add({
+							...first,
+							date,
+						});
+					};
+
+					transaction.onerror = () => reject(transaction.error);
+					transaction.oncomplete = () => resolve();
+				};
+			}),
+		date,
+	);
+}

@@ -1,26 +1,17 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import {
-	AUTOSAVE_MS,
 	addTask,
+	AUTOSAVE_MS,
 	closeTaskForm,
-	drainForm,
 	expectTaskInputs,
 	logDrain,
-	openDrainEditor,
+	logFlow,
 	openTaskForm,
-	plantRunningTimer,
 	setBudget,
 	setSlider,
 	taskCard,
 	taskRow,
 } from './helpers';
-
-/* Row-scoped: two rows can hold an open editor at once, which `drainForm` would both
-   match. */
-const rowDrainForm = (page: Page, title: string) =>
-	taskRow(page, title).locator('form').filter({
-		hasText: 'After the session',
-	});
 
 test('fresh profile shows the empty state', async ({ page }) => {
 	await page.goto('/');
@@ -453,163 +444,6 @@ test('a phone reads the plan and hides the row detail', async ({ page }) => {
 	expect(document.content).toBe(document.box);
 });
 
-/* The timer's whole point: the minutes reach the 🪫 form without being recalled.
-   Only an e2e sees the path — the control on the card's heading row, the reading
-   `localStorage` carries, and the editor on a row that never heard of either. */
-test('stopping the timer fills the next drain editor', async ({ page }) => {
-	await page.goto('/');
-	await addTask(page, 'Write report');
-	await page.waitForTimeout(AUTOSAVE_MS);
-
-	await plantRunningTimer(page, 45);
-	await page.reload();
-
-	await page
-		.getByRole('button', {
-			name: 'Stop timer',
-		})
-		.click();
-
-	await openDrainEditor(page, 'Write report');
-	await expect(drainForm(page).locator('input[type="number"]').first()).toHaveValue('45');
-});
-
-/* One 🪫 row per session. The reading funds the log that spends it and no other, or
-   the second row re-saves hours the day already counts. */
-test('one stop funds one log', async ({ page }) => {
-	await page.goto('/');
-	await addTask(page, 'Write report');
-	await addTask(page, 'Gym session');
-	await page.waitForTimeout(AUTOSAVE_MS);
-
-	await plantRunningTimer(page, 45);
-	await page.reload();
-
-	await page
-		.getByRole('button', {
-			name: 'Stop timer',
-		})
-		.click();
-
-	await openDrainEditor(page, 'Write report');
-	const fields = drainForm(page).locator('input[type="number"]');
-	await expect(fields.first()).toHaveValue('45');
-	await fields.nth(1).fill('5');
-	await fields.nth(2).fill('3');
-
-	await drainForm(page)
-		.getByRole('button', {
-			name: 'Save',
-		})
-		.click();
-
-	await openDrainEditor(page, 'Gym session');
-	await expect(drainForm(page).locator('input[type="number"]').first()).toHaveValue('');
-});
-
-/* The reading outlives the tab, which is why it is written at all: a session ends
-   with a reload as often as with a click. */
-test('the stopped reading survives a reload', async ({ page }) => {
-	await page.goto('/');
-	await addTask(page, 'Write report');
-	await page.waitForTimeout(AUTOSAVE_MS);
-
-	await plantRunningTimer(page, 45);
-	await page.reload();
-
-	await page
-		.getByRole('button', {
-			name: 'Stop timer',
-		})
-		.click();
-
-	await page.reload();
-
-	await openDrainEditor(page, 'Write report');
-	await expect(drainForm(page).locator('input[type="number"]').first()).toHaveValue('45');
-});
-
-/* Correcting a rating rewrites a session already counted, so it never spends the
-   timed one — the reading is still there for the log it belongs to. */
-test('a correction does not spend the stopped reading', async ({ page }) => {
-	await page.goto('/');
-	await addTask(page, 'Write report');
-	await logDrain(page, 60, 5, 3);
-	await page.waitForTimeout(AUTOSAVE_MS);
-
-	await plantRunningTimer(page, 45);
-	await page.reload();
-
-	await page
-		.getByRole('button', {
-			name: 'Stop timer',
-		})
-		.click();
-
-	await taskRow(page, 'Write report')
-		.getByRole('button', {
-			name: 'Correct this drain rating',
-		})
-		.click();
-
-	await drainForm(page)
-		.getByRole('button', {
-			name: 'Save',
-		})
-		.click();
-
-	await openDrainEditor(page, 'Write report');
-	await expect(drainForm(page).locator('input[type="number"]').first()).toHaveValue('45');
-});
-
-/* Several rows hold an open 🪫 editor at once — ticking two tasks done opens two — and
-   the stopped reading is one session's. The first editor opened claims it; any other
-   opens empty and spends nothing, and closing the claim hands it back. */
-test('a second drain editor opened over the reading opens empty', async ({ page }) => {
-	await page.goto('/');
-	await addTask(page, 'Write report');
-	await addTask(page, 'Gym session');
-	await page.waitForTimeout(AUTOSAVE_MS);
-
-	await plantRunningTimer(page, 45);
-	await page.reload();
-
-	await page
-		.getByRole('button', {
-			name: 'Stop timer',
-		})
-		.click();
-
-	await openDrainEditor(page, 'Write report');
-	await openDrainEditor(page, 'Gym session');
-
-	const claimed = rowDrainForm(page, 'Write report').locator('input[type="number"]');
-	const unclaimed = rowDrainForm(page, 'Gym session').locator('input[type="number"]');
-
-	await expect(claimed.first()).toHaveValue('45');
-	await expect(unclaimed.first()).toHaveValue('');
-
-	// The row that opened empty rates its own session and leaves the reading where it was.
-	await unclaimed.first().fill('30');
-	await unclaimed.nth(1).fill('5');
-	await unclaimed.nth(2).fill('3');
-
-	await rowDrainForm(page, 'Gym session')
-		.getByRole('button', {
-			name: 'Save',
-		})
-		.click();
-
-	await rowDrainForm(page, 'Write report')
-		.getByRole('button', {
-			name: 'Cancel',
-		})
-		.click();
-
-	await openDrainEditor(page, 'Write report');
-	await expect(claimed.first()).toHaveValue('45');
-});
-
 /* The verdict on the day comes before the setup that produces it; the list still
    reads before the full readings. What put the first task past the fold at every
    desktop size was the whole metrics grid, and that is what stayed underneath. */
@@ -631,40 +465,181 @@ test('the verdict reads above the ledger and the full readings below it', async 
 	expect(ledger?.y).toBeLessThan(readings?.y ?? 0);
 });
 
-/* One reading, one rule, on both screens that hold a 🪫 editor: the Lab seeds from the
-   stopped reading and spends it, so a session rated there cannot be rated again here. */
-test('the Lab seeds and spends the same stopped reading', async ({ page }) => {
+/* Both records copy the task's title at logging time, and a rename left that copy
+   behind — the history printed a name the task no longer has, with nothing to say the
+   two rows were the same task. It reads the live title by `taskId` now, off the year of
+   days the page already loads. Crossing the screens is the test: the rename happens on
+   `/` and only the list can say which name it prints. */
+test('the log history follows a renamed task', async ({ page }) => {
 	await page.goto('/');
-	await addTask(page, 'Write report');
-	await page.waitForTimeout(AUTOSAVE_MS);
-
-	await plantRunningTimer(page, 45);
-	await page.reload();
+	await addTask(page, 'Boxing training');
+	await logFlow(page, 90);
+	await logDrain(page, 60, 7, 3);
 
 	await page
 		.getByRole('button', {
-			name: 'Stop timer',
+			name: 'Edit task',
 		})
 		.click();
 
-	await page.goto('/energy');
-	await openDrainEditor(page, 'Write report');
+	const editor = page.locator('form').filter({
+		has: page.getByLabel('Title'),
+	});
 
-	const fields = rowDrainForm(page, 'Write report').locator('input[type="number"]');
-	await expect(fields.first()).toHaveValue('45');
-	await fields.nth(1).fill('5');
-	await fields.nth(2).fill('3');
+	await editor.getByLabel('Title').fill('Boxing sparring');
 
-	await rowDrainForm(page, 'Write report')
+	await editor
 		.getByRole('button', {
 			name: 'Save',
 		})
 		.click();
 
-	await page.goto('/');
-	await openDrainEditor(page, 'Write report');
+	await expect(taskRow(page, 'Boxing sparring')).toBeVisible();
+	await page.waitForTimeout(AUTOSAVE_MS);
+
+	await page.goto('/analytics');
+
+	// Both measurements, under the name the task carries now
+	await expect(page.getByText('2 measurements')).toBeVisible();
 
 	await expect(
-		rowDrainForm(page, 'Write report').locator('input[type="number"]').first(),
-	).toHaveValue('');
+		page.getByRole('listitem').filter({
+			hasText: 'Boxing sparring',
+		}),
+	).toHaveCount(2);
+
+	await expect(
+		page.getByRole('listitem').filter({
+			hasText: 'Boxing training',
+		}),
+	).toHaveCount(0);
+});
+
+/* Re-tuning a task after it is added is a different path from creating one: the
+   editor seeds its draft from the task, and the new values have to reach both the
+   allocator's inputs and the persisted session. */
+test('editing a task rewrites its inputs and survives a reload', async ({ page }) => {
+	await page.goto('/');
+	await addTask(page, 'Boxing training');
+	await expectTaskInputs(page, 'Boxing training', [5, 5, 5]);
+
+	await page
+		.getByRole('button', {
+			name: 'Edit task',
+		})
+		.click();
+
+	// The add-task form carries the same slider labels, so scope to the editor —
+	// which is the only form with a "Title" field.
+	const editor = page.locator('form').filter({
+		has: page.getByLabel('Title'),
+	});
+
+	await editor.getByLabel('Title').fill('Boxing sparring');
+	await setSlider(editor.getByLabel('Mental Diff'), 6);
+
+	await editor
+		.getByRole('button', {
+			name: 'Save',
+		})
+		.click();
+
+	await expect(taskRow(page, 'Boxing sparring')).toBeVisible();
+	await expectTaskInputs(page, 'Boxing sparring', [5, 6, 5]);
+
+	await page.waitForTimeout(AUTOSAVE_MS);
+	await page.reload();
+
+	await expect(taskRow(page, 'Boxing sparring')).toBeVisible();
+	await expectTaskInputs(page, 'Boxing sparring', [5, 6, 5]);
+});
+
+/* The same editor, opened from the Lab's row. It is the same task and the same
+   store, so a title was never one screen's to own — the Lab could not rename one at
+   all until the editor was shared. */
+test('the Lab edits a task with the same editor as the main page', async ({ page }) => {
+	await page.goto('/');
+	await addTask(page, 'Boxing training');
+	await setBudget(page, 6);
+	await page.waitForTimeout(AUTOSAVE_MS);
+
+	await page.goto('/energy');
+
+	await page
+		.getByRole('button', {
+			name: 'Edit task',
+		})
+		.click();
+
+	const editor = page.locator('form').filter({
+		has: page.getByLabel('Title'),
+	});
+
+	await editor.getByLabel('Title').fill('Boxing sparring');
+
+	await editor
+		.getByRole('button', {
+			name: 'Save',
+		})
+		.click();
+
+	await expect(taskRow(page, 'Boxing sparring')).toBeVisible();
+
+	// Saving closes the editor, and the rename reached the shared session — the main
+	// page reads it without a reload.
+	await expect(page.getByLabel('Title')).toHaveCount(0);
+
+	await page.waitForTimeout(AUTOSAVE_MS);
+	await page.goto('/');
+	await expect(taskRow(page, 'Boxing sparring')).toBeVisible();
+});
+
+/* Importance is the one task field with no slider and no default worth showing on the
+   row: `Normal` is silent, and only a level the user chose gets a badge. The edit form
+   is where a task already deployed changes level, so it has to seed from what is
+   stored — otherwise saving any other edit would quietly reset the level to Normal. */
+test('a task’s importance is editable after it is deployed', async ({ page }) => {
+	await page.goto('/');
+	await addTask(page, 'Boxing training');
+
+	const row = taskRow(page, 'Boxing training');
+
+	// Nothing badged: a task nobody rated is Normal, and Normal says nothing.
+	await expect(row.getByText(/importance/)).toHaveCount(0);
+
+	await row
+		.getByRole('button', {
+			name: 'Edit task',
+		})
+		.click();
+
+	// Seeded from the stored level, which is what a save must not overwrite.
+	await expect(
+		row
+			.getByRole('group', {
+				name: 'Importance',
+			})
+			.getByRole('radio', {
+				name: 'Normal',
+				exact: true,
+			}),
+	).toBeChecked();
+
+	await row
+		.getByRole('group', {
+			name: 'Importance',
+		})
+		.getByRole('radio', {
+			name: 'Low',
+			exact: true,
+		})
+		.check();
+
+	await row
+		.getByRole('button', {
+			name: 'Save',
+		})
+		.click();
+
+	await expect(row.getByText('Low importance')).toBeVisible();
 });
