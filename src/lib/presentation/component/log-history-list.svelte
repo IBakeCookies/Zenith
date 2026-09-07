@@ -1,4 +1,6 @@
 <script lang="ts">
+	import Pencil from '@lucide/svelte/icons/pencil';
+	import X from '@lucide/svelte/icons/x';
 	import { resolve } from '$app/paths';
 	import * as m from '$lib/paraglide/messages.js';
 	import { localizeHref } from '$lib/paraglide/runtime';
@@ -135,11 +137,10 @@
 								kind: KIND[row.kind].name(),
 								date: row.date,
 							})}
-							title={m.ana_logs_edit_title()}
-							class="text-ty-silent transition hover:text-ty-secondary"
+							class="row-action text-ty-silent hover:text-ty-secondary"
 							onclick={() => (editingKey === row.key ? oncancel() : onedit(row.key))}
 						>
-							✎
+							<Pencil />
 						</button>
 						<button
 							type="button"
@@ -147,11 +148,10 @@
 								kind: KIND[row.kind].name(),
 								date: row.date,
 							})}
-							title={m.ana_logs_delete_title()}
-							class="text-ty-silent transition hover:text-danger"
+							class="row-action text-ty-silent hover:text-danger"
 							onclick={() => ondelete(row.kind, row.id)}
 						>
-							✕
+							<X />
 						</button>
 					</span>
 				</div>

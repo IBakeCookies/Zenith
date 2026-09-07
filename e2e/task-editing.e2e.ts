@@ -76,7 +76,7 @@ test('completing a task asks for its time-to-flow', async ({ page }) => {
 
 	await flowForm
 		.getByRole('button', {
-			name: '✓',
+			name: 'Save',
 		})
 		.click();
 
@@ -263,7 +263,7 @@ test('a flow log is correctable from the analytics history', async ({ page }) =>
 
 	await page
 		.getByRole('button', {
-			name: '✓',
+			name: 'Save',
 		})
 		.click();
 

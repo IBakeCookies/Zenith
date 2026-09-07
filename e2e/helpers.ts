@@ -108,7 +108,9 @@ export async function closeTaskForm(page: Page) {
 /** Save the day's whole list as a named routine, through the Plan card's Save menu.
  *  Shared because the Lab suite needs a routine saved on `/` before it can load one. */
 export async function saveRoutine(page: Page, name: string) {
-	// "Save" exact is the trigger; the form's own button is "Save routine".
+	// "Save" exact is the trigger; the form's own button is "Save routine". Page-level
+	// and not form-scoped because the trigger is in no form — which holds only while no
+	// measurement editor is open, the ✓ in those being "Save" exactly too.
 	await page
 		.getByRole('button', {
 			name: 'Save',
@@ -170,11 +172,18 @@ export async function logFlow(page: Page, minutes: number) {
 		.first()
 		.click();
 
-	await page.getByPlaceholder('min').fill(String(minutes));
+	const minutesField = page.getByPlaceholder('min');
 
+	await minutesField.fill(String(minutes));
+
+	// Form-scoped, the way `logDrain` is: on `/` the routine trigger is a second "Save".
 	await page
+		.locator('form')
+		.filter({
+			has: minutesField,
+		})
 		.getByRole('button', {
-			name: '✓',
+			name: 'Save',
 		})
 		.click();
 }
@@ -227,7 +236,7 @@ export async function logDrain(page: Page, minutes: number, mind: number, body: 
 
 	await form
 		.getByRole('button', {
-			name: '✓',
+			name: 'Save',
 		})
 		.click();
 }
@@ -268,7 +277,7 @@ export async function logRest(
 
 	await form
 		.getByRole('button', {
-			name: '✓',
+			name: 'Save',
 		})
 		.click();
 }

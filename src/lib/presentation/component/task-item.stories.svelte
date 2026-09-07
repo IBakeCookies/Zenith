@@ -456,7 +456,7 @@
 
 		await userEvent.click(
 			canvas.getByRole('button', {
-				name: '✓',
+				name: 'Save',
 			}),
 		);
 
@@ -657,7 +657,7 @@
 		// ✓ reports the session in hours, keyed by the task the row is
 		await userEvent.click(
 			canvas.getByRole('button', {
-				name: '✓',
+				name: 'Save',
 			}),
 		);
 

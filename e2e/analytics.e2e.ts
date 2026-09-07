@@ -747,7 +747,7 @@ test('a wipe closes an open correction', async ({ page }) => {
 		.click();
 
 	const save = page.getByRole('button', {
-		name: '✓',
+		name: 'Save',
 	});
 
 	await expect(save).toBeVisible();

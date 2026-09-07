@@ -365,6 +365,26 @@
 	@apply absolute inset-0 cursor-pointer appearance-none opacity-0;
 }
 
+/* The controls a row carries at its right edge — ⚡ 🪫 to log, ✎ to correct, ✕ to drop,
+   and the same pair on the analytics log rows and the tag rows. The hover is in the
+   COLOUR only, which the call site owns (`hover:text-danger` on a drop): `ghost`'s
+   `hover:bg-surface-hover` puts a second plate under the mark, inside a row that
+   already lifts on hover, and the two surfaces read as a button landing on the row
+   rather than belonging to it. The 24px box stays either way — it is the tap target a
+   bare glyph does not give, and it is invisible until focused. `h-6 min-w-6` and not
+   `size-6`: the armed confirm's two WORDS sit in the same 24px band, so the row keeps
+   its height when it arms and every control centres against the same box —
+   `items-center` concentres boxes, it does not align text, and a 12px word centred in
+   a 16px line box read as misaligned beside a 14px reading. `size-3` on the icon
+   because the group's other two marks are text at the row's inherited 14px, and a
+   16px pencil beside them reads as two sizes of control. A control that is already
+   an accent colour takes NO hover: grey lighting up is the cue, and an accent has
+   nothing to become — the armed confirm's `hover:text-danger-strong` is the one
+   exception, where deepening IS the warning. */
+@utility row-action {
+	@apply inline-flex h-6 min-w-6 shrink-0 items-center justify-center rounded-md transition-colors outline-none focus-visible:ring-3 focus-visible:ring-ring/50 [&_svg]:size-3 [&_svg]:shrink-0;
+}
+
 @utility log-row {
 	@apply flex items-center justify-between gap-text-xs rounded-sm bg-surface-inset px-box-2xs py-text-2xs text-xs text-ty-secondary;
 }

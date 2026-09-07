@@ -229,12 +229,12 @@ Six components hold what the two screens say the same way:
   `lead` / `badges` / `meta` / `planned` / `readings` — all inline, none a cell.
   **An action is present when its callback is**, so a read-only row passes no ✎ or
   ✕ and a past day none of the **logging** ones.
-- **`measurement-form-actions.svelte`** — the ✓/✕/🗑 that closes ⚡, 🪫 and ☕. It
-  exists because those three editors were written separately and drifted into
-  two different button sizes, one with a hover surface and one without; the
-  instrument's hue on ✓ is the only real difference and is a prop. 🗑 is the
-  caller's copy and absent unless it passes one, because what is being dropped
-  differs per editor and a first measurement has nothing to drop.
+- **`measurement-form-actions.svelte`** — the ✓/✕/🗑 that closes ⚡, 🪫 and ☕, on
+  `row-action`. It exists because those three editors were written separately
+  and drifted into two button sizes, one with a hover surface and one without;
+  the instrument's hue on ✓ is the only real difference and is a prop. 🗑 is the
+  caller's copy and absent unless it passes one, because what is dropped differs
+  per editor and a first measurement has nothing to drop.
 - **`task-edit-form.svelte`** — the editor, on both screens. Its frame is the
   `bg-surface-page/40` wash the two measurement forms in the same spanning row
   use, under a plain `border-line-soft` — this form logs no instrument, so it
@@ -341,11 +341,15 @@ is ticked, or the screen is a picture of a plan nothing computed. Every reading
 below draws its own conclusion from that one fact, and which mark each screen
 uses is "the bar marks, the list dims", below.
 
-✎ and ✕ carry an `aria-label` and no tooltip: a pencil and a cross are the two
-icons nobody needs told. They are always visible, at the right edge of the title's
-line — the strip they replaced was hover-revealed and reserved 114px on every row
-to show nothing
-([docs/features/the-row-that-became-a-table.md](../../../docs/features/the-row-that-became-a-table.md)).
+**A control is a lucide icon; a glyph or an emoji is content** — `Pencil`/`X`
+for a row's correct/drop pair, `Trash2` to destroy a stored record from its own
+editor, `Check`/`X` to close one. ✎ ✕ 🗑 ✓ name them in prose, and no control of
+ours renders one: the `✓` on a finished block is content, `component/ui/`'s ✕ is
+vendored. Box and colour-only hover are `row-action`'s (STYLE.md). The pair
+carries an `aria-label` and no tooltip — a pencil and a cross are the two icons
+nobody needs told — and is always visible at the right edge of the title's line;
+the strip it replaced was hover-revealed and reserved 114px per row to show nothing
+([the-row-that-became-a-table.md](../../../docs/features/the-row-that-became-a-table.md)).
 A story `play` pins that they read at rest and that neither is a tooltip's
 trigger, the second on `data-slot` rather than by hovering and waiting for
 nothing: a tooltip that never opens and one that opens after a delay look alike.
@@ -717,6 +721,10 @@ because putting a measurement back is a second IndexedDB write and only the
 store knows what it writes — the whole record under its own id and `createdAt`
 (`$restore*Observation`), never a re-log, which would be a second session for
 §8.7's α and a second recovery for §8.9's r.
+
+The session clock's discard is the third address into this window: it destroys
+the reading a 🪫 editor would have been seeded from, and only the toast stands
+between a mis-click and a lost session.
 
 No day guard, unlike the task's: a record carries the day it belongs to, so no
 viewed day can misplace it. Nothing is offered back for a record the store does
