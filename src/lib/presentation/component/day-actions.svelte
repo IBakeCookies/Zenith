@@ -50,6 +50,8 @@
 		ondeleteroutine,
 	}: Props = $props();
 
+	const id = $props.id();
+
 	const isToday = $derived(selectedDate === today);
 	const isViewingPast = $derived(selectedDate < today);
 	// "Yesterday" is yesterday relative to `today`, not to the day on screen, so
@@ -304,6 +306,7 @@
 				</DropdownMenu.Label>
 				<div class="px-box-2xs pb-box-2xs">
 					<input
+						id="{id}-import-date"
 						type="date"
 						bind:value={importDate}
 						onchange={importFromDate}
@@ -321,7 +324,7 @@
 							}
 						}}
 						aria-label={m.header_from_date()}
-						class="w-full px-box-2xs py-text-2xs text-sm rounded-sm bg-surface-card border text-ty-secondary focus:outline-none focus:ring-1 focus:ring-brand"
+						class="field-input"
 					/>
 					{#if importDateEmpty}
 						<p class="mt-text-2xs text-xs text-danger">{m.header_no_tasks_on_date()}</p>
@@ -344,13 +347,14 @@
 								e.preventDefault();
 								saveCurrentAsRoutine();
 							}}
-							class="flex gap-grid-xs"
+							class="flex items-end gap-grid-xs"
 						>
 							<input
+								id="{id}-routine-name"
 								type="text"
 								bind:value={routineName}
 								placeholder={m.header_routine_name_placeholder()}
-								class="flex-1 px-box-2xs py-text-2xs text-sm rounded-sm bg-surface-card border text-ty-secondary placeholder:text-ty-silent focus:outline-none focus:ring-1 focus:ring-brand"
+								class="field-input flex-1"
 							/>
 							<!-- Not `common_save` again: the trigger above already carries that
 								     name, and two controls with one accessible name is a coin flip

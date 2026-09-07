@@ -42,6 +42,8 @@
 		oncancel,
 	}: Props = $props();
 
+	const id = $props.id();
+
 	// The ☕ editor's own draft, unlike the 🪫 one: a break has no task row to hang off
 	// and no completion that opens it, so nothing outside this form gates on it.
 	//
@@ -87,6 +89,7 @@
 		     asked for. Not `autofocus` — the document's autofocus-processed flag is set
 		     at load, so the attribute is inert on any node inserted afterwards. -->
 		<input
+			id="{id}-minutes"
 			type="number"
 			min="1"
 			max="480"
@@ -102,6 +105,7 @@
 		<label class="flex items-center gap-grid-2xs" title={m.energy_rest_mind_title()}>
 			<span class="font-medium text-mind/80">{m.energy_drain_mind_label()}</span>
 			<input
+				id="{id}-mind-before"
 				type="number"
 				min="0"
 				max="10"
@@ -114,6 +118,7 @@
 		<label class="flex items-center gap-grid-2xs" title={m.energy_rest_body_title()}>
 			<span class="font-medium text-body/80">{m.energy_drain_body_label()}</span>
 			<input
+				id="{id}-body-before"
 				type="number"
 				min="0"
 				max="10"
@@ -129,6 +134,7 @@
 		<label class="flex items-center gap-grid-2xs" title={m.energy_rest_mind_title()}>
 			<span class="font-medium text-mind/80">{m.energy_drain_mind_label()}</span>
 			<input
+				id="{id}-mind-after"
 				type="number"
 				min="0"
 				max="10"
@@ -141,6 +147,7 @@
 		<label class="flex items-center gap-grid-2xs" title={m.energy_rest_body_title()}>
 			<span class="font-medium text-body/80">{m.energy_drain_body_label()}</span>
 			<input
+				id="{id}-body-after"
 				type="number"
 				min="0"
 				max="10"

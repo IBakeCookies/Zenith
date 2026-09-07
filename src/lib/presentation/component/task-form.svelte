@@ -94,8 +94,11 @@
 		);
 	});
 
-	// `$props.id()` rather than a literal: unique per instance and stable across hydration.
-	const listId = $props.id();
+	// `$props.id()` rather than a literal: unique per instance and stable across
+	// hydration. Svelte allows one call per component, so the list id is suffixed
+	// off it.
+	const id = $props.id();
+	const listId = `${id}-suggestions`;
 	const optionId = (index: number) => `${listId}-option-${index}`;
 
 	function closeSuggestions() {
@@ -214,6 +217,7 @@
 			<label class="block text-xs font-medium text-ty-secondary">
 				{m.task_title_label()}
 				<input
+					id="{id}-title"
 					type="text"
 					bind:this={titleField}
 					role="combobox"

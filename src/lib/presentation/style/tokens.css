@@ -328,23 +328,41 @@
 	@apply mb-grid-lg flex items-center gap-grid-sm rounded-xl border p-box-md text-sm backdrop-blur;
 }
 
-/* The app's text field. Three inputs spell exactly this — the add form's title, the
-   ✎ editor's title, and the tag field both of them share — and it is the recipe a
-   fourth has to match (STYLE.md, "A repeated cluster becomes an `@utility`"). The
-   dialog story's demo field was a fourth hand-copy and had already lost the focus
-   ring and the placeholder colour; it renders the real thing now.
+/* The app's text field, and the recipe a new one has to match (STYLE.md, "A
+   repeated cluster becomes an `@utility`"): the add and ✎ titles, the tag field
+   they share, the analytics tag rename, and the day menu's date and routine-name
+   fields.
 
-   An `@utility` and not a component for the reason `hint-underline` is one: all
-   three inputs sit INSIDE the `<label>` that names them, and an element between
-   the two is either the label's own content or the association is gone. The top
-   margin belongs in here because the label's text is above the field in all
-   three, which is the layout and not a call-site choice.
+   An `@utility` and not a component for the reason `hint-underline` is one: the
+   inputs sit INSIDE the `<label>` that names them, and an element between the two
+   is either the label's own content or the association is gone. The top margin
+   belongs in here because the label's text is above the field, which is the
+   layout and not a call-site choice — a field sharing a row with a button aligns
+   with `items-end` on the row, never by dropping the margin.
 
    The narrow instrument inputs (`utils/measurement-prompt.ts`) are NOT this: each
    carries the accent border of the quantity it reads and sits inline in a row of
    text, so they share only `bg-input`. */
 @utility field-input {
 	@apply mt-text-xs w-full rounded-lg border border-line-strong bg-input px-box-md py-box-xs text-sm text-ty-primary transition outline-none placeholder:text-ty-silent focus:border-brand/50 focus:ring-1 focus:ring-brand/50;
+}
+
+/* The bare track every `type="range"` in the app is. The thumb's colour is NOT in
+   here: the three task sliders each carry the capacity they set (`accent-mind`,
+   `accent-body`, `accent-brand`) and the budget slider carries `accent-brand`, so
+   the accent is the one thing a call site decides. */
+@utility range-track {
+	@apply h-1 w-full cursor-pointer appearance-none rounded-full bg-surface-inset;
+}
+
+/* A real checkbox or radio stretched invisibly over the label that paints it —
+   STYLE.md's `appearance-auto accent-brand` carve-out, where the native control
+   keeps its accessible name, its keys and its `.check()` while the label carries
+   the button recipe. Transparent rather than `sr-only`: Playwright clicks the box
+   the element reports, and a control shrunk into a corner lets the label swallow
+   the click. */
+@utility input-overlay {
+	@apply absolute inset-0 cursor-pointer appearance-none opacity-0;
 }
 
 @utility log-row {

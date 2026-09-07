@@ -106,6 +106,7 @@
 			     lever — left the thumb reading a value the field beside it disagreed
 			     with. Snapping the drag keeps the quarters `step` was there for. -->
 			<input
+				id="available-hours-slider"
 				type="range"
 				aria-label={m.budget_hours_slider()}
 				min={BUDGET_BOUNDS.min}
@@ -113,7 +114,7 @@
 				step="any"
 				value={availableHours}
 				oninput={(e) => (availableHours = snapToStep(e.currentTarget.valueAsNumber))}
-				class="mt-text-xs h-1 w-full cursor-pointer appearance-none rounded-full bg-surface-inset accent-brand"
+				class="range-track mt-text-xs accent-brand"
 			/>
 			<p class="mt-text-xs text-xs text-ty-silent">
 				{m.budget_allocated({

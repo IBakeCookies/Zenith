@@ -262,36 +262,36 @@ Read this before touching markup, classes, or anything under
   `metrics-dashboard.svelte` was left on the registry default, so one card's
   tooltips fired on a pointer that was only crossing the trigger on its way
   somewhere else. Pass the prop only to deviate from the app's delay.
+- **Every form control carries an `id` or a `name`** — a browser warns on one
+  with neither. `$props.id()` wherever the component can mount twice: the add
+  dialog and a row's editor hold the same fields at once. A literal only where
+  one instance exists, or a visible `<label for>` has to name it.
 - Checkboxes use `appearance-auto accent-brand`, not the `@tailwindcss/forms`
-  look. **Two carve-outs**: `must-do-toggle.svelte` and the three radios in
-  `task-importance-select.svelte`. The toggle reads as a button with a
-  toggle state, so its `<input>` is a transparent full-size overlay inside a
-  `<label>` carrying `buttonVariants` — `outline` unset, `secondary` set, which
-  is the emphasis ladder keeping it below the submit beside it. The input stays
-  a real checkbox rather than a `<button aria-pressed>` because the value is
-  submitted with the form, and it is an overlay rather than `sr-only` because
-  Playwright clicks the box it is given and a shrunk one is intercepted by the
-  label. The focus ring is `has-[:focus-visible]:`, not `peer-*`: the input is
-  a child of the label, never its sibling. `task-importance-select.svelte`
-  takes that recipe three times for a 3-level scale, inside a `<fieldset>`
-  whose `<legend>` is **visible and above** the three options, styled like the
-  slider labels beside it — three bare buttons in a form say nothing about what
-  they set, and a `<legend>` cannot be a flex item in its own fieldset anyway.
-  The three are **joined into one segmented control**: `rounded-none` but for
-  the two ends, `-ms-px` so neighbours share one border, and
-  `has-focus-visible:z-10` so the overlapped neighbour cannot clip the ring.
-  Gapped, they read as three independent toggles rather than one control set to
-  one of three values — which is what they are.
-  Its `name` is `$props.id()`, because the add dialog and a row's editor can be
-  mounted at once and one shared name would merge them into a single group.
-  The plugin paints a hardcoded `fill='white'` checkmark over
+  look. **Two carve-outs**, both `input-overlay` (tokens.css) inside a `<label>`
+  carrying `buttonVariants`: `must-do-toggle.svelte` and the three radios in
+  `task-importance-select.svelte`. The toggle reads as a button with a toggle
+  state — `outline` unset, `secondary` set, the emphasis ladder keeping it below
+  the submit beside it — and stays a real checkbox rather than a
+  `<button aria-pressed>` because the value is submitted with the form. Its
+  focus ring is `has-focus-visible:`, not `peer-*`: the input is a child of the
+  label, never its sibling. The radios take that recipe three times for a
+  3-level scale, inside a `<fieldset>` whose `<legend>` is **visible and above**
+  the three options, styled like the slider labels beside it — three bare
+  buttons in a form say nothing about what they set, and a `<legend>` cannot be
+  a flex item in its own fieldset anyway. The three are **joined into one
+  segmented control**: `rounded-none` but for the two ends, `-ms-px` so
+  neighbours share one border, and `has-focus-visible:z-10` so the overlapped
+  neighbour cannot clip the ring. Gapped, they read as three independent
+  toggles rather than one control set to one of three values — which is what
+  they are. Its `name` is `$props.id()`, because the add dialog and a row's
+  editor can be mounted at once and one shared name would merge them into a
+  single group. The plugin paints a hardcoded `fill='white'` checkmark over
   `background-color: currentColor`, so the fill has to be dark — impossible
   here: on a dark theme every accent token is light by design. `accent-color`
   hands checkmark contrast to the browser, the only thing that holds across
-  every theme. The plugin is still loaded in `app.css` and **cannot just be
-  dropped**: the two bare-`border` inputs in `day-actions.svelte` inherit their
-  border colour from its base layer. Give them explicit token borders first,
-  then remove it.
+  every theme. It is still loaded in `app.css`: the instrument rings below
+  **displace** its focus ring rather than replacing it, so dropping it changes
+  every one of those, not just an import.
 - **A composite field rings on its wrapper, not on the input.**
   `number-input.svelte` is a row of two `tabindex={-1}` steppers around a field,
   so the ring is `has-focus-visible:ring-2 has-focus-visible:ring-ring/50` on
@@ -316,11 +316,11 @@ Read this before touching markup, classes, or anything under
   otherwise (axe `scrollable-region-focusable`), which is why it holds a scoped
   `svelte-ignore` for `a11y_no_noninteractive_tabindex`.
 - **A repeated cluster becomes an `@utility`, not a wrapper component** —
-  `field-input` is the newest (the app's text field, spelled by hand in the add
-  form, the ✎ editor and the tag field they share), over `banner-shell` and
-  `card-shell`. A wrapper component would cost each caller a level it cannot
-  always afford: the same argument as `hint-underline`'s, where it would cost the
-  heading level or the label association.
+  `field-input` (every text and date field), `range-track` (every slider, its
+  `accent-*` left to the call site) and `input-overlay` (the carve-outs above),
+  over `banner-shell` and `card-shell`. A wrapper component would cost each
+  caller a level it cannot always afford: the same argument as `hint-underline`'s,
+  where it would cost the heading level or the label association.
 - **The hand cursor marks anything clickable** — Tailwind v4's Preflight gives
   buttons `cursor: default` (the spec reading, where the hand means "link");
   `base.css` puts `cursor: pointer` back on every enabled `button` and

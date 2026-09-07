@@ -16,6 +16,8 @@
 
 	let { seed = null, focusMinutes = false, onsave, oncancel, ondelete }: Props = $props();
 
+	const id = $props.id();
+
 	// Why a copy, and why re-opening is a remount: presentation/AGENTS.md, "A seeded editor
 	// copies its seed at mount".
 	// svelte-ignore state_referenced_locally -- deliberately initial-value only
@@ -34,6 +36,7 @@
 	<label class="flex items-center gap-grid-2xs">
 		<span class="text-ty-secondary">{m.task_flow_form_title()}</span>
 		<input
+			id="{id}-minutes"
 			type="number"
 			min="1"
 			max="960"

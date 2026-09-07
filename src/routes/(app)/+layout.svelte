@@ -35,6 +35,8 @@
 
 	let { children }: LayoutProps = $props();
 
+	const id = $props.id();
+
 	onMount(flushPendingToasts);
 
 	const themeStore = getThemeStore();
@@ -218,6 +220,7 @@
 					</DropdownMenu.Content>
 				</DropdownMenu.Root>
 				<input
+					id="{id}-backup-file"
 					bind:this={backupFileInput}
 					type="file"
 					accept="application/json,.json"

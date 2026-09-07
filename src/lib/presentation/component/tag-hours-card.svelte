@@ -16,6 +16,8 @@
 
 	let { breakdown, hasFailed, locale, ondelete, onrename, willMerge }: Props = $props();
 
+	const id = $props.id();
+
 	// Rounded here rather than in the fold, which has to stay exact: the parts add
 	// up to the "Logged hours" tile this card breaks down.
 	const hours = (value: number) => (Math.round(value * 10) / 10).toLocaleString(locale);
@@ -177,6 +179,7 @@
 								{m.ana_tag_hours_rename_field()}
 								<!-- Not `autofocus`: the attribute is inert on a node inserted after load. -->
 								<input
+									id="{id}-rename"
 									type="text"
 									bind:value={draft}
 									required
