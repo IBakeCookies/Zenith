@@ -200,3 +200,75 @@ test('a routine carries the importance its tasks were saved with', async ({ page
 
 	await expect(taskRow(page, 'Send the invoice').getByText('High importance')).toBeVisible();
 });
+
+/* The Lab is where the day is actually tuned, so the day's two menus read on its
+   Plan card as well — a routine saved on the main page had no way in here. */
+test('the day’s Load and Save read on the Lab’s Plan card', async ({ page }) => {
+	await page.goto('/energy');
+	await addTask(page, 'Deep work');
+
+	const card = taskCard(page);
+
+	await expect(
+		card.getByRole('button', {
+			name: 'Load',
+			exact: true,
+		}),
+	).toBeVisible();
+
+	await expect(
+		card.getByRole('button', {
+			name: 'Save',
+			exact: true,
+		}),
+	).toBeVisible();
+});
+
+test('a routine loads onto the Lab’s list', async ({ page }) => {
+	// Saved from a future day so today stays empty: routines are global, and loading
+	// tasks onto a day that already holds them would assert nothing.
+	await page.goto(`/?date=${isoDate(2)}`);
+	await addTask(page, 'Boxing training');
+	await addTask(page, 'Write report');
+
+	await saveRoutine(page, 'Morning block');
+
+	await page.goto('/energy');
+	await expect(page.getByText('No tasks deployed yet')).toBeVisible();
+
+	await taskCard(page)
+		.getByRole('button', {
+			name: 'Load',
+			exact: true,
+		})
+		.click();
+
+	await page
+		.getByRole('menuitem', {
+			name: 'Morning block (2)',
+		})
+		.click();
+
+	await expect(taskRow(page, 'Boxing training')).toBeVisible();
+	await expect(taskRow(page, 'Write report')).toBeVisible();
+});
+
+// Load with nothing loaded yet is the whole point of the pair being here; Save is
+// what an empty day has nothing to offer.
+test('an empty Lab day offers Load and nothing to save', async ({ page }) => {
+	await page.goto('/energy');
+
+	await expect(
+		taskCard(page).getByRole('button', {
+			name: 'Load',
+			exact: true,
+		}),
+	).toBeVisible();
+
+	await expect(
+		page.getByRole('button', {
+			name: 'Save',
+			exact: true,
+		}),
+	).toHaveCount(0);
+});

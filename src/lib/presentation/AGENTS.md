@@ -192,7 +192,7 @@ Untestable at every level is the signal.
   page-owned draft, and `log-history-list.svelte`'s
   `{#if editingKey === row.key}` sits inside a keyed `{#each}`, so a row's
   editor cannot outlive the row. The forms carry no runtime guard;
-  `e2e/energy-lab.e2e.ts` ("the ✎ re-seeds a drain editor the row already has
+  `e2e/drain-rating.e2e.ts` ("the ✎ re-seeds a drain editor the row already has
   open") is what holds the drain half.
 - Storybook stories live **beside their component** (`*.stories.svelte`), one
   file per component or primitive group, rendered as smoke tests by the
@@ -322,7 +322,7 @@ and the meta line's READINGS half is `hidden sm:flex`: seven figures at `text-2x
 wrap to three lines on a 390px screen and bury the one thing the screen is for. The
 logged chips stay — they are what the row recorded — and with none of them the whole
 line goes rather than leave a gap (`hasLogged`). ✎ is where a phone re-reads the
-three sliders. `e2e/tasks.e2e.ts` pins what stays AND that the document does not
+three sliders. `e2e/task-list.e2e.ts` pins what stays AND that the document does not
 scroll sideways, because hiding a line is only correct while nothing else widens
 the page.
 

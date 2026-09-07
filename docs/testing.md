@@ -33,6 +33,9 @@ Pick the level:
 | Component, not story-expressible  | `*.svelte.spec.ts` — module mocks, rerender, head      |
 | A user-visible flow               | `e2e/*.e2e.ts`                                         |
 
+An e2e file is named for a **feature**, not a route: a feature's tests live in
+exactly one file, whichever routes exercise them.
+
 **Check for existing coverage first; when there is none, adding it is part of
 the change, not a follow-up:**
 
