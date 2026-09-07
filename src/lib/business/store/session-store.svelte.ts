@@ -98,6 +98,26 @@ function nextTaskId(tasks: readonly Task[]): number {
 	return Math.max(Date.now(), ...tasks.map((task) => Math.floor(task.id) + 1));
 }
 
+/** What a task IS, stripped of the day it sat on. */
+type TaskDefinition = Omit<Task, 'id' | 'createdAt' | 'completed'>;
+
+/**
+ * The one projection every import and every saved routine carries. Listed field
+ * by field rather than omitted, because what a DAY owns has to stay behind —
+ * `mustDoToday`, the id, the date, the checkbox — and a spread would carry the
+ * next such field silently.
+ */
+function toTaskDefinition(task: TaskDefinition): TaskDefinition {
+	return {
+		title: task.title,
+		physicalDifficulty: task.physicalDifficulty,
+		mentalDifficulty: task.mentalDifficulty,
+		enjoyment: task.enjoyment,
+		importance: task.importance,
+		tags: task.tags,
+	};
+}
+
 /**
  * The daily session as a shared reactive store: tasks, time budget, capacity
  * pools, flow observations, and their IndexedDB persistence. Created once in
@@ -1030,20 +1050,10 @@ export class SessionStore {
 
 		try {
 			const session = await this.#readSession(date);
-			const tasks = session?.tasks ?? [];
 
 			// The count the header reports is what actually landed, not what was read:
 			// the await above outlives a date change, and `importTasks` then refuses.
-			return this.importTasks(
-				tasks.map((t) => ({
-					title: t.title,
-					physicalDifficulty: t.physicalDifficulty,
-					mentalDifficulty: t.mentalDifficulty,
-					enjoyment: t.enjoyment,
-					importance: t.importance,
-					tags: t.tags,
-				})),
-			);
+			return this.importTasks(session?.tasks ?? []);
 		} catch (e) {
 			logError('Failed to load session for import', e, {
 				date,
@@ -1059,13 +1069,13 @@ export class SessionStore {
 	}
 
 	/** Returns how many landed, so a caller reporting a count reports the truth. */
-	importTasks(imported: Omit<Task, 'id' | 'createdAt' | 'completed'>[]): number {
+	importTasks(imported: TaskDefinition[]): number {
 		if (!this.#canEditPlan) return 0;
 
 		let id = nextTaskId(this.#tasks);
 
 		const newTasks = imported.map((t) => ({
-			...t,
+			...toTaskDefinition(t),
 			id: id++,
 			createdAt: this.#selectedDate,
 			completed: false,
@@ -1383,14 +1393,7 @@ export class SessionStore {
 			name,
 			// `tags` is a nested $state proxy, and structuredClone (IndexedDB's put)
 			// throws DataCloneError on a Proxy — snapshot before building the record.
-			tasks: $state.snapshot(this.#tasks).map((t) => ({
-				title: t.title,
-				physicalDifficulty: t.physicalDifficulty,
-				mentalDifficulty: t.mentalDifficulty,
-				enjoyment: t.enjoyment,
-				importance: t.importance,
-				tags: t.tags,
-			})),
+			tasks: $state.snapshot(this.#tasks).map(toTaskDefinition),
 			createdAt: Date.now(),
 		};
 

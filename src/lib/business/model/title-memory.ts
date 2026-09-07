@@ -14,6 +14,7 @@
  */
 
 import type { DailySession } from '$lib/data/type';
+import { normalizeTitle } from '$lib/business/utils/title';
 
 export interface TitleRating {
 	/**
@@ -42,19 +43,6 @@ export interface TitleRating {
  * is no instrument for it short of real histories.
  */
 export const TITLE_QUERY_MIN = 2;
-
-/**
- * The one definition of "the same task title" (AGENTS.md R3) — the map is keyed
- * with it, every lookup goes through it, and it is what makes a query match in
- * any case or spacing. A second spelling of this rule would make a remembered
- * rating unreachable from the title that produced it.
- *
- * NFC last, not first: lowercasing can decompose what it folds, so composing
- * afterwards is the one call that leaves every accent in a single spelling.
- */
-export function normalizeTitle(title: string): string {
-	return title.trim().toLowerCase().replace(/\s+/g, ' ').normalize('NFC');
-}
 
 /**
  * The latest rating per title across the given days, latest last. Sorted here

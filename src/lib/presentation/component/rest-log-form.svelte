@@ -1,7 +1,12 @@
 <script lang="ts">
 	import * as m from '$lib/paraglide/messages.js';
+	import { cn } from '$lib/presentation/utils';
+	import * as Tooltip from '$lib/presentation/component/ui/tooltip';
 	import MeasurementFormActions from '$lib/presentation/component/measurement-form-actions.svelte';
-	import { RATING_INPUT_CLASS } from '$lib/presentation/utils/measurement-prompt';
+	import {
+		MEASUREMENT_FORM_CLASS,
+		RATING_INPUT_CLASS,
+	} from '$lib/presentation/utils/measurement-prompt';
 
 	/** The five numbers a break is, as this form holds them — minutes on the way in,
 	 *  hours on the way out, since MATH.md §8.9 fits r in hours. */
@@ -28,6 +33,7 @@
 			bodyAfter: number;
 		}) => void;
 		oncancel: () => void;
+		class?: string;
 	}
 
 	let {
@@ -40,6 +46,7 @@
 		},
 		onsave,
 		oncancel,
+		class: className,
 	}: Props = $props();
 
 	const id = $props.id();
@@ -78,85 +85,127 @@
 	}
 </script>
 
-<form
-	class="mt-text-sm flex flex-wrap items-center gap-x-grid-xs gap-y-grid-2xs rounded-lg border border-info/20 bg-surface-page/40 px-box-xs py-box-2xs text-2xs text-ty-silent"
-	onsubmit={(e) => (e.preventDefault(), save())}
->
-	<label class="flex items-center gap-grid-2xs">
-		{m.energy_rest_rested_label()}
-		<!-- Always focuses: both ways in are a click asking for this editor — the ☕ button
+<Tooltip.Provider>
+	<form
+		class={cn(MEASUREMENT_FORM_CLASS, 'border-info/20', className)}
+		onsubmit={(e) => (e.preventDefault(), save())}
+	>
+		<label class="flex items-center gap-grid-2xs">
+			{m.energy_rest_rested_label()}
+			<!-- Always focuses: both ways in are a click asking for this editor — the ☕ button
 		     and the analytics ✎ — so the caret is always
 		     asked for. Not `autofocus` — the document's autofocus-processed flag is set
 		     at load, so the attribute is inert on any node inserted afterwards. -->
-		<input
-			id="{id}-minutes"
-			type="number"
-			min="1"
-			max="480"
-			placeholder={m.task_minutes_placeholder()}
-			{@attach (node) => node.focus()}
-			bind:value={draft.minutes}
-			required
-			class="w-14 rounded-sm border border-info/30 bg-input px-box-3xs py-text-3xs text-xs text-ty-primary outline-none focus:border-info/60 focus:ring-1 focus:ring-info/60"
-		/>
-	</label>
-	<span class="flex items-center gap-grid-2xs">
-		{m.energy_rest_before_label()}
-		<label class="flex items-center gap-grid-2xs" title={m.energy_rest_mind_title()}>
-			<span class="font-medium text-mind/80">{m.energy_drain_mind_label()}</span>
 			<input
-				id="{id}-mind-before"
+				id="{id}-minutes"
 				type="number"
-				min="0"
-				max="10"
-				step="1"
-				bind:value={draft.mindBefore}
+				min="1"
+				max="480"
+				placeholder={m.task_minutes_placeholder()}
+				{@attach (node) => node.focus()}
+				bind:value={draft.minutes}
 				required
-				class={RATING_INPUT_CLASS.mind}
+				class="w-14 rounded-sm border border-info/30 bg-input px-box-3xs py-text-3xs text-xs text-ty-primary outline-none focus:border-info/60 focus:ring-1 focus:ring-info/60"
 			/>
 		</label>
-		<label class="flex items-center gap-grid-2xs" title={m.energy_rest_body_title()}>
-			<span class="font-medium text-body/80">{m.energy_drain_body_label()}</span>
-			<input
-				id="{id}-body-before"
-				type="number"
-				min="0"
-				max="10"
-				step="1"
-				bind:value={draft.bodyBefore}
-				required
-				class={RATING_INPUT_CLASS.body}
-			/>
-		</label>
-	</span>
-	<span class="flex items-center gap-grid-2xs">
-		{m.energy_rest_after_label()}
-		<label class="flex items-center gap-grid-2xs" title={m.energy_rest_mind_title()}>
-			<span class="font-medium text-mind/80">{m.energy_drain_mind_label()}</span>
-			<input
-				id="{id}-mind-after"
-				type="number"
-				min="0"
-				max="10"
-				step="1"
-				bind:value={draft.mindAfter}
-				required
-				class={RATING_INPUT_CLASS.mind}
-			/>
-		</label>
-		<label class="flex items-center gap-grid-2xs" title={m.energy_rest_body_title()}>
-			<span class="font-medium text-body/80">{m.energy_drain_body_label()}</span>
-			<input
-				id="{id}-body-after"
-				type="number"
-				min="0"
-				max="10"
-				step="1"
-				bind:value={draft.bodyAfter}
-				required
-				class={RATING_INPUT_CLASS.body}
-			/>
-		</label>
-	</span>
-	<MeasurementFormActions accentClass="text-info" {oncancel} />
-</form>
+		<span class="flex items-center gap-grid-2xs">
+			{m.energy_rest_before_label()}
+			<Tooltip.Root>
+				<Tooltip.Trigger>
+					{#snippet child({ props })}
+						<label class="flex items-center gap-grid-2xs">
+							<span class="font-medium text-mind/80">{m.energy_drain_mind_label()}</span>
+							<input
+								{...props}
+								id="{id}-mind-before"
+								type="number"
+								min="0"
+								max="10"
+								step="1"
+								bind:value={draft.mindBefore}
+								required
+								class={RATING_INPUT_CLASS.mind}
+							/>
+						</label>
+					{/snippet}
+				</Tooltip.Trigger>
+				<Tooltip.Content side="top">
+					<p>{m.energy_rest_mind_title()}</p>
+				</Tooltip.Content>
+			</Tooltip.Root>
+			<Tooltip.Root>
+				<Tooltip.Trigger>
+					{#snippet child({ props })}
+						<label class="flex items-center gap-grid-2xs">
+							<span class="font-medium text-body/80">{m.energy_drain_body_label()}</span>
+							<input
+								{...props}
+								id="{id}-body-before"
+								type="number"
+								min="0"
+								max="10"
+								step="1"
+								bind:value={draft.bodyBefore}
+								required
+								class={RATING_INPUT_CLASS.body}
+							/>
+						</label>
+					{/snippet}
+				</Tooltip.Trigger>
+				<Tooltip.Content side="top">
+					<p>{m.energy_rest_body_title()}</p>
+				</Tooltip.Content>
+			</Tooltip.Root>
+		</span>
+		<span class="flex items-center gap-grid-2xs">
+			{m.energy_rest_after_label()}
+			<Tooltip.Root>
+				<Tooltip.Trigger>
+					{#snippet child({ props })}
+						<label class="flex items-center gap-grid-2xs">
+							<span class="font-medium text-mind/80">{m.energy_drain_mind_label()}</span>
+							<input
+								{...props}
+								id="{id}-mind-after"
+								type="number"
+								min="0"
+								max="10"
+								step="1"
+								bind:value={draft.mindAfter}
+								required
+								class={RATING_INPUT_CLASS.mind}
+							/>
+						</label>
+					{/snippet}
+				</Tooltip.Trigger>
+				<Tooltip.Content side="top">
+					<p>{m.energy_rest_mind_title()}</p>
+				</Tooltip.Content>
+			</Tooltip.Root>
+			<Tooltip.Root>
+				<Tooltip.Trigger>
+					{#snippet child({ props })}
+						<label class="flex items-center gap-grid-2xs">
+							<span class="font-medium text-body/80">{m.energy_drain_body_label()}</span>
+							<input
+								{...props}
+								id="{id}-body-after"
+								type="number"
+								min="0"
+								max="10"
+								step="1"
+								bind:value={draft.bodyAfter}
+								required
+								class={RATING_INPUT_CLASS.body}
+							/>
+						</label>
+					{/snippet}
+				</Tooltip.Trigger>
+				<Tooltip.Content side="top">
+					<p>{m.energy_rest_body_title()}</p>
+				</Tooltip.Content>
+			</Tooltip.Root>
+		</span>
+		<MeasurementFormActions accentClass="text-info" {oncancel} />
+	</form>
+</Tooltip.Provider>

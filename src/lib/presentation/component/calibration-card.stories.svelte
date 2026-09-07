@@ -65,32 +65,3 @@
 		</div>
 	{/snippet}
 </Story>
-
-<Story
-	name="With an action"
-	args={{
-		title: 'Recovery Calibration',
-		hint: 'Fits the recovery rate to your ☕ pre/post-rest rating pairs.',
-	}}
-	play={async ({ canvas }) => {
-		// The recovery card is the only one with an action: ☕ opens the rest editor
-		await expect(
-			canvas.getByRole('button', {
-				name: /log a rest/i,
-			}),
-		).toBeVisible();
-	}}
->
-	{#snippet template(args)}
-		<div class="max-w-sm">
-			<CalibrationCard title={args.title} hint={args.hint}>
-				{#snippet action()}
-					<button type="button" class="shrink-0 text-xs text-info/90 hover:text-info-strong">
-						☕ Log a rest
-					</button>
-				{/snippet}
-				<p class="mt-text-sm text-xs text-ty-silent">Rest pairs · 4</p>
-			</CalibrationCard>
-		</div>
-	{/snippet}
-</Story>

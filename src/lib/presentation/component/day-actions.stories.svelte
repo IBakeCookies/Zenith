@@ -19,6 +19,7 @@
 		tasks: [
 			{
 				...task(1, 'boxing'),
+				importance: 'high',
 				tags: ['exercise'],
 			},
 			task(2, 'writing'),
@@ -120,7 +121,7 @@
 		currentTasks: [task(1, 'boxing'), task(2, 'writing')],
 	}}
 	play={async ({ args, canvas, canvasElement, userEvent }) => {
-		// The full load menu: yesterday's tasks import stripped to their definition, routines import by
+		// The full load menu: yesterday's tasks import whole, routines import by
 		// click or Enter, and deleting takes two presses
 		const body = within(canvasElement.ownerDocument.body);
 
@@ -128,7 +129,6 @@
 			name: 'Load',
 		});
 
-		// Yesterday's tasks arrive stripped to their definition — no id, date, done.
 		await whenClickable(load);
 		await userEvent.click(load);
 
@@ -146,24 +146,10 @@
 			}),
 		);
 
-		// Stripped to the definition, and a tag is PART of that definition — the
-		// day-import path carries them, so the shortcut cannot be the one that drops them.
-		await expect(args.onimport).toHaveBeenNthCalledWith(1, [
-			{
-				title: 'boxing',
-				physicalDifficulty: 3,
-				mentalDifficulty: 7,
-				enjoyment: 6,
-				tags: ['exercise'],
-			},
-			{
-				title: 'writing',
-				physicalDifficulty: 3,
-				mentalDifficulty: 7,
-				enjoyment: 6,
-				tags: undefined,
-			},
-		]);
+		// The day's tasks whole, not a projection of them: `importTasks` is where a
+		// task is stripped to its definition, so no field can go missing on this
+		// path alone — `tags` already did, and `importance` did after it.
+		await expect(args.onimport).toHaveBeenNthCalledWith(1, yesterdaySession.tasks);
 
 		await waitFor(() => expect(body.queryByRole('menu')).not.toBeInTheDocument());
 

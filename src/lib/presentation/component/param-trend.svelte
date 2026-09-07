@@ -3,14 +3,17 @@
 	   The DEFAULT is part of the drawn range: scaling to the data alone turns a fit
 	   that has barely moved into a dramatic climb, and there is no axis to say so. */
 
+	import { cn } from '$lib/presentation/utils';
+
 	interface Props {
 		/** Ascending by recorded day; at least two, or the caller renders nothing */
 		values: number[];
 		defaultValue: number;
 		ariaLabel: string;
+		class?: string;
 	}
 
-	let { values, defaultValue, ariaLabel }: Props = $props();
+	let { values, defaultValue, ariaLabel, class: className }: Props = $props();
 
 	const CHART = {
 		w: 64,
@@ -45,7 +48,7 @@
 
 <svg
 	viewBox="0 0 {CHART.w} {CHART.h}"
-	class="h-4.5 w-16 shrink-0"
+	class={cn('h-4.5 w-16 shrink-0', className)}
 	role="img"
 	aria-label={ariaLabel}
 >

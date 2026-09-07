@@ -50,15 +50,15 @@
 		/** Why two ⚡ callbacks, and why 🪫's corrections are required: presentation/AGENTS.md,
 		 *  "Both corrections are offered on any day the page shows". */
 		onflowopen?: (source: EditorSource) => void;
-		onflowedit?: () => void;
-		onflowclose?: () => void;
-		onlogflow?: (minutes: number) => void;
-		onflowdelete?: () => void;
+		onflowedit: () => void;
+		onflowclose: () => void;
+		onlogflow: (minutes: number) => void;
+		onflowdelete: () => void;
 		drainDraft?: DrainDraft | null;
 		drainLogs?: Persisted<DrainObservationRecord>[];
 		ondrainopen?: (source: EditorSource) => void;
-		ondrainclose?: () => void;
-		ondrainsave?: (entry: { hours: number; mind: number; body: number }) => void;
+		ondrainclose: () => void;
+		ondrainsave: (entry: { hours: number; mind: number; body: number }) => void;
 		ondrainedit: (log: Persisted<DrainObservationRecord>) => void;
 		ondraindelete: (recordId: number) => void;
 		onupdate?: (edit: TaskEdit) => void;
@@ -75,6 +75,7 @@
 		/** The hours the optimizer planned, at the right edge of the title's line — the one
 		 *  reading both screens put in the same place. */
 		planned?: Snippet;
+		class?: string;
 	}
 
 	let {
@@ -110,6 +111,7 @@
 		readings,
 		meta,
 		planned,
+		class: className,
 	}: Props = $props();
 
 	const id = $props.id();
@@ -118,11 +120,13 @@
 	// else opens it.
 	let isEditing = $state(false);
 
+	const hasFlowReading = $derived(flowMinutes !== undefined);
+
 	// `completed` is a prop, read BEFORE the parent flips it.
 	function onCompletionChange() {
 		const flowAction = completionPromptAction({
 			finishing: !completed,
-			measured: Boolean(flowMinutes),
+			measured: hasFlowReading,
 			editorOpenOnThisRow: flowDraft !== null,
 			promptOpenForThisTask: flowDraft?.promptedByCompletion ?? false,
 		});
@@ -138,21 +142,22 @@
 
 		if (flowAction === 'open') onflowopen?.('completion');
 
-		if (flowAction === 'withdraw') onflowclose?.();
+		if (flowAction === 'withdraw') onflowclose();
 
 		if (drainAction === 'open') ondrainopen?.('completion');
 
-		if (drainAction === 'withdraw') ondrainclose?.();
+		if (drainAction === 'withdraw') ondrainclose();
 	}
 
-	const hasEditor = $derived(flowDraft !== null || drainDraft !== null || isEditing);
-	const hasLogged = $derived(Boolean(flowMinutes) || drainLogs.length > 0);
+	const hasLogged = $derived(hasFlowReading || drainLogs.length > 0);
 	// A past day passes none of the four, and an empty box would take the right end of
 	// the line the hours are meant to hold.
 	const hasControls = $derived(Boolean(onflowopen || ondrainopen || onupdate || onremove));
 </script>
 
-<li class="rounded-lg px-box-2xs py-box-xs text-sm transition hover:bg-surface-hover">
+<li
+	class={cn('rounded-lg px-box-2xs py-box-xs text-sm transition hover:bg-surface-hover', className)}
+>
 	<!-- Two columns from `sm`: everything the task IS stacks on the left, and what today
 	     gave it holds the whole right edge — one block, full height, so the hours never
 	     sit above a second right-hand reading. Stacked in DOM order, so a phone reads
@@ -221,31 +226,22 @@
 					{@render meta?.()}
 				</div>
 
-				{#if flowMinutes}
+				{#if hasFlowReading}
 					<Tooltip.Root>
 						<Tooltip.Trigger>
 							{#snippet child({ props })}
-								{#if onflowedit}
-									<button
-										{...props}
-										type="button"
-										onclick={() => (flowDraft ? onflowclose?.() : onflowedit())}
-										aria-label={m.task_edit_flow_log_aria()}
-										class={cn(
-											READING_CHIP_CLASS,
-											'font-medium text-flow transition hover:text-ty-primary',
-										)}
-									>
-										⚡ {flowMinutes}m
-									</button>
-								{:else}
-									<span
-										{...props}
-										class={cn(READING_CHIP_CLASS, 'cursor-help font-medium text-flow')}
-									>
-										⚡ {flowMinutes}m
-									</span>
-								{/if}
+								<button
+									{...props}
+									type="button"
+									onclick={() => (flowDraft ? onflowclose() : onflowedit())}
+									aria-label={m.task_edit_flow_log_aria()}
+									class={cn(
+										READING_CHIP_CLASS,
+										'font-medium text-flow transition hover:text-ty-primary',
+									)}
+								>
+									⚡ {flowMinutes}m
+								</button>
 							{/snippet}
 						</Tooltip.Trigger>
 						<Tooltip.Content>
@@ -262,7 +258,7 @@
 									{...props}
 									type="button"
 									onclick={() =>
-										drainDraft?.recordId === log.id ? ondrainclose?.() : ondrainedit(log)}
+										drainDraft?.recordId === log.id ? ondrainclose() : ondrainedit(log)}
 									aria-label={m.energy_edit_drain_log_aria()}
 									class={cn(READING_CHIP_CLASS, 'transition hover:text-ty-primary')}
 								>
@@ -305,7 +301,7 @@
 									'row-action',
 									flowMinutes || flowDraft ? 'text-flow' : 'text-ty-silent hover:text-flow',
 								)}
-								onclick={() => (flowDraft ? onflowclose?.() : onflowopen('button'))}
+								onclick={() => (flowDraft ? onflowclose() : onflowopen('button'))}
 								aria-label={m.task_log_flow_aria()}
 							>
 								⚡
@@ -329,7 +325,7 @@
 								)}
 								onclick={() =>
 									drainDraft && drainDraft.recordId === undefined
-										? ondrainclose?.()
+										? ondrainclose()
 										: ondrainopen('button')}
 								aria-label={m.energy_log_drain_aria()}
 							>
@@ -370,57 +366,51 @@
 		</div>
 	</div>
 
-	<!-- One block for all three, so an open editor reads under the whole row rather than
-	     inside either column of it. -->
-	{#if hasEditor}
-		<div>
-			<!-- Both keyed on the draft: `seed`/`focusMinutes` are read at MOUNT and the page can
-			     swap a draft while its editor is open — unkeyed, ✓ overwrote a stored rating. -->
-			{#if flowDraft && onlogflow}
-				{#key flowDraft}
-					<FlowLogForm
-						seed={flowMinutes ?? null}
-						focusMinutes={flowDraft.focusMinutes}
-						onsave={onlogflow}
-						oncancel={() => onflowclose?.()}
-						ondelete={flowMinutes === undefined ? undefined : onflowdelete}
-					/>
-				{/key}
-			{/if}
+	<!-- Both keyed on the draft: `seed`/`focusMinutes` are read at MOUNT and the page can
+	     swap a draft while its editor is open — unkeyed, ✓ overwrote a stored rating. -->
+	{#if flowDraft}
+		{#key flowDraft}
+			<FlowLogForm
+				seed={flowMinutes ?? null}
+				focusMinutes={flowDraft.focusMinutes}
+				onsave={onlogflow}
+				oncancel={onflowclose}
+				ondelete={hasFlowReading ? onflowdelete : undefined}
+			/>
+		{/key}
+	{/if}
 
-			{#if drainDraft && ondrainsave}
-				{#key drainDraft}
-					{@const recordId = drainDraft.recordId}
-					<DrainLogForm
-						seed={drainDraft}
-						focusMinutes={drainDraft.focusMinutes}
-						onsave={ondrainsave}
-						oncancel={() => ondrainclose?.()}
-						ondelete={recordId === undefined ? undefined : () => ondraindelete(recordId)}
-					/>
-				{/key}
-			{/if}
+	{#if drainDraft}
+		{#key drainDraft}
+			{@const recordId = drainDraft.recordId}
+			<DrainLogForm
+				seed={drainDraft}
+				focusMinutes={drainDraft.focusMinutes}
+				onsave={ondrainsave}
+				oncancel={ondrainclose}
+				ondelete={recordId === undefined ? undefined : () => ondraindelete(recordId)}
+			/>
+		{/key}
+	{/if}
 
-			{#if isEditing && onupdate}
-				<TaskEditForm
-					{tagVocabulary}
-					seed={{
-						title,
-						physicalDifficulty,
-						mentalDifficulty,
-						enjoyment,
-						mustDoToday,
-						importance,
-						tags,
-					}}
-					{withMustDoToday}
-					onsave={(edit) => {
-						onupdate(edit);
-						isEditing = false;
-					}}
-					oncancel={() => (isEditing = false)}
-				/>
-			{/if}
-		</div>
+	{#if isEditing && onupdate}
+		<TaskEditForm
+			{tagVocabulary}
+			seed={{
+				title,
+				physicalDifficulty,
+				mentalDifficulty,
+				enjoyment,
+				mustDoToday,
+				importance,
+				tags,
+			}}
+			{withMustDoToday}
+			onsave={(edit) => {
+				onupdate(edit);
+				isEditing = false;
+			}}
+			oncancel={() => (isEditing = false)}
+		/>
 	{/if}
 </li>

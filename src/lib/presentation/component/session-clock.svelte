@@ -7,6 +7,7 @@
 	import { formatDuration } from '$lib/presentation/utils/duration-format';
 	import { playAlarmSound } from '$lib/presentation/utils/alarm-sound';
 	import { showToast, showUndoToast } from '$lib/presentation/utils/toast';
+	import { cn } from '$lib/presentation/utils';
 	import {
 		getElapsedMinutes,
 		getRemainingMinutes,
@@ -26,11 +27,10 @@
 		 *  on one screen counts on the other and its reading stays the page's. */
 		timer: SessionTimer | null;
 		getSuggestedMinutes: () => number;
+		class?: string;
 	}
 
-	let { today, timer = $bindable(), getSuggestedMinutes }: Props = $props();
-
-	const id = $props.id();
+	let { today, timer = $bindable(), getSuggestedMinutes, class: className }: Props = $props();
 
 	const STEP_MINUTES = 15;
 	const MAX_MINUTES = 960;
@@ -40,9 +40,12 @@
 	let now = $state(Date.now());
 	// svelte-ignore state_referenced_locally -- one solve per mount, never per edit
 	let targetMinutes = $state(timer?.targetMs ? toMinutes(timer.targetMs) : getSuggestedMinutes());
+	let hasAlarmSounded = $state(false);
 
+	// The phase alone: re-aiming a running session writes `timer`, and a rebuilt
+	// interval would restart the second it was in the middle of counting.
 	$effect(() => {
-		if (timer?.phase !== 'running') return;
+		if (!isRunning) return;
 
 		now = Date.now();
 
@@ -53,6 +56,7 @@
 
 			showToast.info(m.timer_alarm_toast());
 			playAlarmSound();
+			hasAlarmSounded = true;
 			// Cleared as it rings: no state in which a target exists and has been announced.
 			timer = setTarget(timer, null);
 		}, 1000);
@@ -65,17 +69,15 @@
 
 	const isRunning = $derived(timer?.phase === 'running');
 	const isStopped = $derived(timer?.phase === 'stopped');
-	// The mark clears itself as it rings, so its absence over a live reading is the
-	// only trace left that there was one — which is what the full amber track says.
-	const hasRung = $derived(Boolean(timer) && timer?.targetMs == null);
+	// The mark clears itself as it rings, and a restored timer whose target failed
+	// validation has none either — so only this clock's own alarm tells the two apart.
+	const hasRung = $derived(hasAlarmSounded && timer !== null && timer.targetMs === null);
 
-	const progress = $derived(
-		timer === null
-			? 0
-			: timer.targetMs == null
-				? 100
-				: Math.min(100, ((elapsedMinutes * 60_000) / timer.targetMs) * 100),
-	);
+	const progress = $derived.by(() => {
+		if (timer === null || timer.targetMs === null) return hasRung ? 100 : 0;
+
+		return Math.min(100, ((elapsedMinutes * 60_000) / timer.targetMs) * 100);
+	});
 
 	const accentClass = $derived(
 		!isStopped && hasRung ? 'bg-flow' : isRunning ? 'bg-brand' : 'bg-ty-ghost',
@@ -136,10 +138,12 @@
      third number in the row. 46px on a phone, where a 44px hit target cannot fit in
      the 34px the desktop row gives it. -->
 <div
-	class="overflow-hidden relative flex shrink-0 rounded-lg border transition-colors has-focus-visible:ring-2 has-focus-visible:ring-ring/50 sm:h-8.5
-	{isStopped ? 'bg-surface-inset' : 'bg-input'} {!isStopped && hasRung
-		? 'border-flow/55'
-		: 'border-line-strong'}"
+	class={cn(
+		'overflow-hidden relative flex shrink-0 rounded-lg border transition-colors has-focus-visible:ring-2 has-focus-visible:ring-ring/50',
+		isStopped ? 'bg-surface-inset' : 'bg-input',
+		!isStopped && hasRung ? 'border-flow/55' : 'border-transparent',
+		className,
+	)}
 >
 	<div class="pointer-events-none absolute inset-x-0 bottom-0 h-0.75 bg-line-soft">
 		<div
@@ -193,7 +197,6 @@
 		<!-- The clock IS the bordered, filled, ringed object, so the field drops all three
 		     rather than drawing a second one inside it. -->
 		<NumberInput
-			{id}
 			value={targetMinutes}
 			onchange={onLengthChange}
 			min={STEP_MINUTES}
@@ -201,7 +204,7 @@
 			step={STEP_MINUTES}
 			unit={m.timer_length_unit()}
 			ariaLabel={m.timer_length_label()}
-			class="self-center rounded-none border-0 bg-transparent transition-opacity has-focus-visible:ring-0 {timer
+			class="max-w-30 self-center rounded-none border-0 bg-transparent transition-opacity has-focus-visible:ring-0 {timer
 				? 'opacity-70 hover:opacity-100 focus-within:opacity-100'
 				: ''}"
 		/>
@@ -209,7 +212,7 @@
 
 	{@render divider()}
 
-	<div class="flex items-center {timer ? 'gap-0.5 px-1' : ''}">
+	<div class="flex">
 		<!-- No Start on a stopped timer: the reading cannot be silently replaced by a
 		     second run, and discarding it is the only way back to a fresh clock. -->
 		{#if !isStopped}
@@ -221,15 +224,15 @@
 				variant="ghost"
 				size={timer ? 'icon-sm' : 'sm'}
 				class="focus-visible:ring-0 focus-visible:inset-ring-2 focus-visible:inset-ring-ring/50 {timer
-					? 'size-7'
-					: 'h-auto self-stretch rounded-none px-3'}"
+					? ''
+					: 'rounded-none px-2.5'}"
 				aria-label={primaryLabel}
 				onclick={onPrimaryClick}
 			>
 				{#if isRunning}
-					<Pause class="h-4 w-4" />
+					<Pause />
 				{:else}
-					<Play class="h-4 w-4 {timer ? '' : 'text-brand'}" />
+					<Play class={timer ? '' : 'text-brand'} />
 				{/if}
 				{#if !timer}{m.timer_start()}{/if}
 			</Button>
@@ -239,14 +242,14 @@
 			<Button
 				variant="ghost"
 				size="icon-sm"
-				class="size-7 hover:text-brand-strong focus-visible:ring-0 focus-visible:inset-ring-2 focus-visible:inset-ring-ring/50"
+				class="hover:text-brand-strong focus-visible:ring-0 focus-visible:inset-ring-2 focus-visible:inset-ring-ring/50"
 				aria-label={terminalLabel}
 				onclick={onTerminalClick}
 			>
 				{#if isStopped}
-					<X class="h-4 w-4" />
+					<X />
 				{:else}
-					<Square class="h-4 w-4" />
+					<Square />
 				{/if}
 			</Button>
 		{/if}
@@ -255,5 +258,7 @@
 	<!-- The transition, not the count: the readout ticks all session, so a live
 	     region on it would read the minutes out one by one. This says what the
 	     clock now offers, which changes exactly once per phase. -->
-	<span class="sr-only" role="status">{isStopped ? terminalLabel : primaryLabel}</span>
+	<span class="sr-only" role="status">
+		{isStopped ? terminalLabel : primaryLabel}
+	</span>
 </div>

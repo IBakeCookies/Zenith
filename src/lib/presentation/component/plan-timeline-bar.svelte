@@ -1,7 +1,9 @@
 <script lang="ts">
 	import * as m from '$lib/paraglide/messages.js';
 	import type { EvaluatedBlock } from '$lib/business/model/zenith-energy';
+	import { cn } from '$lib/presentation/utils';
 	import { formatDuration, formatOffset } from '$lib/presentation/utils/duration-format';
+	import { FREE_EPSILON, isBlockDone } from '$lib/presentation/utils/plan-block';
 	import type { SeriesColors } from '$lib/presentation/utils/series-color';
 
 	interface Props {
@@ -16,25 +18,29 @@
 		/** Ticked-off tasks. A reading over the plan: the allocator never sees
 		 *  `completed` (business/model/AGENTS.md), so no block moves. */
 		completedTaskIds: number[];
+		class?: string;
 	}
 
-	let { blocks, windowHours, trailingFreeHours, colors, completedTaskIds }: Props = $props();
+	let {
+		blocks,
+		windowHours,
+		trailingFreeHours,
+		colors,
+		completedTaskIds,
+		class: className,
+	}: Props = $props();
 
 	// Under this share a title truncates to an ellipsis, which reads as a rendering
 	// fault rather than as a short block. The tooltip still names it.
 	const LABEL_MIN_SHARE = 0.07;
 
-	// Floating-point dust, not free time: the optimizer's own hours rarely sum to the
-	// window exactly, and a 1e-12 segment is a tooltip nobody can hit.
-	const FREE_EPSILON = 1e-6;
-
 	const share = (hours: number) => hours / windowHours;
 	const width = (hours: number) => `width: ${share(hours) * 100}%`;
 </script>
 
-<div class="flex h-12 w-full overflow-hidden rounded-lg border">
+<div class={cn('flex h-12 w-full overflow-hidden rounded-lg border', className)}>
 	{#each blocks as block (block.start)}
-		{@const isDone = block.taskId !== null && completedTaskIds.includes(block.taskId)}
+		{@const isDone = isBlockDone(block, completedTaskIds)}
 		{@const tooltip = {
 			title: block.title,
 			start: formatOffset(block.start),

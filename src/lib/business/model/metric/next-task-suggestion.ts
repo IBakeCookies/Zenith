@@ -11,7 +11,7 @@
  */
 
 import type { TitleRating } from '$lib/business/model/title-memory';
-import { normalizeTitle } from '$lib/business/model/title-memory';
+import { normalizeTitle } from '$lib/business/utils/title';
 import { prependDraft } from '$lib/business/model/metric/draft-impact';
 import {
 	calculateDailyMetrics,

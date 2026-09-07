@@ -6,7 +6,9 @@
 
 	import { Toaster as Sonner, type ToasterProps as SonnerProps } from 'svelte-sonner';
 
-	let { ...restProps }: SonnerProps = $props();
+	import { cn } from '$lib/presentation/utils';
+
+	let { class: className, ...restProps }: SonnerProps = $props();
 </script>
 
 <!--
@@ -14,7 +16,7 @@
 	all four, so check this file after.
 
 	1. No `mode-watcher`. The registry version imports it for `theme={mode.current}`,
-	   which is a light/dark *binary* over a catalogue of 40 palettes — the exact
+	   which is a light/dark *binary* over a catalogue of dozens of palettes — the exact
 	   thing STYLE.md bans `dark:` for. Every colour below comes from a token
 	   the themes already swap, so sonner's own `theme` (default `light`) never
 	   shows and the dependency is dead weight.
@@ -47,7 +49,7 @@
 -->
 <Sonner
 	richColors
-	class="toaster group"
+	class={cn('toaster group', className)}
 	style="--border-radius: var(--radius);
 	       --normal-bg: var(--surface-page);
 	       --normal-text: var(--ty-primary);

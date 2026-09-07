@@ -60,11 +60,25 @@ Untestable at every level is the signal.
 
 - Components take snippets/props from the layout; they do not reach into stores
   themselves.
+- **A component takes `class` and merges it with `cn`** — `class?: string` on
+  its `Props`, `class: className` last in the destructure, and `cn` wrapping the
+  root's own literal on the one element that owns the box. That is
+  `must-do-toggle`'s and `segmented-toggle`'s shape, not the vendored `ui/` one:
+  no `...restProps` (a domain `onsubmit` and `HTMLFormAttributes`' own intersect
+  into a member no caller can satisfy), no `ref`, no `data-slot`. One that
+  renders no element of its own forwards `class` to its child; `seo-head` and
+  `metric-band-text` take none, having nowhere to land it. **The prop overrides
+  because `cn` is extended, not bare** — `utils/index.ts` registers this repo's
+  `--spacing-*`, `--text-*`, `--shadow-*` and `--container-*` names with
+  `twMerge`, which otherwise treats `px-box-lg` as a class it has never heard of
+  and lets it survive a caller's `px-4`. An `@utility` composite is the one
+  thing still not merged, and deliberately: a single-property utility beside it
+  already wins on Tailwind's sort order.
 - **A shell renders tooltips but never owns the `Tooltip.Provider`.** The
   callers' `lead` / `badges` / `meta` / `planned` snippets are full of them
   too, so the provider sits above the shell, in the page (`/energy` sets one for
   its whole region). A component that owns every tooltip it renders —
-  `calibration-card`, `drain-log-form` — does carry its own: one that cannot
+  `calibration-card`, `drain-log-form`, `rest-log-form` — does carry its own: one that cannot
   mount without an ancestor's costs every caller a wrapper, and nesting is
   harmless, since the inner provider wins at the same delay.
 - **The add-task form lives in a dialog the CARD owns, and no page decides when a
@@ -852,10 +866,10 @@ renders the toggle.
 
 ### The calibration cards share a shell, not a body
 
-`calibration-card.svelte` is the card, the explained heading and the action
-slot, and nothing else. The fitted numbers read on the parameter rows they fit
-(`param-row.svelte`'s `fit`), so the Lab's two cards are read-outs and neither
-takes the action slot: ☕ is typed on the ledger's heading row with the day's
+`calibration-card.svelte` is the card and the explained heading, and nothing
+else. The fitted numbers read on the parameter rows they fit
+(`param-row.svelte`'s `fit`), so the Lab's two cards are read-outs and there is
+no action slot: ☕ is typed on the ledger's heading row with the day's
 other logs, which is also what makes it reachable on a day with no tasks. What
 is left is still four different things — ⚡ has a headline count and a status
 sentence, 🪫 has the same headline and a pending line, r has a pending line and

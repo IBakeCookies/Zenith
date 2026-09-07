@@ -2,28 +2,31 @@
 	import { resolve } from '$app/paths';
 	import * as m from '$lib/paraglide/messages.js';
 	import { localizeHref } from '$lib/paraglide/runtime';
+	import { cn } from '$lib/presentation/utils';
 
 	interface Props {
 		label: string;
-		title?: string;
 		count: number;
 		confirmLabel: string;
 		resetLabel: string;
 		resetTitle?: string;
 		withHistoryLink?: boolean;
 		onreset?: () => void;
+		class?: string;
 	}
 
 	let {
 		label,
-		title,
 		count,
 		confirmLabel,
 		resetLabel,
 		resetTitle,
 		withHistoryLink = true,
 		onreset,
+		class: className,
 	}: Props = $props();
+
+	const id = $props.id();
 
 	// Confirm focuses Cancel, so a stray Enter cannot wipe the logs; cancel hands focus
 	// back to the trigger. Plain `let`, not `$state`: it must not re-run the attachment.
@@ -37,17 +40,22 @@
 	});
 </script>
 
-<div class="flex flex-wrap items-center justify-between gap-x-grid-xs gap-y-text-2xs">
-	<p class="text-xs text-ty-silent" {title}>{label}</p>
+<div
+	class={cn('flex flex-wrap items-center justify-between gap-x-grid-xs gap-y-text-2xs', className)}
+>
+	<p class="text-xs text-ty-silent">{label}</p>
 
 	{#if count > 0}
 		<!-- Wraps rather than shrinks: the confirm sentence sits in a quarter-width
 		     card on the root page, and `shrink-0` pushed “Cancel” past its padding. -->
 		<span class="flex flex-wrap items-center gap-grid-xs text-xs">
 			{#if confirmingReset}
-				<span class="text-ty-silent">{confirmLabel}</span>
+				<span id="{id}-confirm" class="text-ty-silent">{confirmLabel}</span>
+				<!-- Described by the question, not renamed to it: a name without its own visible
+				     "Reset" in it fails WCAG 2.5.3. -->
 				<button
 					type="button"
+					aria-describedby="{id}-confirm"
 					class="font-medium text-danger hover:text-danger-strong"
 					onclick={() => {
 						onreset?.();

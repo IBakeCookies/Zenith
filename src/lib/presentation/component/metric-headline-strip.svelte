@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { Metric } from '$lib/presentation/type';
 	import * as m from '$lib/paraglide/messages.js';
+	import { cn } from '$lib/presentation/utils';
 	import * as Tooltip from '$lib/presentation/component/ui/tooltip';
 	import { Badge } from '$lib/presentation/component/ui/badge';
 	import MetricBandText from '$lib/presentation/component/metric-band-text.svelte';
@@ -10,9 +11,10 @@
 	interface Props {
 		metrics: Metric[];
 		momentum: number | null;
+		class?: string;
 	}
 
-	let { metrics, momentum }: Props = $props();
+	let { metrics, momentum, class: className }: Props = $props();
 
 	// Every reading at equal weight is a spreadsheet: Burnout Risk read exactly
 	// like Avg Enjoyment. The headline readings are the verdict on the day and
@@ -24,7 +26,7 @@
 	const trend = $derived(momentum === null ? null : Math.sign(momentum));
 </script>
 
-<div class="card-shell p-box-md sm:p-box-xl">
+<div class={cn('card-shell p-box-md sm:p-box-xl', className)}>
 	<!-- Momentum names itself inside the badge: the state alone ("Stable") is a
 	     word with no subject once nothing sits beside it, so the badge is both the
 	     reading and its own tooltip trigger. tailwind-merge lets `class` win the

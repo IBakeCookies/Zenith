@@ -1,15 +1,17 @@
 <script lang="ts">
 	import * as m from '$lib/paraglide/messages.js';
 	import type { BudgetCurve } from '$lib/business/model/zenith-energy';
+	import { cn } from '$lib/presentation/utils';
 	import { formatDuration } from '$lib/presentation/utils/duration-format';
 	import { DASH, dashArray, dashGradient } from '$lib/presentation/utils/dash';
 
 	interface Props {
 		curve: BudgetCurve;
 		currentBudget: number;
+		class?: string;
 	}
 
-	let { curve, currentBudget }: Props = $props();
+	let { curve, currentBudget, class: className }: Props = $props();
 
 	// The viewBox is in real CSS pixels, so axis type and stroke widths are one size
 	// at every card width — holds only while the measured wrapper stays padding-free.
@@ -89,7 +91,7 @@
 	});
 </script>
 
-<div class="mt-text-md" bind:clientWidth={width}>
+<div class={cn('mt-text-md', className)} bind:clientWidth={width}>
 	<svg
 		viewBox="0 0 {width} {height}"
 		style="height: {height}px"

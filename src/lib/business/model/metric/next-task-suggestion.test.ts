@@ -8,7 +8,8 @@ import {
 	calculateDailyMetrics,
 	type DailyMetricsInput,
 } from '$lib/business/model/metric/daily-metrics';
-import { normalizeTitle, type TitleRating } from '$lib/business/model/title-memory';
+import type { TitleRating } from '$lib/business/model/title-memory';
+import { normalizeTitle } from '$lib/business/utils/title';
 import { DEFAULT_USER_CONSTANTS } from '$lib/business/model/zenith';
 import { DEFAULT_ENERGY_PARAMS } from '$lib/business/model/zenith-energy';
 import type { Task } from '$lib/data/type';

@@ -10,6 +10,7 @@
 
 	import * as m from '$lib/paraglide/messages.js';
 	import type { EnergyDraftImpact } from '$lib/business/model/metric/energy-draft-impact';
+	import { cn } from '$lib/presentation/utils';
 	import { getDateLocale } from '$lib/presentation/utils/locale.svelte';
 	import { formatDecimals } from '$lib/presentation/utils/number-format';
 	import { formatDuration, formatOffset } from '$lib/presentation/utils/duration-format';
@@ -23,9 +24,10 @@
 		/** Whether the form has published a draft at all — see below. */
 		hasDraft: boolean;
 		hasWindow: boolean;
+		class?: string;
 	}
 
-	let { impact, isBusy, hasDraft, hasWindow }: Props = $props();
+	let { impact, isBusy, hasDraft, hasWindow, class: className }: Props = $props();
 
 	const decimal = (value: number) => formatDecimals(value, 1, getDateLocale());
 	/** Floored, like `PlanSummary`: 100% has to mean untouched. */
@@ -42,13 +44,13 @@
      enough to wrap in a 1fr column, and the one thing that must not break
      across two lines is the before→after pair itself. -->
 {#snippet changeRow(label: string, value: string)}
-	<p class="flex items-baseline justify-between gap-grid-xs text-xs">
+	<p class="stat-line">
 		<span class="text-ty-secondary">{label}</span>
 		<span class="font-semibold whitespace-nowrap text-ty-primary tabular-nums">{value}</span>
 	</p>
 {/snippet}
 
-<section class="space-y-grid-md">
+<section class={cn('space-y-grid-md', className)}>
 	<h3 class="text-xs font-semibold tracking-wider text-ty-secondary uppercase">
 		{m.form_impact_heading()}
 	</h3>

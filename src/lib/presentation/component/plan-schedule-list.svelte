@@ -1,8 +1,10 @@
 <script lang="ts">
 	import * as m from '$lib/paraglide/messages.js';
+	import { cn } from '$lib/presentation/utils';
 	import type { EvaluatedBlock } from '$lib/business/model/zenith-energy';
 	import { formatDuration, formatOffset } from '$lib/presentation/utils/duration-format';
 	import { formatDecimals } from '$lib/presentation/utils/number-format';
+	import { FREE_EPSILON, isBlockDone } from '$lib/presentation/utils/plan-block';
 	import type { SeriesColors } from '$lib/presentation/utils/series-color';
 
 	interface Props {
@@ -20,6 +22,7 @@
 		/** Ticked-off tasks. A reading over the plan: the allocator never sees
 		 *  `completed` (business/model/AGENTS.md), so no block moves and no figure changes. */
 		completedTaskIds: number[];
+		class?: string;
 	}
 
 	let {
@@ -30,19 +33,16 @@
 		colors,
 		locale,
 		completedTaskIds,
+		class: className,
 	}: Props = $props();
-
-	// Same dust threshold as the timeline bar: the optimizer's hours rarely sum to the
-	// window exactly, and a 1e-12 row is a line of zeroes.
-	const FREE_EPSILON = 1e-6;
 </script>
 
 {#if blocks.length === 0}
-	<p class="mt-text-md text-sm text-ty-silent">{m.energy_nothing_scheduled()}</p>
+	<p class={cn('mt-text-md text-sm text-ty-silent', className)}>{m.energy_nothing_scheduled()}</p>
 {:else}
-	<ul class="mt-text-md space-y-text-xs">
+	<ul class={cn('mt-text-md space-y-text-xs', className)}>
 		{#each blocks as block (block.start)}
-			{@const isDone = block.taskId !== null && completedTaskIds.includes(block.taskId)}
+			{@const isDone = isBlockDone(block, completedTaskIds)}
 			<li class="flex items-center gap-grid-xs text-sm" class:opacity-60={isDone}>
 				<!-- The ring, not the fill, is what makes a 10px dot visible: a series fill
 				     sits close to its surface by design (STYLE.md). -->

@@ -4,6 +4,7 @@
 	import { resolve } from '$app/paths';
 	import * as m from '$lib/paraglide/messages.js';
 	import { localizeHref } from '$lib/paraglide/runtime';
+	import { cn } from '$lib/presentation/utils';
 	import { formatDuration } from '$lib/presentation/utils/duration-format';
 	import type { LogHistoryRow, LogKind } from '$lib/presentation/utils/log-history';
 	import FlowLogForm from '$lib/presentation/component/flow-log-form.svelte';
@@ -37,6 +38,8 @@
 				bodyAfter: number;
 			},
 		) => void;
+		/** Lands on the scrolling <ul>; the empty state has no element to take it. */
+		class?: string;
 	}
 
 	let {
@@ -49,6 +52,7 @@
 		onsaveflow,
 		onsavedrain,
 		onsaverest,
+		class: className,
 	}: Props = $props();
 
 	// Minutes is the unit every editor takes, `hours` what the record and the fits
@@ -86,7 +90,7 @@
 	</p>
 	<!-- Capped: a year holds hundreds of rows, and a card that grows with the history
 	     pushes every reading below it off the page. -->
-	<ul class="nice-scrollbar mt-text-xs max-h-64 space-y-text-2xs overflow-y-auto">
+	<ul class={cn('nice-scrollbar mt-text-xs max-h-64 space-y-text-2xs overflow-y-auto', className)}>
 		{#each rows as row (row.key)}
 			<li>
 				<div class="log-row">

@@ -1,18 +1,24 @@
 <script lang="ts">
 	import * as m from '$lib/paraglide/messages.js';
 	import { BAND_BAR_CLASS, BAND_TEXT_CLASS, bandLabel } from '$lib/presentation/utils/band';
+	import { cn } from '$lib/presentation/utils';
 	import type { DayTimeline } from '$lib/presentation/utils/day-timeline';
 	import { scrollByDrag } from '$lib/presentation/utils/drag-scroll';
 	import { formatDuration, formatDurationBand } from '$lib/presentation/utils/duration-format';
 
-	let { totalHours, minimumBlockWidths, blocks }: DayTimeline = $props();
+	let {
+		totalHours,
+		minimumBlockWidths,
+		blocks,
+		class: className,
+	}: DayTimeline & { class?: string } = $props();
 
 	const share = (hours: number) => hours / totalHours;
 </script>
 
 <!-- No card and no visible title: the strip reads inside the Plan card, under its
      heading. The name stays for a screen reader — nothing else says what these are. -->
-<section>
+<section class={cn(className)}>
 	<h3 class="sr-only">{m.day_timeline_title()}</h3>
 	{#if blocks.length === 0}
 		<p class="text-sm text-ty-secondary">{m.day_timeline_empty()}</p>

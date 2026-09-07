@@ -11,7 +11,10 @@
 </script>
 
 <script lang="ts">
+	import X from '@lucide/svelte/icons/x';
 	import * as m from '$lib/paraglide/messages.js';
+	import { normalizeTitle } from '$lib/business/utils/title';
+	import { cn } from '$lib/presentation/utils';
 	import TaskImportanceSelect from '$lib/presentation/component/task-importance-select.svelte';
 
 	interface Props {
@@ -20,9 +23,10 @@
 		 *  pass it — unlike the title suggestions, which only the add form reads,
 		 *  because a picked TAG rewrites nothing. */
 		tagVocabulary?: string[];
+		class?: string;
 	}
 
-	let { draft = $bindable(), tagVocabulary = [] }: Props = $props();
+	let { draft = $bindable(), tagVocabulary = [], class: className }: Props = $props();
 
 	let entry = $state('');
 
@@ -33,10 +37,10 @@
 	const listId = `${id}-tag-list`;
 
 	function addTag(raw: string) {
-		const tag = raw.trim();
+		// The write side's own answer to "the same tag" (`toStoredTags` normalizes
+		// then dedupes), or the chips promise a tag the save folds away.
+		const tag = normalizeTitle(raw);
 
-		// Trimmed only: normalizing is the write side's (`toStoredTags`), which a
-		// component may not value-import.
 		if (tag && !draft.tags.includes(tag)) draft.tags = [...draft.tags, tag];
 	}
 
@@ -96,7 +100,7 @@
 	] as const;
 </script>
 
-<div class="@container space-y-grid-lg">
+<div class={cn('@container space-y-grid-lg', className)}>
 	<!-- Three across where the fields have the room — the ledger's inline editor,
 	     which is as wide as the table — and one per line in the dialog's field
 	     column, where three short tracks are harder to drag than three long ones.
@@ -154,17 +158,15 @@
 							class="flex items-center gap-text-2xs rounded-full bg-surface-inset px-box-2xs py-text-3xs text-xs text-ty-secondary"
 						>
 							{tag}
-							<!-- A 20px target rather than a bare glyph: at the form's scale this
-							     was the smallest thing in it. -->
 							<button
 								type="button"
 								aria-label={m.form_tag_remove({
 									tag,
 								})}
 								onclick={() => (draft.tags = draft.tags.filter((t) => t !== tag))}
-								class="inline-flex size-5 items-center justify-center text-ty-silent transition hover:text-ty-primary"
+								class="row-action text-ty-silent hover:text-ty-primary"
 							>
-								&times;
+								<X />
 							</button>
 						</span>
 					{/each}

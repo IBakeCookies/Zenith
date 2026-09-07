@@ -7,6 +7,13 @@
 	import { localizeHref } from '$lib/paraglide/runtime';
 	import * as m from '$lib/paraglide/messages.js';
 	import { jsonLdScript } from '$lib/presentation/utils/json-ld';
+	import { cn } from '$lib/presentation/utils';
+
+	interface Props {
+		class?: string;
+	}
+
+	let { class: className }: Props = $props();
 
 	const ARTICLE_URL =
 		'https://thequantasticjournal.com/how-to-over-engineer-a-todo-app-the-zenith-gradient-algorithm-67712737135e';
@@ -56,7 +63,12 @@
 	{@html jsonLdScript(faqSchema)}
 </svelte:head>
 
-<section class="card-shell mt-section-lg space-y-section p-box-md text-ty-secondary sm:p-box-xl">
+<section
+	class={cn(
+		'card-shell mt-section-lg space-y-section p-box-md text-ty-secondary sm:p-box-xl',
+		className,
+	)}
+>
 	<div class="max-w-3xl space-y-text-sm">
 		<h2 class="text-xl font-bold text-ty-primary">{m.about_hook_title()}</h2>
 		<p class="text-sm leading-relaxed">{m.about_hook_body()}</p>

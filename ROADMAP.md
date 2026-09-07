@@ -111,8 +111,7 @@ _Settled 2026-08-09, not a roadmap item:_ both halves of `importFromDate` /
 `importYesterday` are intended and stay. Copying a completed task in as a fresh
 incomplete one IS the point of "import yesterday", and importing a title that is
 already on today's list is allowed to produce two rows — no dedupe against the
-day's tasks, no filter on `completed` (`session-store.svelte.ts:761`, `:792`).
-The consequence to keep in mind, since 🪫 logs key on `taskId`: two rows with
+day's tasks, no filter on `completed`. The consequence to keep in mind, since 🪫 logs key on `taskId`: two rows with
 the same title are two tasks to every fit, and the hours logged against each
 stay separate.
 

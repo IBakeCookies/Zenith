@@ -7,12 +7,17 @@
 		logCount: number;
 		/** Ratings dated on or after today: α reads days strictly before it */
 		pendingLogs?: number;
+		class?: string;
 	}
 
-	let { logCount, pendingLogs = 0 }: Props = $props();
+	let { logCount, pendingLogs = 0, class: className }: Props = $props();
 </script>
 
-<CalibrationCard title={m.energy_calibration()} hint={m.energy_calibration_hint()}>
+<CalibrationCard
+	title={m.energy_calibration()}
+	hint={m.energy_calibration_hint()}
+	class={className}
+>
 	<!-- The headline counts every rating, including the ones α has not read yet, and the
 	     line below names those. How a rating is made is the empty state's sentence alone. -->
 	<div class="mt-text-sm flex items-baseline gap-text-xs">

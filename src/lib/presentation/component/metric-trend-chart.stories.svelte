@@ -219,3 +219,33 @@
 		</div>
 	{/snippet}
 </Story>
+
+<Story
+	name="A series shorter than the axis"
+	args={{
+		labels: Array.from(
+			{
+				length: 14,
+			},
+			(_, i) => `Jul ${18 + i}`,
+		),
+		series: [line('Burnout Risk', [12, 18, 25, 21, 30, 44, 38], 'danger')],
+		ariaLabel: 'Burnout risk over the last 14 days',
+	}}
+	play={async ({ canvasElement }) => {
+		// One slot per LABEL, so seven readings under a fortnight's axis stop at the seventh
+		// day rather than stretching to the right edge and standing over the wrong labels.
+		const last = canvasElement
+			.querySelector('path.stroke-danger')
+			?.getAttribute('d')
+			?.match(/L([\d.]+),[\d.]+$/)?.[1];
+
+		await expect(Number(last)).toBeCloseTo(383.8, 1);
+	}}
+>
+	{#snippet template(args)}
+		<div class="card-shell max-w-3xl rounded-xl p-box-lg">
+			<MetricTrendChart {...args} />
+		</div>
+	{/snippet}
+</Story>

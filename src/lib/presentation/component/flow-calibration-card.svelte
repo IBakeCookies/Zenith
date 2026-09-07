@@ -8,9 +8,10 @@
 		logCount: number;
 		/** Logs dated on or after the planned day: no fit has counted them */
 		pendingLogs?: number;
+		class?: string;
 	}
 
-	let { constantsFitted, logCount, pendingLogs = 0 }: Props = $props();
+	let { constantsFitted, logCount, pendingLogs = 0, class: className }: Props = $props();
 
 	const fitCountedLogs = $derived(logCount - pendingLogs);
 
@@ -49,7 +50,7 @@
 	);
 </script>
 
-<CalibrationCard title={m.flow_calibration()} hint={m.budget_model_tooltip()}>
+<CalibrationCard title={m.flow_calibration()} hint={m.budget_model_tooltip()} class={className}>
 	<!-- The headline counts every log; the sentence below says how many the fit used,
 	     which is a different number on the day a log is made. -->
 	<div class="mt-text-sm flex items-baseline gap-text-xs">

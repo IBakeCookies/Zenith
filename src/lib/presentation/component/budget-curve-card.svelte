@@ -5,6 +5,7 @@
 	import { formatDecimals } from '$lib/presentation/utils/number-format';
 	import BudgetCurveChart from '$lib/presentation/component/budget-curve-chart.svelte';
 	import { Button } from '$lib/presentation/component/ui/button';
+	import { cn } from '$lib/presentation/utils';
 
 	interface Props {
 		/** Null until the user asks: the sweep costs a full solve per candidate window. */
@@ -23,10 +24,20 @@
 		locale: string;
 		oncheck: () => void;
 		onapply: (hours: number) => void;
+		class?: string;
 	}
 
-	let { curve, isBusy, isStale, hasError, currentBudget, locale, oncheck, onapply }: Props =
-		$props();
+	let {
+		curve,
+		isBusy,
+		isStale,
+		hasError,
+		currentBudget,
+		locale,
+		oncheck,
+		onapply,
+		class: className,
+	}: Props = $props();
 
 	const recommended = $derived(
 		curve === null || curve.recommendedHours === null
@@ -39,7 +50,7 @@
 	const booksNoWork = $derived(curve !== null && curve.points.every((p) => p.workHours === 0));
 </script>
 
-<div class="card-shell p-box-md sm:p-box-xl">
+<div class={cn('card-shell p-box-md sm:p-box-xl', className)}>
 	<div class="flex items-start justify-between gap-grid-xs">
 		<div class="min-w-0">
 			<h3 class="text-xs font-semibold tracking-wider text-ty-secondary uppercase">

@@ -14,6 +14,16 @@
 		targetMs: null,
 	};
 
+	// Counting with no countdown, as `sanitizeSessionTimer` hands back a stored timer
+	// whose target it could not read.
+	const noCountdownTimer: SessionTimer = {
+		phase: 'running',
+		startedOn: '2026-07-20',
+		runningSince: Date.now(),
+		accumulatedMs: 20 * 60_000,
+		targetMs: null,
+	};
+
 	const pendingLine = 'waiting for a 🪫 drain rating';
 	const underMinute = '<1m';
 
@@ -183,5 +193,27 @@
 				}),
 			),
 		);
+	}}
+/>
+
+<Story
+	name="Counting with no countdown"
+	args={{
+		timer: noCountdownTimer,
+	}}
+	play={async ({ canvas, canvasElement }) => {
+		// A clock that never had a target has not rung: the amber border and the full track are
+		// the alarm's own mark, and a restored session wearing them reports a countdown nobody set.
+		await expect(
+			canvas.getByRole('button', {
+				name: 'Pause timer',
+			}),
+		).toBeInTheDocument();
+
+		const track = canvasElement.querySelector<HTMLElement>('[style^="width"]');
+
+		await expect(track).toHaveClass('bg-brand');
+		await expect(track?.style.width).toBe('0%');
+		await expect(canvasElement.querySelector('.border-flow\\/55')).toBeNull();
 	}}
 />

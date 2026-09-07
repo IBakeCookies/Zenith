@@ -1,5 +1,6 @@
 <script lang="ts">
 	import * as m from '$lib/paraglide/messages.js';
+	import { cn } from '$lib/presentation/utils';
 	import { Button } from '$lib/presentation/component/ui/button';
 	import MustDoToggle from '$lib/presentation/component/must-do-toggle.svelte';
 	import TaskFormFields, {
@@ -14,9 +15,17 @@
 		withMustDoToday?: boolean;
 		onsave: (edit: TaskEdit) => void;
 		oncancel: () => void;
+		class?: string;
 	}
 
-	let { seed, tagVocabulary = [], withMustDoToday = true, onsave, oncancel }: Props = $props();
+	let {
+		seed,
+		tagVocabulary = [],
+		withMustDoToday = true,
+		onsave,
+		oncancel,
+		class: className,
+	}: Props = $props();
 
 	const id = $props.id();
 
@@ -42,7 +51,10 @@
 </script>
 
 <form
-	class="mt-text-sm space-y-grid-lg rounded-lg border border-line-soft bg-surface-page/40 p-box-lg"
+	class={cn(
+		'mt-text-sm space-y-grid-lg rounded-lg border border-line-soft bg-surface-page/40 p-box-lg',
+		className,
+	)}
 	onsubmit={(e) => (e.preventDefault(), save())}
 >
 	<label class="block text-xs font-medium text-ty-secondary">

@@ -24,9 +24,10 @@
 	interface Props {
 		// Right-side controls (theme switcher, data menu) — wired by the layout
 		actions?: Snippet;
+		class?: string;
 	}
 
-	let { actions }: Props = $props();
+	let { actions, class: className }: Props = $props();
 
 	const today = $derived(liveToday.value);
 
@@ -100,7 +101,12 @@
 	);
 </script>
 
-<header class="sticky top-0 z-20 border-b border-line-soft bg-surface-float backdrop-blur">
+<header
+	class={cn(
+		'sticky top-0 z-20 border-b border-line-soft bg-surface-float backdrop-blur',
+		className,
+	)}
+>
 	<div class="page-column flex items-center justify-between gap-grid-md py-box-md">
 		<div class="flex items-center gap-grid-sm md:gap-grid-lg">
 			<!-- The brand mark carries the tagline: it is on every route, so "what is
@@ -170,8 +176,11 @@
 				{today} &middot; {weekday}
 			</span>
 			<DropdownMenu.Root>
-				<DropdownMenu.Trigger aria-label={m.nav_switch_language()}>
+				<DropdownMenu.Trigger>
 					<Languages class="h-4 w-4 shrink-0" />
+					<!-- Not an `aria-label`: it would replace the locale name the button shows,
+					     and a name that omits its visible text fails WCAG 2.5.3. -->
+					<span class="sr-only">{m.nav_switch_language()}</span>
 					<span class="hidden md:inline">{localeLabel(activeLocale.value)}</span>
 				</DropdownMenu.Trigger>
 				<DropdownMenu.Content align="end" class="w-max min-w-40">

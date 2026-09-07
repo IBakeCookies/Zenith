@@ -1,5 +1,6 @@
 <script lang="ts">
 	import * as m from '$lib/paraglide/messages.js';
+	import { cn } from '$lib/presentation/utils';
 	import * as Tooltip from '$lib/presentation/component/ui/tooltip';
 	import MeasurementFormActions from '$lib/presentation/component/measurement-form-actions.svelte';
 	import {
@@ -25,6 +26,7 @@
 		onsave: (entry: { hours: number; mind: number; body: number }) => void;
 		oncancel: () => void;
 		ondelete?: () => void;
+		class?: string;
 	}
 
 	let {
@@ -37,6 +39,7 @@
 		onsave,
 		oncancel,
 		ondelete,
+		class: className,
 	}: Props = $props();
 
 	const id = $props.id();
@@ -84,7 +87,10 @@
      ancestor providing one costs every caller a wrapper. Nesting is harmless — the inner
      one wins, with the same delay. -->
 <Tooltip.Provider>
-	<form class={MEASUREMENT_FORM_CLASS} onsubmit={(e) => (e.preventDefault(), save())}>
+	<form
+		class={cn(MEASUREMENT_FORM_CLASS, className)}
+		onsubmit={(e) => (e.preventDefault(), save())}
+	>
 		<span class="text-ty-secondary">{m.energy_drain_form_title()}</span>
 		<label class="flex items-center gap-grid-2xs">
 			{m.energy_drain_worked_label()}
@@ -105,9 +111,10 @@
 		<Tooltip.Root>
 			<Tooltip.Trigger>
 				{#snippet child({ props })}
-					<label {...props} class="flex items-center gap-grid-2xs">
+					<label class="flex items-center gap-grid-2xs">
 						<span class="font-medium text-mind/80">{m.energy_drain_mind_label()}</span>
 						<input
+							{...props}
 							id="{id}-mind"
 							type="number"
 							min="0"
@@ -130,9 +137,10 @@
 		<Tooltip.Root>
 			<Tooltip.Trigger>
 				{#snippet child({ props })}
-					<label {...props} class="flex items-center gap-grid-2xs">
+					<label class="flex items-center gap-grid-2xs">
 						<span class="font-medium text-body/80">{m.energy_drain_body_label()}</span>
 						<input
+							{...props}
 							id="{id}-body"
 							type="number"
 							min="0"

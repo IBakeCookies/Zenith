@@ -1,5 +1,6 @@
 <script lang="ts">
 	import * as m from '$lib/paraglide/messages.js';
+	import { cn } from '$lib/presentation/utils';
 	import MeasurementFormActions from '$lib/presentation/component/measurement-form-actions.svelte';
 	import {
 		MEASUREMENT_FORM_CLASS,
@@ -12,9 +13,17 @@
 		onsave: (minutes: number) => void;
 		oncancel: () => void;
 		ondelete?: () => void;
+		class?: string;
 	}
 
-	let { seed = null, focusMinutes = false, onsave, oncancel, ondelete }: Props = $props();
+	let {
+		seed = null,
+		focusMinutes = false,
+		onsave,
+		oncancel,
+		ondelete,
+		class: className,
+	}: Props = $props();
 
 	const id = $props.id();
 
@@ -32,7 +41,7 @@
 	}
 </script>
 
-<form class={MEASUREMENT_FORM_CLASS} onsubmit={(e) => (e.preventDefault(), save())}>
+<form class={cn(MEASUREMENT_FORM_CLASS, className)} onsubmit={(e) => (e.preventDefault(), save())}>
 	<label class="flex items-center gap-grid-2xs">
 		<span class="text-ty-secondary">{m.task_flow_form_title()}</span>
 		<input
