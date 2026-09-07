@@ -118,6 +118,8 @@
 		planned,
 	}: Props = $props();
 
+	const id = $props.id();
+
 	// Local, unlike the two measurement drafts: the task it edits is the row, and nothing
 	// else opens it.
 	let isEditing = $state(false);
@@ -167,13 +169,14 @@
 				{@render lead?.()}
 
 				<input
+					id="{id}-done"
 					type="checkbox"
 					checked={completed}
 					onchange={onCompletionChange}
 					aria-label={m.task_toggle_aria({
 						title,
 					})}
-					class="h-4 w-4 shrink-0 cursor-pointer appearance-auto accent-brand focus:ring-2 focus:ring-brand/40"
+					class="h-4 w-4 shrink-0 cursor-pointer appearance-auto accent-brand focus:ring-2 focus:ring-brand/50"
 				/>
 
 				<!-- The dim covers the title and its badges only: the logs beside them are the 🪫

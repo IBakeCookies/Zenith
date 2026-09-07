@@ -39,6 +39,8 @@
 		ondelete,
 	}: Props = $props();
 
+	const id = $props.id();
+
 	// Why a copy, and why re-opening is a remount: presentation/AGENTS.md, "A seeded editor
 	// copies its seed at mount".
 	// svelte-ignore state_referenced_locally -- deliberately initial-value only
@@ -87,6 +89,7 @@
 		<label class="flex items-center gap-grid-2xs">
 			{m.energy_drain_worked_label()}
 			<input
+				id="{id}-minutes"
 				type="number"
 				min="1"
 				max="960"
@@ -105,6 +108,7 @@
 					<label {...props} class="flex items-center gap-grid-2xs">
 						<span class="font-medium text-mind/80">{m.energy_drain_mind_label()}</span>
 						<input
+							id="{id}-mind"
 							type="number"
 							min="0"
 							max="10"
@@ -129,6 +133,7 @@
 					<label {...props} class="flex items-center gap-grid-2xs">
 						<span class="font-medium text-body/80">{m.energy_drain_body_label()}</span>
 						<input
+							id="{id}-body"
 							type="number"
 							min="0"
 							max="10"

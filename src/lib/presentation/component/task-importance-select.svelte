@@ -30,9 +30,9 @@
 	] as const;
 </script>
 
-<!-- The `must-do-toggle.svelte` carve-out, three times: a real radio keeps the group's
-     roving tabindex and its arrow keys, while the label around it carries the button
-     recipe. A `<fieldset>`/`<legend>` is what names the group.
+<!-- `input-overlay` three times: a real radio keeps the group's roving tabindex and its
+     arrow keys, while the label around it carries the button recipe. A
+     `<fieldset>`/`<legend>` is what names the group.
 
      The legend is VISIBLE and sits ABOVE the three options, reading like the slider
      labels beside it — three bare buttons in a form say nothing about what they set.
@@ -59,7 +59,7 @@
 					{name}
 					value={level.value}
 					bind:group={importance}
-					class="absolute inset-0 cursor-pointer appearance-none opacity-0"
+					class="input-overlay"
 				/>
 				{level.label}
 			</label>

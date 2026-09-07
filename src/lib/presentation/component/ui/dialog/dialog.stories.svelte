@@ -70,7 +70,7 @@
 			<Dialog.Title class="mb-text-md">Add task</Dialog.Title>
 			<label class="block text-xs font-medium text-ty-secondary">
 				Title
-				<input type="text" class="field-input" />
+				<input id="dialog-story-field" type="text" class="field-input" />
 			</label>
 		</Dialog.Content>
 	</Dialog.Root>

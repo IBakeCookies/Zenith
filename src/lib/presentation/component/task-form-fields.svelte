@@ -28,7 +28,9 @@
 
 	// `$props.id()` rather than a literal: both forms can be mounted at once, and one
 	// shared list id would point the row editor's field at the dialog's options.
-	const listId = $props.id();
+	// Svelte allows one call per component, so the list id is suffixed off it.
+	const id = $props.id();
+	const listId = `${id}-tag-list`;
 
 	function addTag(raw: string) {
 		const tag = raw.trim();
@@ -106,11 +108,12 @@
 			<label class="grid grid-cols-[auto_1fr_2ch] items-center gap-x-grid-xs">
 				<span class="text-xs font-medium text-ty-secondary">{slider.label}</span>
 				<input
+					id="{id}-{slider.key}"
 					type="range"
 					min={slider.min}
 					max="10"
 					bind:value={draft[slider.key]}
-					class="h-1 w-full cursor-pointer appearance-none rounded-full bg-surface-inset {slider.accent}"
+					class="range-track {slider.accent}"
 				/>
 				<span class="text-right text-xs font-medium text-ty-primary tabular-nums"
 					>{draft[slider.key]}</span
@@ -128,6 +131,7 @@
 			<label class="block text-xs font-medium text-ty-secondary">
 				{m.form_tags()}
 				<input
+					id="{id}-tags"
 					type="text"
 					list={listId}
 					value={entry}

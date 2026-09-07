@@ -8,6 +8,9 @@
 		max?: number;
 		step?: number;
 		unit?: string; // small suffix label inside the field, e.g. "hrs"
+		/** Only where a visible `<label for>` points at it. Left out, the field still
+		 *  gets one — a form control with neither `id` nor `name` is what the browser
+		 *  warns about. */
 		id?: string;
 		// Only for a field with no visible <label for={id}> — otherwise the label
 		// already names it and this would override it with a second name.
@@ -28,6 +31,8 @@
 		ariaLabel,
 		accent = 'focus-within:border-brand/50',
 	}: Props = $props();
+
+	const autoId = $props.id();
 
 	// Decimal places of the step, so 0.25-stepping never shows 0.35000000000000003
 	const stepDecimals = $derived((String(step).split('.')[1] ?? '').length);
@@ -76,7 +81,7 @@
 	</button>
 	<div class="relative min-w-0 flex-1">
 		<input
-			{id}
+			id={id ?? autoId}
 			type="number"
 			aria-label={ariaLabel}
 			{min}

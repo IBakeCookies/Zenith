@@ -18,6 +18,8 @@
 
 	let { seed, tagVocabulary = [], withMustDoToday = true, onsave, oncancel }: Props = $props();
 
+	const id = $props.id();
+
 	// Why a copy, and why re-opening is a remount: presentation/AGENTS.md, "A seeded editor
 	// copies its seed at mount".
 	// svelte-ignore state_referenced_locally -- deliberately initial-value only
@@ -46,6 +48,7 @@
 	<label class="block text-xs font-medium text-ty-secondary">
 		{m.task_title_label()}
 		<input
+			id="{id}-title"
 			type="text"
 			bind:value={draft.title}
 			placeholder={m.form_task_placeholder()}
