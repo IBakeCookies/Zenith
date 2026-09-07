@@ -16,7 +16,7 @@ const START = 1_800_000_000_000;
 const at = (minutes: number) => START + minutes * 60_000;
 
 describe('getElapsedMinutes', () => {
-	// Milliseconds accumulate and minutes are rounded once, at read: rounding each
+	// Milliseconds accumulate and minutes are cut once, at read: cutting each
 	// segment would let a run of short pauses drift the reading off the clock.
 	it('sums the running segments and leaves out the pause', () => {
 		const started = runTimer(null, TODAY, START);
@@ -26,6 +26,27 @@ describe('getElapsedMinutes', () => {
 		expect(getElapsedMinutes(resumed, at(45))).toBe(15);
 	});
 
+	// A clock, not a rounding: a minute appears when it has passed, and then stands
+	// for the whole of the next one. Rounding to nearest showed every reading for
+	// thirty seconds and named the first minute halfway through it.
+	it('reads the minute that has passed, not the nearest one', () => {
+		const started = runTimer(null, TODAY, START);
+
+		expect(getElapsedMinutes(started, START + 59_999)).toBe(0);
+		expect(getElapsedMinutes(started, START + 60_000)).toBe(1);
+		expect(getElapsedMinutes(started, START + 119_999)).toBe(1);
+	});
+
+	// The two readings stand side by side, so they have to change on the same second
+	// and add up to the length that was set — one flooring against the other's ceiling.
+	it('moves in step with the countdown beside it', () => {
+		const started = runTimer(null, TODAY, START, 45 * 60_000);
+
+		expect(getElapsedMinutes(started, START + 30_000)).toBe(0);
+		expect(getRemainingMinutes(started, START + 30_000)).toBe(45);
+		expect(getElapsedMinutes(started, START + 90_000)).toBe(1);
+		expect(getRemainingMinutes(started, START + 90_000)).toBe(44);
+	});
 });
 
 describe('stopTimer', () => {
@@ -70,8 +91,14 @@ describe('getPendingMinutes', () => {
 		expect(getPendingMinutes(runTimer(null, TODAY, START))).toBeNull();
 	});
 
-	it('offers nothing for a session shorter than half a minute', () => {
-		expect(getPendingMinutes(stopped(20_000))).toBeNull();
+	it('offers nothing for a session shorter than a minute', () => {
+		expect(getPendingMinutes(stopped(50_000))).toBeNull();
+	});
+
+	// The same cut as the readout: the editor opens on the number the strip was
+	// showing when Stop was pressed, never a minute the clock never reached.
+	it('seeds the minutes the readout showed', () => {
+		expect(getPendingMinutes(stopped(20 * 60_000 + 40_000))).toBe(20);
 	});
 });
 
@@ -167,7 +194,7 @@ describe('runTimer', () => {
 });
 
 describe('getRemainingMinutes', () => {
-	// Ceiled where the elapsed reading rounds: "0m left" with seconds still on the
+	// Ceiled where the elapsed reading floors: "0m left" with seconds still on the
 	// clock reads as an alarm that failed.
 	it('rounds a part-minute up', () => {
 		expect(getRemainingMinutes(runTimer(null, TODAY, START, 45 * 60_000), START + 10_000)).toBe(45);

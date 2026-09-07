@@ -231,8 +231,8 @@
 			/>
 
 			<!-- Full ink only while it counts: paused and stopped are otherwise a glyph
-			     apart, and the minutes look the same either way. "<1m" because the first
-			     minute rounds to "0m", which reads as a clock that never started. -->
+			     apart, and the minutes look the same either way. "<1m" for the whole first
+			     minute, because "0m" reads as a clock that never started. -->
 			{#if timer}
 				<span class="text-xs tabular-nums {isRunning ? 'text-ty-primary' : 'text-ty-silent'}">
 					{elapsedMinutes === 0 ? m.timer_under_a_minute() : formatDuration(elapsedMinutes / 60)}
