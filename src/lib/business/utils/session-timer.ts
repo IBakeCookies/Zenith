@@ -55,18 +55,20 @@ export const pauseTimer = (timer: SessionTimer, now: number) => halt(timer, 'pau
 
 export const stopTimer = (timer: SessionTimer, now: number) => halt(timer, 'stopped', now);
 
-const toMinutes = (ms: number) => Math.round(ms / 60_000);
+const toMinutes = (ms: number) => Math.floor(ms / 60_000);
 
-/** What the readout shows. Rounded once here: rounding at each pause would let a run of
- *  short segments drift the reading off the clock. */
+/** What the readout shows, counted the way a clock counts: a minute appears once it has
+ *  passed and then stands for the whole of the next one. Cut once here, at read —
+ *  cutting at each pause would let a run of short segments drift off the clock. */
 export const getElapsedMinutes = (timer: SessionTimer, now: number): number =>
 	toMinutes(totalMs(timer, now));
 
 /** What is left of the countdown, or `null` when none is set or the session is over —
- *  a stopped clock is waiting for a 🪫 log, not counting down. Ceiled where the elapsed
- *  reading rounds: "0m left" with seconds still on the clock reads as an alarm that
- *  failed. Clamped, so a tick a throttled background tab slept through does not print a
- *  negative reading before the alarm catches up. */
+ *  a stopped clock is waiting for a 🪫 log, not counting down. Ceiled against the elapsed
+ *  reading's floor, so the two change on the same second and add up to the length that
+ *  was set: "0m left" with seconds still on the clock reads as an alarm that failed.
+ *  Clamped, so a tick a throttled background tab slept through does not print a negative
+ *  reading before the alarm catches up. */
 export const getRemainingMinutes = (timer: SessionTimer, now: number): number | null =>
 	timer.targetMs === null || timer.phase === 'stopped'
 		? null
@@ -88,8 +90,9 @@ export const suggestTargetMinutes = (advice: StopAdvice | null): number =>
 
 /** The minutes a 🪫 log may be seeded from — a STOPPED timer's, and nothing else. A
  *  clock still counting would fund a second log from the same minutes, and the first
- *  log would take the rest of the session with it. Under half a minute is not a
- *  session, so it seeds nothing and the field stays empty. */
+ *  log would take the rest of the session with it. Cut like the readout, so the editor
+ *  opens on the number the strip was showing — and under a minute is not a session, so
+ *  it seeds nothing and the field stays empty. */
 export function getPendingMinutes(timer: SessionTimer | null): number | null {
 	if (timer === null || timer.phase !== 'stopped') return null;
 
