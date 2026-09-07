@@ -18,6 +18,10 @@ export default defineConfig({
 	timeout: testTimeout,
 	outputDir: `${outputDir}/asset`,
 	testMatch: '**/*.e2e.{ts,js}',
+	// Other agents' worktrees live under `.claude/worktrees/`, and their copies of
+	// this suite matched `testMatch` and ran against THIS tree's build — stale
+	// expectations, duplicated failures.
+	testIgnore: '**/.claude/**',
 	fullyParallel: true,
 	forbidOnly: Boolean(process.env.CI),
 	retries: process.env.CI ? 2 : 0,

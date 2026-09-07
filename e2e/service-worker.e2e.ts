@@ -52,7 +52,7 @@ test('a visited page still works after going offline', async ({ page, context })
 	// empty there and nothing that hydrates gets precached.
 	await expect(
 		page.getByRole('heading', {
-			name: 'Completion rate',
+			name: 'Completion & yield',
 		}),
 	).toBeVisible();
 });
