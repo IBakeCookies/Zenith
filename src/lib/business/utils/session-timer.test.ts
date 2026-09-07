@@ -2,10 +2,13 @@ import { describe, expect, it } from 'vitest';
 import {
 	getElapsedMinutes,
 	getPendingMinutes,
+	getRemainingMinutes,
+	isAlarmDue,
 	pauseTimer,
 	runTimer,
 	sanitizeSessionTimer,
 	stopTimer,
+	suggestTargetMinutes,
 } from '$lib/business/utils/session-timer';
 
 const TODAY = '2026-08-22';
@@ -22,6 +25,7 @@ describe('getElapsedMinutes', () => {
 
 		expect(getElapsedMinutes(resumed, at(45))).toBe(15);
 	});
+
 });
 
 describe('stopTimer', () => {
@@ -53,6 +57,7 @@ describe('getPendingMinutes', () => {
 		startedOn: TODAY,
 		runningSince: null,
 		accumulatedMs,
+		targetMs: null,
 	});
 
 	it("offers a stopped timer's whole minutes", () => {
@@ -115,5 +120,109 @@ describe('sanitizeSessionTimer', () => {
 				TODAY,
 			)?.accumulatedMs,
 		).toBe(0);
+	});
+
+	// The target is a user's intention, not a measurement, so an unreadable one
+	// costs the countdown and never the minutes the session actually counted.
+	it('drops an unreadable target and keeps the session', () => {
+		const sanitized = sanitizeSessionTimer(
+			{
+				phase: 'paused',
+				startedOn: TODAY,
+				runningSince: null,
+				accumulatedMs: 20 * 60_000,
+				targetMs: '45m',
+			},
+			TODAY,
+		);
+
+		expect(sanitized?.targetMs).toBeNull();
+		expect(sanitized?.accumulatedMs).toBe(20 * 60_000);
+	});
+
+	it('reads a non-positive target as no target', () => {
+		expect(
+			sanitizeSessionTimer(
+				{
+					phase: 'paused',
+					startedOn: TODAY,
+					runningSince: null,
+					accumulatedMs: 0,
+					targetMs: 0,
+				},
+				TODAY,
+			)?.targetMs,
+		).toBeNull();
+	});
+});
+
+describe('runTimer', () => {
+	// A resume is the same transition as a start, so the target has to survive it or
+	// pausing would silently turn a countdown back into the plain clock.
+	it('keeps a paused target when none is passed', () => {
+		const paused = pauseTimer(runTimer(null, TODAY, START, 45 * 60_000), at(20));
+
+		expect(runTimer(paused, TODAY, at(30)).targetMs).toBe(45 * 60_000);
+	});
+});
+
+describe('getRemainingMinutes', () => {
+	// Ceiled where the elapsed reading rounds: "0m left" with seconds still on the
+	// clock reads as an alarm that failed.
+	it('rounds a part-minute up', () => {
+		expect(getRemainingMinutes(runTimer(null, TODAY, START, 45 * 60_000), START + 10_000)).toBe(45);
+	});
+
+	it('still reads on a paused clock', () => {
+		const paused = pauseTimer(runTimer(null, TODAY, START, 45 * 60_000), at(20));
+
+		expect(getRemainingMinutes(paused, at(90))).toBe(25);
+	});
+
+	// A stopped session is over, and the reading beside it is the minutes a 🪫 log is
+	// waiting for — a countdown there would say the clock was still going.
+	it('reads nothing on a stopped clock', () => {
+		const stopped = stopTimer(runTimer(null, TODAY, START, 45 * 60_000), at(20));
+
+		expect(getRemainingMinutes(stopped, at(20))).toBeNull();
+	});
+});
+
+describe('isAlarmDue', () => {
+	// The alarm belongs to a clock that is counting: a paused session is not running
+	// out of time, however long it has been paused for.
+	it('is false on a paused timer past its target', () => {
+		const paused = pauseTimer(runTimer(null, TODAY, START, 45 * 60_000), at(50));
+
+		expect(isAlarmDue(paused, at(90))).toBe(false);
+	});
+
+	it('is false for a timer with no target', () => {
+		expect(isAlarmDue(runTimer(null, TODAY, START), at(600))).toBe(false);
+	});
+});
+
+describe('suggestTargetMinutes', () => {
+	it('takes the advised session length', () => {
+		expect(
+			suggestTargetMinutes({
+				verdict: 'continue',
+				taskId: 1,
+				sessionHours: 1.5,
+				marginalValue: 2,
+			}),
+		).toBe(90);
+	});
+
+	// One model step (MATH.md §8.8) is the one duration the rest of the app already
+	// speaks in, so an unpriced day starts there rather than at an invented number.
+	it('falls back to one step with nothing to price', () => {
+		expect(suggestTargetMinutes(null)).toBe(45);
+
+		expect(
+			suggestTargetMinutes({
+				verdict: 'window-full',
+			}),
+		).toBe(45);
 	});
 });

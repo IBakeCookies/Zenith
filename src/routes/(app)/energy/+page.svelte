@@ -45,7 +45,7 @@
 	import { getEnergyObservationStore } from '$lib/business/store/energy-observation-store.svelte';
 	import { getEnergyLabStore } from '$lib/business/store/energy-lab-store.svelte';
 	import { getSessionTimerStore } from '$lib/business/store/session-timer-store.svelte';
-	import { getPendingMinutes } from '$lib/business/utils/session-timer';
+	import { getPendingMinutes, suggestTargetMinutes } from '$lib/business/utils/session-timer';
 	import type { DrainObservationRecord, Persisted } from '$lib/business/type';
 
 	const VIEW_KEY = 'zenith-energy-view';
@@ -290,6 +290,7 @@
 			routines={session.routines}
 			currentTasks={session.tasks}
 			bind:timer={timerStore.timer}
+			getSuggestedMinutes={() => suggestTargetMinutes(lab.stopAdvice)}
 			onimport={(t) => session.importTasks(t)}
 			onimportdate={(d) => session.importFromDate(d)}
 			onsaveroutine={(name) => session.saveCurrentAsRoutine(name)}

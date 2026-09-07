@@ -551,19 +551,17 @@ their chips from.
 A draft whose row leaves the screen is inert (it is keyed by a task nothing
 renders); a deleted task's is not, so ✕ drops both on both screens.
 
-The session timer is the third opening of the 🪫 APPEND editor, and the only
-one that arrives with a value: `newDrainDraft(source, minutes)` takes what a
-STOPPED timer counted (`getPendingMinutes` — a running clock offers nothing, or
-it would fund a second log from the same minutes), and `drain-log-form.svelte`
-then focuses the **first empty required field, falling back to the length when
-none is empty** — so a seeded `45` cannot become `456`, and a correction, which
-seeds all three, keeps the caret it always had. One stop funds one log and
-several rows hold an open editor at once, so the reading is
-**claimed by the first editor opened** (`claimPendingMinutes`): every other row
-opens empty while that claim stands, closing the claiming editor releases it,
-and only that editor's append spends the reading (`spendsPendingMinutes`) —
-never a correction, and never while the clock still runs. Both screens seed and
-spend by that one rule, and both offer the timer's CONTROLS.
+The session timer is the third opening of the 🪫 APPEND editor, and the only one that
+arrives with a value: `newDrainDraft(source, minutes)` takes what a STOPPED timer COUNTED,
+never its countdown's target (`getPendingMinutes` — a running clock offers nothing, or it
+would fund a second log from the same minutes), and `drain-log-form.svelte` then focuses
+the **first empty required field, falling back to the length when none is empty** — so a
+seeded `45` cannot become `456`, and a correction, which seeds all three, keeps the caret
+it always had. One stop funds one log and several rows hold an open editor at once, so the
+reading is **claimed by the first editor opened** (`claimPendingMinutes`): every other row
+opens empty while that claim stands, closing the claiming editor releases it, and only
+that editor's append spends the reading (`spendsPendingMinutes`) — never a correction, and
+never while the clock still runs. Both screens seed and spend by that rule.
 
 ### One screen lists logs: `/analytics`
 
@@ -684,17 +682,19 @@ withholds the first, exactly as it does for 🪫.
 `deleteFlowLog(recordId)`, addressed the way a row can address it — and drops
 the viewed day's reading, since that is the one on screen.
 
-The timer that fills a 🪫 length is gated the same way, and it is the one control
-on `day-actions.svelte` that is: its neighbours read on any day that is not past,
-the timer on **today** alone. The state is `SessionTimerStore`'s, bound into the
-component by both screens that render it (`bind:timer`), and `localStorage`'s —
-`business/utils/session-timer.ts` owns the shape, the transitions and
-`getPendingMinutes`, and `presentation/utils/session-timer.ts` is the storage
-call and the key
-([the-clock-that-only-one-screen-could-start.md](../../../docs/features/the-clock-that-only-one-screen-could-start.md)).
-A timer whose `startedOn` is not today is dropped both on read and by the
-store's getter, which reads `liveToday.value` — so one left running overnight is
-disposed of under a page left open too.
+The timer that fills a 🪫 length is gated the same way, and it is the one control on
+`day-actions.svelte` that is: its neighbours read on any day that is not past, the timer
+on **today** alone. The state is `SessionTimerStore`'s, bound into the component by both
+screens that render it (`bind:timer`), and `localStorage`'s —
+`business/utils/session-timer.ts` owns the shape, the transitions, `getPendingMinutes`
+and the countdown (`targetMs`, `getRemainingMinutes`, `isAlarmDue`,
+`suggestTargetMinutes`); `presentation/utils/session-timer.ts` is the storage call and
+the key ([one screen](../../../docs/features/the-clock-that-only-one-screen-could-start.md),
+[rings once](../../../docs/features/the-clock-that-rings-once.md)). The alarm rings from
+the component's one-second tick and clears `targetMs` as it rings, so a length rings
+once. A timer whose `startedOn` is not today is dropped both on read and by the store's
+getter, which reads `liveToday.value` — so one left running overnight is disposed of
+under a page left open too.
 
 ## Settled decisions — do not re-litigate
 
