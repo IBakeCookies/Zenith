@@ -29,7 +29,7 @@
 		const [bodyBefore, bodyAfter] = canvas.getAllByLabelText('Body');
 
 		const save = canvas.getByRole('button', {
-			name: '✓',
+			name: 'Save',
 		});
 
 		// The ☕ button is the only way in, so the caret is always asked for
@@ -40,7 +40,7 @@
 
 		await userEvent.click(
 			canvas.getByRole('button', {
-				name: '✕',
+				name: 'Cancel',
 			}),
 		);
 
@@ -112,7 +112,7 @@
 
 		await userEvent.click(
 			canvas.getByRole('button', {
-				name: '✓',
+				name: 'Save',
 			}),
 		);
 

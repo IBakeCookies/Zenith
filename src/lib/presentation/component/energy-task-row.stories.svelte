@@ -280,7 +280,7 @@
 		// ✓ reports the amended session through the row, in hours
 		await userEvent.click(
 			canvas.getByRole('button', {
-				name: '✓',
+				name: 'Save',
 			}),
 		);
 

@@ -398,7 +398,7 @@ test('capacity left reads N/A until a session is rated, then names what is spent
 
 	await form
 		.getByRole('button', {
-			name: '✓',
+			name: 'Save',
 		})
 		.click();
 
@@ -499,7 +499,7 @@ test('one stop funds one log', async ({ page }) => {
 
 	await drainForm(page)
 		.getByRole('button', {
-			name: '✓',
+			name: 'Save',
 		})
 		.click();
 
@@ -554,7 +554,7 @@ test('a correction does not spend the stopped reading', async ({ page }) => {
 
 	await drainForm(page)
 		.getByRole('button', {
-			name: '✓',
+			name: 'Save',
 		})
 		.click();
 
@@ -596,13 +596,13 @@ test('a second drain editor opened over the reading opens empty', async ({ page 
 
 	await rowDrainForm(page, 'Gym session')
 		.getByRole('button', {
-			name: '✓',
+			name: 'Save',
 		})
 		.click();
 
 	await rowDrainForm(page, 'Write report')
 		.getByRole('button', {
-			name: '✕',
+			name: 'Cancel',
 		})
 		.click();
 
@@ -657,7 +657,7 @@ test('the Lab seeds and spends the same stopped reading', async ({ page }) => {
 
 	await rowDrainForm(page, 'Write report')
 		.getByRole('button', {
-			name: '✓',
+			name: 'Save',
 		})
 		.click();
 

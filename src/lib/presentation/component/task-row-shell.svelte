@@ -2,7 +2,6 @@
 	import type { Snippet } from 'svelte';
 	import type { Persisted, DrainObservationRecord, TaskImportance } from '$lib/business/type';
 	import * as m from '$lib/paraglide/messages.js';
-	import { buttonVariants } from '$lib/presentation/component/ui/button';
 	import * as Tooltip from '$lib/presentation/component/ui/tooltip';
 	import Pencil from '@lucide/svelte/icons/pencil';
 	import X from '@lucide/svelte/icons/x';
@@ -20,11 +19,6 @@
 	} from '$lib/presentation/utils/measurement-prompt';
 
 	// Why: presentation/AGENTS.md, "R3 in the UI — the two task screens are one definition".
-
-	const ROW_ACTION_CLASS = buttonVariants({
-		variant: 'ghost',
-		size: 'icon-xs',
-	});
 
 	/** A logged READING on the meta line. The recessed chip is what separates the two
 	 *  readings from the two bare-glyph triggers that open their editors — "⚡ 🪫 2h Mind 0
@@ -308,7 +302,7 @@
 						<Tooltip.Root>
 							<Tooltip.Trigger
 								class={cn(
-									ROW_ACTION_CLASS,
+									'row-action',
 									flowMinutes || flowDraft ? 'text-flow' : 'text-ty-silent hover:text-flow',
 								)}
 								onclick={() => (flowDraft ? onflowclose?.() : onflowopen('button'))}
@@ -328,7 +322,7 @@
 						<Tooltip.Root>
 							<Tooltip.Trigger
 								class={cn(
-									ROW_ACTION_CLASS,
+									'row-action',
 									drainLogs.length > 0 || drainDraft
 										? 'text-flow'
 										: 'text-ty-silent hover:text-flow',
@@ -351,24 +345,24 @@
 						<button
 							type="button"
 							class={cn(
-								ROW_ACTION_CLASS,
+								'row-action',
 								isEditing ? 'text-success' : 'text-ty-silent hover:text-success',
 							)}
 							onclick={() => (isEditing = !isEditing)}
 							aria-label={m.task_edit_aria()}
 						>
-							<Pencil class="h-4 w-4" />
+							<Pencil />
 						</button>
 					{/if}
 
 					{#if onremove}
 						<button
 							type="button"
-							class={cn(ROW_ACTION_CLASS, 'text-ty-silent hover:text-danger')}
+							class="row-action text-ty-silent hover:text-danger"
 							onclick={onremove}
 							aria-label={m.task_remove_aria()}
 						>
-							<X class="h-4 w-4" />
+							<X />
 						</button>
 					{/if}
 				</div>

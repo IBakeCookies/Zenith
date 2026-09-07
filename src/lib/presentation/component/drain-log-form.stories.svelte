@@ -27,7 +27,7 @@
 		const body = canvas.getByLabelText('Body');
 
 		const save = canvas.getByRole('button', {
-			name: '✓',
+			name: 'Save',
 		});
 
 		// Opened itself on completion, so it must not yank the caret out of the list
@@ -45,7 +45,7 @@
 
 		await userEvent.click(
 			canvas.getByRole('button', {
-				name: '✕',
+				name: 'Cancel',
 			}),
 		);
 

@@ -9,6 +9,7 @@
 	import X from '@lucide/svelte/icons/x';
 	import * as m from '$lib/paraglide/messages.js';
 	import { formatDuration } from '$lib/presentation/utils/duration-format';
+	import { showUndoToast } from '$lib/presentation/utils/toast';
 	import {
 		getElapsedMinutes,
 		pauseTimer,
@@ -92,8 +93,23 @@
 	}
 
 	function onTerminalClick() {
-		if (isStopped) timer = null;
-		else if (timer) timer = stopTimer(timer, Date.now());
+		if (!timer) return;
+
+		if (!isStopped) {
+			timer = stopTimer(timer, Date.now());
+
+			return;
+		}
+
+		const discarded = timer;
+
+		timer = null;
+
+		// Refuses onto an occupied clock, the way the sibling undos refuse a moved day:
+		// `getPendingMinutes` would seed the next 🪫 editor from a session nobody worked.
+		showUndoToast(m.timer_discard_toast(), m.common_undo(), () => {
+			if (timer === null) timer = discarded;
+		});
 	}
 
 	let showLoadMenu = $state(false);
@@ -261,10 +277,10 @@
 							>
 								{routine.name} ({routine.tasks.length})
 							</DropdownMenu.Item>
-							<!-- Deleting a routine cannot be undone, so the trash only arms it
-								     and the second press deletes. Arming changes the two controls,
-								     never the row: a routine that turns red end to end reads as
-								     already gone, and the load action has to stay put. -->
+							<!-- Deleting a routine cannot be undone, so the trash only arms it and
+								     the second press deletes. Arming changes the two controls, never
+								     the row: a routine red end to end reads as already gone, and the
+								     load action has to stay put. No fill; the ring is its keyboard cue. -->
 							<DropdownMenu.Item
 								variant="destructive"
 								closeOnSelect={false}
@@ -275,9 +291,11 @@
 									: m.header_delete_routine({
 											name: routine.name,
 										})}
-								class={isConfirming
-									? 'shrink-0'
-									: 'shrink-0 opacity-0 group-hover:opacity-100 focus:opacity-100 [@media(hover:none)]:opacity-100'}
+								class={[
+									'shrink-0 focus:bg-transparent! focus-visible:ring-3 focus-visible:ring-ring/50',
+									isConfirming ||
+										'opacity-0 group-hover:opacity-100 focus:opacity-100 [@media(hover:none)]:opacity-100',
+								]}
 								onclick={() =>
 									isConfirming ? deleteRoutine(routine.id) : (confirmingDelete = routine.id)}
 							>
@@ -288,7 +306,7 @@
 								<DropdownMenu.Item
 									closeOnSelect={false}
 									aria-label={m.common_cancel()}
-									class="shrink-0"
+									class="shrink-0 focus:bg-transparent! focus-visible:ring-3 focus-visible:ring-ring/50"
 									onclick={() => (confirmingDelete = null)}
 								>
 									<X class="h-4 w-4" />

@@ -317,10 +317,10 @@ Read this before touching markup, classes, or anything under
   `svelte-ignore` for `a11y_no_noninteractive_tabindex`.
 - **A repeated cluster becomes an `@utility`, not a wrapper component** —
   `field-input` (every text and date field), `range-track` (every slider, its
-  `accent-*` left to the call site) and `input-overlay` (the carve-outs above),
-  over `banner-shell` and `card-shell`. A wrapper component would cost each
-  caller a level it cannot always afford: the same argument as `hint-underline`'s,
-  where it would cost the heading level or the label association.
+  `accent-*` left to the call site), `row-action` (a row's right-edge controls)
+  and `input-overlay` (the carve-outs above), over `banner-shell` and
+  `card-shell`. A wrapper would cost each caller a level it cannot always afford,
+  as `hint-underline`'s would the heading level or the label association.
 - **The hand cursor marks anything clickable** — Tailwind v4's Preflight gives
   buttons `cursor: default` (the spec reading, where the hand means "link");
   `base.css` puts `cursor: pointer` back on every enabled `button` and

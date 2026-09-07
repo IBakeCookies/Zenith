@@ -1,7 +1,9 @@
 <script lang="ts">
+	import Check from '@lucide/svelte/icons/check';
+	import Pencil from '@lucide/svelte/icons/pencil';
+	import X from '@lucide/svelte/icons/x';
 	import type { TagHoursBreakdown } from '$lib/business/model/tags';
 	import * as m from '$lib/paraglide/messages.js';
-	import { Button } from '$lib/presentation/component/ui/button';
 
 	interface Props {
 		breakdown: TagHoursBreakdown | null;
@@ -105,8 +107,8 @@
 				<li>
 					<!-- The ✎ and ✕ at the far end, past the hours, where the log rows put theirs. -->
 					<div class="flex flex-wrap items-center justify-between gap-x-grid-xs">
-						<span class="text-xs text-ty-silent">{row.label}</span>
-						<span class="flex items-center gap-grid-2xs">
+						<div class="text-xs text-ty-silent">{row.label}</div>
+						<div class="flex items-center gap-grid-2xs">
 							<span class="text-sm font-medium text-ty-primary">
 								<span style="font-variant-numeric: tabular-nums">{hours(row.hours)}</span>
 								{m.unit_hours()}
@@ -117,62 +119,54 @@
 								     back, so the ✕ only arms; the confirm focuses cancel, so a stray
 								     Enter cannot drop one. -->
 								{#if confirmingTag === tag}
-									<Button
-										variant="ghost"
-										size="sm"
+									<button
 										type="button"
 										aria-label={m.ana_tag_hours_delete_confirm({
 											tag,
 										})}
-										class="text-danger hover:text-danger-strong"
+										class="row-action text-xs font-medium text-danger hover:text-danger-strong"
 										onclick={() => remove(tag)}
 									>
 										{m.ana_tag_hours_delete_prompt()}
-									</Button>
-									<Button
-										variant="ghost"
-										size="sm"
+									</button>
+									<button
 										type="button"
-										class="text-ty-silent"
+										class="row-action text-xs text-ty-silent hover:text-ty-secondary"
 										{@attach (node: HTMLElement) => node.focus()}
 										onclick={() => (confirmingTag = null)}
 									>
 										{m.common_cancel()}
-									</Button>
+									</button>
 								{:else}
-									<Button
-										variant="ghost"
-										size="icon-xs"
+									<button
 										type="button"
 										aria-label={m.ana_tag_hours_rename({
 											tag,
 										})}
-										class="text-ty-silent hover:text-ty-secondary"
+										class="row-action text-ty-silent hover:text-ty-secondary"
 										onclick={() => toggleEditor(tag)}
 									>
-										✎
-									</Button>
-									<Button
-										variant="ghost"
-										size="icon-xs"
+										<Pencil />
+									</button>
+									<button
 										type="button"
 										aria-label={m.ana_tag_hours_delete({
 											tag,
 										})}
-										class="text-ty-silent hover:text-danger"
+										class="row-action text-ty-silent hover:text-danger"
 										onclick={() => (confirmingTag = tag)}
 									>
-										✕
-									</Button>
+										<X />
+									</button>
 								{/if}
 							{/if}
-						</span>
+						</div>
 					</div>
 
 					{#if row.tag !== undefined && editingTag === row.tag}
 						{@const tag = row.tag}
 						<form
-							class="rounded-lg border border-line-soft bg-surface-page/40 p-box-lg flex flex-wrap items-end gap-grid-2xs"
+							class="mt-text-xs flex flex-wrap items-end gap-grid-2xs rounded-lg border border-line-soft bg-surface-page/40 p-box-lg"
 							onsubmit={(e) => (e.preventDefault(), save(tag))}
 						>
 							<label class="flex-1 text-2xs text-ty-silent">
@@ -187,25 +181,21 @@
 									class="field-input"
 								/>
 							</label>
-							<Button
-								variant="ghost"
-								size="icon-xs"
+							<button
 								type="submit"
 								aria-label={m.ana_tag_hours_rename_save()}
-								class="text-brand"
+								class="row-action text-brand"
 							>
-								✓
-							</Button>
-							<Button
-								variant="ghost"
-								size="icon-xs"
+								<Check />
+							</button>
+							<button
 								type="button"
 								aria-label={m.ana_tag_hours_rename_cancel()}
-								class="text-ty-silent"
+								class="row-action text-ty-silent hover:text-ty-primary"
 								onclick={() => (editingTag = null)}
 							>
-								✕
-							</Button>
+								<X />
+							</button>
 							{#if willMerge(tag, draft)}
 								<p class="w-full text-2xs text-ty-secondary">{m.ana_tag_hours_rename_merge()}</p>
 							{/if}

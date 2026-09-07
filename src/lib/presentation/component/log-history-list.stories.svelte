@@ -174,7 +174,7 @@
 
 		await userEvent.click(
 			canvas.getByRole('button', {
-				name: '✓',
+				name: 'Save',
 			}),
 		);
 
@@ -198,7 +198,7 @@
 
 		await expect(
 			canvas.queryByRole('button', {
-				name: '🗑',
+				name: 'Delete this drain rating',
 			}),
 		).not.toBeInTheDocument();
 
@@ -207,7 +207,7 @@
 
 		await userEvent.click(
 			canvas.getByRole('button', {
-				name: '✓',
+				name: 'Save',
 			}),
 		);
 
@@ -236,7 +236,7 @@
 
 		await userEvent.click(
 			canvas.getByRole('button', {
-				name: '✕',
+				name: 'Cancel',
 			}),
 		);
 

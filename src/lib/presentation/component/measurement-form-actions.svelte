@@ -1,5 +1,8 @@
 <script lang="ts">
-	import { Button } from '$lib/presentation/component/ui/button';
+	import Check from '@lucide/svelte/icons/check';
+	import Trash2 from '@lucide/svelte/icons/trash-2';
+	import X from '@lucide/svelte/icons/x';
+	import * as m from '$lib/paraglide/messages.js';
 
 	type Props = {
 		accentClass?: string;
@@ -22,20 +25,25 @@
 
 <span class="ml-auto flex items-center gap-grid-2xs">
 	{#if ondelete}
-		<Button
-			variant="ghost"
-			size="icon-xs"
+		<button
 			type="button"
 			onclick={ondelete}
 			aria-label={deleteLabel}
 			title={deleteTitle}
-			class="text-ty-silent hover:text-danger"
+			class="row-action text-ty-silent hover:text-danger"
 		>
-			🗑
-		</Button>
+			<Trash2 />
+		</button>
 	{/if}
-	<Button variant="ghost" size="icon-xs" type="submit" class={accentClass}>✓</Button>
-	<Button variant="ghost" size="icon-xs" type="button" onclick={oncancel} class="text-ty-silent">
-		✕
-	</Button>
+	<button type="submit" aria-label={m.common_save()} class={['row-action', accentClass]}>
+		<Check />
+	</button>
+	<button
+		type="button"
+		onclick={oncancel}
+		aria-label={m.common_cancel()}
+		class="row-action text-ty-silent"
+	>
+		<X />
+	</button>
 </span>

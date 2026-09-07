@@ -1230,7 +1230,7 @@ test('completing a task opens its drain rating', async ({ page }) => {
 
 	await form
 		.getByRole('button', {
-			name: '✓',
+			name: 'Save',
 		})
 		.click();
 
@@ -1388,7 +1388,7 @@ test('the drain prompt takes no focus and refuses an empty rating', async ({ pag
 
 	await form
 		.getByRole('button', {
-			name: '✓',
+			name: 'Save',
 		})
 		.click();
 
@@ -1543,7 +1543,7 @@ test('the rest editor refuses a half-filled pair but accepts a rating of 0', asy
 	const fields = form.locator('input[type="number"]');
 
 	const save = form.getByRole('button', {
-		name: '✓',
+		name: 'Save',
 	});
 
 	// Everything but Body after. Drain falls across the break, as a rest pair must
@@ -1653,7 +1653,7 @@ test('correcting a rating edits its row, while a second session adds one', async
 
 	await form
 		.getByRole('button', {
-			name: '✓',
+			name: 'Save',
 		})
 		.click();
 
@@ -1710,7 +1710,7 @@ test('the ✎ re-seeds a drain editor the row already has open', async ({ page }
 
 	await form
 		.getByRole('button', {
-			name: '✓',
+			name: 'Save',
 		})
 		.click();
 
@@ -1775,7 +1775,7 @@ test('a break is correctable from the analytics history, and the fit follows', a
 
 	await form
 		.getByRole('button', {
-			name: '✓',
+			name: 'Save',
 		})
 		.click();
 
