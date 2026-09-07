@@ -1,6 +1,6 @@
 # The clock that rings once
 
-**Kind:** feature · **Status:** planning · **Roadmap:** item `none` (a second
+**Kind:** feature · **Status:** landed 2026-09-07 · **Roadmap:** item `none` (a second
 follow-on to the timer bullet already dated in ROADMAP's not-proposed list —
 nothing re-opens, and no plan-value number is claimed)
 
@@ -14,7 +14,7 @@ this one. Same status as [zenith.md](../../zenith.md), for the same reason.
 The session clock takes a length. The user says how long they mean to work —
 prefilled with the length the stop advisor already recommends — starts it,
 pauses and resumes it as they always could, and when the time runs out the app
-says so: a toast and a short beep. **The clock keeps counting.** Today the clock
+says so: a toast and three short beeps. **The clock keeps counting.** Today the clock
 only counts up and says nothing, so a user who means to work 45 minutes has to
 watch it, and a user who looks away gets no signal at all.
 
@@ -221,8 +221,8 @@ not touch it.
   [the-clock-that-only-one-screen-could-start.md](the-clock-that-only-one-screen-could-start.md)
   already put notifications out of the timer's scope and this change does not
   collect them.
-- **A mute setting, a volume, or a choice of sound.** One beep, always, at a
-  fixed level. Per the user, during planning. No preference, no storage key, no
+- **A mute setting, a volume, or a choice of sound.** The same three beeps,
+  always, at a fixed level. Per the user. No preference, no storage key, no
   settings surface.
 - **Auto-pausing or auto-stopping at zero.** Deliberate, and the load-bearing
   decision in this file — see Decisions. The clock counts on, and only the user
@@ -315,13 +315,13 @@ timer` — so autoplay policy is satisfied without a gesture argument in the
   unchanged: it is the `localStorage` call and the key, and `targetMs` rides
   along inside the JSON it already writes whole.
 - `src/lib/presentation/style/STYLE.md` — the length field's classes. **Not the
-  repo root** — this is the styling rulebook. `drain-log-form.svelte`'s number
-  inputs are the existing in-repo pattern for a numeric field; no raw palette
-  class, and if the strip's new cluster repeats, STYLE.md's rule is a composite
-  `@utility`, not a wrapper component.
+  repo root** — this is the styling rulebook. It shipped as the shared
+  `ui/number-input` primitive, which that file's composite-field bullet already
+  documents, so no styling rule moved and STYLE.md is unchanged.
 - `messages/en.json` and the four other locales — three new keys around the
-  existing `timer_*` block (an accessible name for the length field, the `left`
-  reading, and the alarm's toast). All five files, or the build fails.
+  existing `timer_*` block (an accessible name for the length field, its unit
+  suffix, the `left` reading, and the alarm's toast — four, once the field
+  became a `NumberInput`). All five files, or the build fails.
 - `docs/testing.md` — the level table for the mix above, and the reviewer table:
   this diff touches user-visible behaviour, so it is a full reviewer pass.
 - `src/lib/presentation/AGENTS.md` — two sections state what this change moves,
@@ -419,11 +419,25 @@ number`, called once when the component initializes its own length state.
   editor at exactly the moment the user is deciding whether to stop. Rejected:
   swapping the readout while a countdown is set, which is less markup and
   strictly worse information.
-- **One beep, no setting** — per the user, during planning. A WebAudio
-  oscillator rather than an audio file: nothing to fetch, nothing to add to the
-  service worker's precache, and no asset to keep in the repo for 200 ms of
-  sound. Rejected: a mute preference, which is a storage key, a settings
-  surface and a migration question for one boolean nobody has asked for.
+- **Three beeps, no setting** — per the user, during the build; one tone alone
+  is easily taken for a notification from something else. A WebAudio oscillator
+  rather than an audio file: nothing to fetch, nothing to add to the service
+  worker's precache, and no asset to keep in the repo for under a second of
+  sound, and the three are scheduled from one call so the alarm stays one
+  `playAlarmSound()`. Rejected: a mute preference, which is a storage key, a
+  settings surface and a migration question for one boolean nobody has asked
+  for.
+- **The length is the shared `NumberInput`, stepping 15 minutes** — per the
+  user, during the build. Its steppers and its clamp-on-blur are what make a
+  non-positive length unreachable, so the field cannot arm a countdown the
+  sanitizer would refuse; 15 is a third of the model's own 45-minute step
+  (MATH.md §8.8). Rejected: the bare `<input type="number">` this file first
+  planned, whose `min` is advisory outside a form.
+- **A length typed over a running session re-aims it** — the field is the only
+  way to set a second countdown once the first has rung and cleared itself, so
+  a change while the clock runs writes `setTarget` rather than waiting for the
+  next fresh start. Floored at one step, because the field is not clamped until
+  it is left and the `0` on the way to `15` would ring on the next tick.
 - **Both screens, in `day-actions.svelte`** — per the user, during planning. The
   component is already shared by `/` and the Lab and the state is already
   `SessionTimerStore`'s, so a countdown set on one screen counts on the other

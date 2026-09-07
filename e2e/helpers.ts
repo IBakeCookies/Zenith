@@ -188,16 +188,22 @@ export async function logFlow(page: Page, minutes: number) {
 		.click();
 }
 
-/* A running timer with time already on it, written the way `readSessionTimer` reads
-   it back. The key is re-spelled here as an independent oracle (data/AGENTS.md's
-   note on R8 step 4); the only other route to a nonzero reading is 30 seconds of
-   wall clock per test, since the field takes whole minutes. */
-export const plantRunningTimer = (page: Page, minutes: number) =>
+/* A running timer with time already on it — and, given a length, counting down to
+   one. Written the way `readSessionTimer` reads it back; the key is re-spelled here
+   as an independent oracle (data/AGENTS.md's note on R8 step 4), and the only other
+   route to a nonzero reading is 30 seconds of wall clock per test, since both fields
+   take whole minutes. */
+export const plantRunningTimer = (
+	page: Page,
+	minutes: number,
+	targetMinutes: number | null = null,
+) =>
 	page.evaluate((timer) => localStorage.setItem('fallow:session-timer', JSON.stringify(timer)), {
 		phase: 'running',
 		startedOn: isoDate(0),
 		runningSince: Date.now(),
 		accumulatedMs: minutes * 60_000,
+		targetMs: targetMinutes === null ? null : targetMinutes * 60_000,
 	});
 
 /** The 🪫 append/correct editor, wherever a row has one open. */

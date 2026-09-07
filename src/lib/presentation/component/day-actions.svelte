@@ -9,29 +9,33 @@
 	import X from '@lucide/svelte/icons/x';
 	import * as m from '$lib/paraglide/messages.js';
 	import { formatDuration } from '$lib/presentation/utils/duration-format';
-	import { showUndoToast } from '$lib/presentation/utils/toast';
+	import { playAlarmSound } from '$lib/presentation/utils/alarm-sound';
+	import { showToast, showUndoToast } from '$lib/presentation/utils/toast';
 	import {
 		getElapsedMinutes,
+		getRemainingMinutes,
+		isAlarmDue,
 		pauseTimer,
 		runTimer,
+		setTarget,
 		stopTimer,
 		type SessionTimer,
 	} from '$lib/business/utils/session-timer';
 	import { Button } from '$lib/presentation/component/ui/button';
+	import { NumberInput } from '$lib/presentation/component/ui/number-input';
 	import * as DropdownMenu from '$lib/presentation/component/ui/dropdown-menu';
 	import type { Task, DailySession, SavedRoutine } from '$lib/business/type';
 
 	interface Props {
 		selectedDate: string;
 		today: string;
-		// Import props
 		yesterdaySession: DailySession | null;
 		routines: SavedRoutine[];
 		currentTasks: Task[];
-		/** The day's session clock. Bindable: `SessionTimerStore`'s, so a session
-		 *  started on one screen is still counting on the other, and the 🪫 editor a
-		 *  stopped reading fills is still the page's. */
+		/** The day's session clock. Bindable: `SessionTimerStore`'s, so a session started
+		 *  on one screen counts on the other and its reading stays the page's. */
 		timer: SessionTimer | null;
+		getSuggestedMinutes: () => number;
 		onimport: (tasks: Omit<Task, 'id' | 'createdAt' | 'completed'>[]) => void;
 		onimportdate: (date: string) => Promise<number>;
 		onsaveroutine: (name: string) => void;
@@ -45,6 +49,7 @@
 		routines,
 		currentTasks,
 		timer = $bindable(),
+		getSuggestedMinutes,
 		onimport,
 		onimportdate,
 		onsaveroutine,
@@ -52,6 +57,9 @@
 	}: Props = $props();
 
 	const id = $props.id();
+
+	const STEP_MINUTES = 15;
+	const toMinutes = (ms: number) => Math.round(ms / 60_000);
 
 	const isToday = $derived(selectedDate === today);
 	const isViewingPast = $derived(selectedDate < today);
@@ -64,17 +72,30 @@
 
 	// Only while running: a paused or stopped reading has nothing left to count.
 	let now = $state(Date.now());
+	// svelte-ignore state_referenced_locally -- one solve per mount, never per edit
+	let targetMinutes = $state(timer?.targetMs ? toMinutes(timer.targetMs) : getSuggestedMinutes());
 
 	$effect(() => {
 		if (timer?.phase !== 'running') return;
 
 		now = Date.now();
-		const tick = setInterval(() => (now = Date.now()), 1000);
+
+		const tick = setInterval(() => {
+			now = Date.now();
+
+			if (!timer || !isAlarmDue(timer, now)) return;
+
+			showToast.info(m.timer_alarm_toast());
+			playAlarmSound();
+			// Cleared as it rings: no state in which a target exists and has been announced.
+			timer = setTarget(timer, null);
+		}, 1000);
 
 		return () => clearInterval(tick);
 	});
 
 	const elapsedMinutes = $derived(timer ? getElapsedMinutes(timer, now) : 0);
+	const remainingMinutes = $derived(timer ? getRemainingMinutes(timer, now) : null);
 
 	const isRunning = $derived(timer?.phase === 'running');
 	const isStopped = $derived(timer?.phase === 'stopped');
@@ -89,7 +110,18 @@
 
 	function onPrimaryClick() {
 		if (isRunning && timer) timer = pauseTimer(timer, Date.now());
-		else timer = runTimer(timer, today, Date.now());
+		else if (timer) timer = runTimer(timer, today, Date.now());
+		else timer = runTimer(null, today, Date.now(), targetMinutes * 60_000);
+	}
+
+	// A length typed over a session already under way re-aims it, which is the only way
+	// to set a second countdown once the first has rung and cleared itself.
+	function onLengthChange(minutes: number) {
+		targetMinutes = minutes;
+
+		// The field is not clamped until it is left, so the `0` on the way to `15` must
+		// not re-aim a running session at zero and ring it a second later.
+		if (timer && !isStopped && minutes >= STEP_MINUTES) timer = setTarget(timer, minutes * 60_000);
 	}
 
 	function onTerminalClick() {
@@ -179,17 +211,25 @@
 	}
 </script>
 
-<!-- Wraps, and gives up width when asked: the two menus are ~150px and a stopped
-     reading adds a line of copy beside the readout, which is more than a 375px screen
-     holds in one row. The Next title truncates first (its own `truncate`); what still
-     does not fit wraps here rather than scrolling the document sideways. Once it has
-     wrapped it aligns left: ragged rows pushed against the right edge read as
-     misaligned, and the strip shares the page's left edge with everything above it. -->
+<!-- Wraps, and gives up width when asked: two ~150px menus, the length field and a stopped
+     reading's line of copy sit beside the readout, which is more than 375px holds in a row.
+     Wrapped rows align left, against the same edge as everything above them. -->
 <div class="flex flex-wrap items-center justify-start sm:justify-end gap-grid-xs">
 	<!-- Today only, unlike its neighbours: a day being planned can be loaded and saved,
 	     but a new 🪫 measurement is today's alone, and this reading fills one. -->
 	{#if isToday}
 		<div class="flex shrink-0 items-center gap-grid-2xs">
+			<NumberInput
+				id="{id}-session-length"
+				value={targetMinutes}
+				onchange={onLengthChange}
+				min={STEP_MINUTES}
+				max={960}
+				step={STEP_MINUTES}
+				unit={m.timer_length_unit()}
+				ariaLabel={m.timer_length_label()}
+			/>
+
 			<!-- Full ink only while it counts: paused and stopped are otherwise a glyph
 			     apart, and the minutes look the same either way. "<1m" because the first
 			     minute rounds to "0m", which reads as a clock that never started. -->
@@ -197,6 +237,14 @@
 				<span class="text-xs tabular-nums {isRunning ? 'text-ty-primary' : 'text-ty-silent'}">
 					{elapsedMinutes === 0 ? m.timer_under_a_minute() : formatDuration(elapsedMinutes / 60)}
 				</span>
+			{/if}
+
+			{#if remainingMinutes !== null}
+				<span class="text-xs whitespace-nowrap tabular-nums text-ty-silent"
+					>{m.timer_time_left({
+						duration: formatDuration(remainingMinutes / 60),
+					})}</span
+				>
 			{/if}
 
 			<!-- Only a stopped reading is waiting on anything, and neither the minutes nor

@@ -36,6 +36,7 @@
 		startedOn: '2026-07-20',
 		runningSince: null,
 		accumulatedMs: 45 * 60_000,
+		targetMs: null,
 	};
 
 	const pendingLine = 'waiting for a 🪫 drain rating';
@@ -76,6 +77,7 @@
 			routines: [],
 			currentTasks: [],
 			timer: null,
+			getSuggestedMinutes: () => 45,
 			onimport: fn(),
 			onimportdate: fn(() => Promise.resolve(0)),
 			onsaveroutine: fn(),

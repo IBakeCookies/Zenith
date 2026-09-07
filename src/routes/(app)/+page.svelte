@@ -44,13 +44,15 @@
 	import { setDailyPlanStore } from '$lib/business/store/daily-plan-store.svelte';
 	import { getSessionStore } from '$lib/business/store/session-store.svelte';
 	import { getEnergyObservationStore } from '$lib/business/store/energy-observation-store.svelte';
+	import { getEnergyLabStore } from '$lib/business/store/energy-lab-store.svelte';
 	import { getSessionTimerStore } from '$lib/business/store/session-timer-store.svelte';
 	import { fromISO } from '$lib/business/utils/date';
-	import { getPendingMinutes } from '$lib/business/utils/session-timer';
+	import { getPendingMinutes, suggestTargetMinutes } from '$lib/business/utils/session-timer';
 
 	const session = getSessionStore();
 	const observations = getEnergyObservationStore();
 	const timerStore = getSessionTimerStore();
+	const lab = getEnergyLabStore();
 
 	const plan = setDailyPlanStore(session, observations);
 
@@ -202,6 +204,7 @@
 		routines={session.routines}
 		currentTasks={tasks}
 		bind:timer={timerStore.timer}
+		getSuggestedMinutes={() => suggestTargetMinutes(lab.stopAdvice)}
 		onimport={(t) => session.importTasks(t)}
 		onimportdate={(d) => session.importFromDate(d)}
 		onsaveroutine={(name) => session.saveCurrentAsRoutine(name)}

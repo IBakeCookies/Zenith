@@ -10,6 +10,7 @@ const running = (startedOn: string): SessionTimer => ({
 	startedOn,
 	runningSince: 1_800_000_000_000,
 	accumulatedMs: 0,
+	targetMs: null,
 });
 
 function mount(stored: SessionTimer | null) {
