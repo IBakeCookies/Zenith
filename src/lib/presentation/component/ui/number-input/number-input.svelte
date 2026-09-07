@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { cn } from '$lib/presentation/utils';
 	import * as m from '$lib/paraglide/messages.js';
 
 	interface Props {
@@ -18,6 +19,9 @@
 		// Focus accent, passed as a literal class so Tailwind can see it,
 		// e.g. "focus-within:border-brand/50"
 		accent?: string;
+		/** Merged over the wrapper's own chrome, so a caller that IS the bordered
+		 *  object can drop the border, fill and ring rather than nest a second one. */
+		class?: string;
 	}
 
 	let {
@@ -30,6 +34,7 @@
 		id,
 		ariaLabel,
 		accent = 'focus-within:border-brand/50',
+		class: className,
 	}: Props = $props();
 
 	const autoId = $props.id();
@@ -67,7 +72,11 @@
 </script>
 
 <div
-	class="flex items-stretch rounded-lg border border-line-strong bg-input transition-colors has-focus-visible:ring-2 has-focus-visible:ring-ring/50 {accent}"
+	class={cn(
+		'flex items-stretch rounded-lg border border-line-strong bg-input transition-colors has-focus-visible:ring-2 has-focus-visible:ring-ring/50',
+		accent,
+		className,
+	)}
 >
 	<button
 		type="button"
@@ -75,7 +84,7 @@
 		aria-label={m.number_input_decrease()}
 		disabled={atMin}
 		onclick={() => stepBy(-1)}
-		class="rounded-l-lg px-2.5 text-sm text-ty-silent transition select-none hover:bg-surface-hover hover:text-ty-primary disabled:cursor-default disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-ty-silent"
+		class="number-step rounded-l-lg px-2.5 text-sm"
 	>
 		−
 	</button>
@@ -90,11 +99,11 @@
 			{value}
 			oninput={handleInput}
 			onblur={handleBlur}
-			class="w-full border-0 bg-transparent py-2 pr-9 pl-1 text-center text-sm text-ty-primary outline-none focus:ring-0"
+			class="w-full border-0 bg-transparent py-1.5 pr-8 pl-1 text-center text-sm text-ty-primary outline-none focus:ring-0"
 		/>
 		{#if unit}
 			<span
-				class="pointer-events-none absolute top-1/2 right-1.5 -translate-y-1/2 text-2xs font-medium tracking-wide text-ty-silent uppercase"
+				class="pointer-events-none absolute top-1/2 right-1 -translate-y-1/2 text-2xs font-medium tracking-wide text-ty-silent uppercase"
 			>
 				{unit}
 			</span>
@@ -106,7 +115,7 @@
 		aria-label={m.number_input_increase()}
 		disabled={atMax}
 		onclick={() => stepBy(1)}
-		class="rounded-r-lg px-2.5 text-sm text-ty-silent transition select-none hover:bg-surface-hover hover:text-ty-primary disabled:cursor-default disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-ty-silent"
+		class="number-step rounded-r-lg px-2.5 text-sm"
 	>
 		+
 	</button>

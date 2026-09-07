@@ -682,10 +682,10 @@ withholds the first, exactly as it does for 🪫.
 `deleteFlowLog(recordId)`, addressed the way a row can address it — and drops
 the viewed day's reading, since that is the one on screen.
 
-The timer that fills a 🪫 length is gated the same way, and it is the one control on
-`day-actions.svelte` that is: its neighbours read on any day that is not past, the timer
-on **today** alone. The state is `SessionTimerStore`'s, bound into the component by both
-screens that render it (`bind:timer`), and `localStorage`'s —
+The timer that fills a 🪫 length is gated the same way — `day-actions.svelte` renders
+`session-clock.svelte` on **today** alone. It is one bounded object whose outline holds
+across the phases; ink weight and the track carry the phase, not which controls exist. The state is `SessionTimerStore`'s, bound in
+by both screens that render it (`bind:timer`), and `localStorage`'s —
 `business/utils/session-timer.ts` owns the shape, the transitions, `getPendingMinutes`
 and the countdown (`targetMs`, `getRemainingMinutes`, `isAlarmDue`,
 `suggestTargetMinutes`); `presentation/utils/session-timer.ts` is the storage call and
