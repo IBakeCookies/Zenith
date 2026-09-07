@@ -9,11 +9,12 @@
 	import {
 		baseLocale,
 		deLocalizeHref,
-		getLocale,
+		type Locale,
 		locales,
 		localizeHref,
 	} from '$lib/paraglide/runtime';
 	import { jsonLdScript } from '$lib/presentation/utils/json-ld';
+	import { activeLocale } from '$lib/presentation/utils/locale.svelte';
 
 	interface Props {
 		title: string;
@@ -23,7 +24,7 @@
 
 	let { title, description, jsonLd }: Props = $props();
 
-	const OG_LOCALES: Record<string, string> = {
+	const OG_LOCALES: Record<Locale, string> = {
 		en: 'en_US',
 		de: 'de_DE',
 		es: 'es_ES',
@@ -48,9 +49,9 @@
 			]),
 		),
 	);
-	const canonical = $derived(alternates[getLocale()]);
+	const canonical = $derived(alternates[activeLocale.value]);
 	const ogImage = $derived(`${origin}/fallow-daily-time-allocation.png`);
-	const ogLocale = $derived(OG_LOCALES[getLocale()] ?? 'en_US');
+	const ogLocale = $derived(OG_LOCALES[activeLocale.value]);
 
 	const jsonLdTag = $derived(jsonLd ? jsonLdScript(jsonLd) : null);
 </script>
@@ -71,8 +72,8 @@
 	<meta property="og:description" content={description} />
 	<meta property="og:url" content={canonical} />
 	<meta property="og:locale" content={ogLocale} />
-	{#each locales.filter((l) => l !== getLocale()) as locale (locale)}
-		<meta property="og:locale:alternate" content={OG_LOCALES[locale] ?? locale} />
+	{#each locales.filter((l) => l !== activeLocale.value) as locale (locale)}
+		<meta property="og:locale:alternate" content={OG_LOCALES[locale]} />
 	{/each}
 	<meta property="og:image" content={ogImage} />
 	<meta property="og:image:width" content="1200" />

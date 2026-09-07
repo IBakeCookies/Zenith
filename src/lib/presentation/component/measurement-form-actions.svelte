@@ -3,10 +3,13 @@
 	import Trash2 from '@lucide/svelte/icons/trash-2';
 	import X from '@lucide/svelte/icons/x';
 	import * as m from '$lib/paraglide/messages.js';
+	import { cn } from '$lib/presentation/utils';
 
 	type Props = {
+		/** Paints the ✓ button alone; `class` paints the row. */
 		accentClass?: string;
 		oncancel: () => void;
+		class?: string;
 	} & (
 		| {
 				ondelete?: undefined;
@@ -20,10 +23,17 @@
 		  }
 	);
 
-	let { accentClass = 'text-flow', oncancel, ondelete, deleteLabel, deleteTitle }: Props = $props();
+	let {
+		accentClass = 'text-flow',
+		oncancel,
+		ondelete,
+		deleteLabel,
+		deleteTitle,
+		class: className,
+	}: Props = $props();
 </script>
 
-<span class="ml-auto flex items-center gap-grid-2xs">
+<span class={cn('ml-auto flex items-center gap-grid-2xs', className)}>
 	{#if ondelete}
 		<button
 			type="button"

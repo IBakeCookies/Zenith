@@ -123,10 +123,10 @@ export const drainDraftFromLog = (log: Persisted<DrainObservationRecord>): Drain
 	body: log.bodyDrain,
 });
 
-/* The two forms are the same object on screen, and their classes were already
+/* The three editors are the same object on screen, and their classes were already
    character-for-character identical under a comment saying "mirrors" — R3's own
-   example of the thing to export. What differs stays inline: ⚡ asks for one
-   number, 🪫 for three. */
+   example of the thing to export. What differs stays at the call site: ⚡ asks for one
+   number, 🪫 for three, and ☕ overrides the border to its own `info` tint (STYLE.md). */
 
 export const MEASUREMENT_FORM_CLASS =
 	'mt-text-xs flex flex-wrap items-center gap-x-grid-xs gap-y-grid-2xs rounded-lg border border-flow/20 bg-surface-page/40 px-box-xs py-box-2xs text-2xs text-ty-silent';

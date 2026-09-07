@@ -750,6 +750,28 @@ describe('SessionStore persistence', () => {
 		expect(store.tasks[0].createdAt).toBe(tomorrow);
 	});
 
+	it('imports the definition alone: importance travels, mustDoToday stays behind', async () => {
+		const { store } = await setup();
+
+		store.importTasks([
+			{
+				title: 'Tax return',
+				physicalDifficulty: 2,
+				mentalDifficulty: 10,
+				enjoyment: 1,
+				importance: 'high',
+				mustDoToday: true,
+				tags: ['admin'],
+			},
+		]);
+
+		flushSync();
+
+		expect(store.tasks[0].importance).toBe('high');
+		expect(store.tasks[0].tags).toEqual(['admin']);
+		expect(store.tasks[0].mustDoToday).toBeUndefined();
+	});
+
 	it('surfaces a failed load instead of silently never saving again', async () => {
 		readSessionByDateMock.mockRejectedValue(new Error('IndexedDB unavailable'));
 		let store!: SessionStore;
@@ -1777,9 +1799,9 @@ describe('SessionStore task tags', () => {
 		readSessionByDateMock.mockImplementation(async () => null);
 	});
 
-	/* A tag is part of what the task IS, so it travels everywhere the sliders do. All
-	   three writers below list the fields they carry one by one, which is why a dropped
-	   tag is invisible at every other level. */
+	/* A tag is part of what the task IS, so it travels everywhere the sliders do. The
+	   writers below name the fields they carry, which is why a dropped tag is invisible
+	   at every other level. */
 
 	it('carries tags into a saved routine, and back out of one', async () => {
 		const { store } = await setup();

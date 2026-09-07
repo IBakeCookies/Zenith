@@ -1,15 +1,17 @@
 <script lang="ts">
 	import type { Metric, MetricGroup } from '$lib/presentation/type';
 	import * as m from '$lib/paraglide/messages.js';
+	import { cn } from '$lib/presentation/utils';
 	import MetricBandText from '$lib/presentation/component/metric-band-text.svelte';
 	import MetricLabel from '$lib/presentation/component/metric-label.svelte';
 	import { BAND_TEXT_CLASS } from '$lib/presentation/utils/band';
 
 	interface Props {
 		metrics: Metric[];
+		class?: string;
 	}
 
-	let { metrics }: Props = $props();
+	let { metrics, class: className }: Props = $props();
 
 	// A column per question, in the order a day is asked about. Every reading
 	// answers one, the headline four included — they are repeated here rather than
@@ -17,7 +19,7 @@
 	// answering it best is worse than reading a number twice, and the tiles are a
 	// screen away above the day's setup. Empty columns are dropped: a title over
 	// nothing is a question the card cannot answer.
-	const questions: { group: MetricGroup; title: string }[] = $derived([
+	const questions: { group: MetricGroup; title: string }[] = [
 		{
 			group: 'fit',
 			title: m.metric_group_fit(),
@@ -34,7 +36,7 @@
 			group: 'endurance',
 			title: m.metric_group_endurance(),
 		},
-	]);
+	];
 
 	const columns = $derived(
 		questions
@@ -50,7 +52,7 @@
      reading's descriptor neighbours beside it but has nowhere to hang a heading,
      and the heading is what makes a reading findable by the question that sent
      the reader looking for it. -->
-<div class="card-shell p-box-md sm:p-box-xl">
+<div class={cn('card-shell p-box-md sm:p-box-xl', className)}>
 	<div class="grid grid-cols-1 gap-grid-lg sm:grid-cols-2 lg:grid-cols-4">
 		{#each columns as column (column.group)}
 			<section>
@@ -62,6 +64,8 @@
 						class="flex items-baseline justify-between gap-text-xs border-b border-line-soft py-text-2xs"
 					>
 						<MetricLabel text={item.label} description={item.description} />
+						<!-- A `span`, not a `p`: `e2e/time-budget.e2e.ts` tells the headline tile from
+						     this row by which of the two draws its value in a direct-child `<p>`. -->
 						<span
 							class="text-right text-sm font-semibold tabular-nums capitalize {BAND_TEXT_CLASS[
 								item.band

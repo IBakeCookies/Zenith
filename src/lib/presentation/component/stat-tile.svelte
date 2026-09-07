@@ -8,6 +8,7 @@
 	   would have forced either `{@html}` or a second "note colour" prop. */
 
 	import type { Snippet } from 'svelte';
+	import { cn } from '$lib/presentation/utils';
 
 	interface Props {
 		label: string;
@@ -18,12 +19,13 @@
 		/** There is no reading — the value is a placeholder, so it is not ink-loud */
 		muted?: boolean;
 		note: Snippet;
+		class?: string;
 	}
 
-	let { label, value, suffix, muted = false, note }: Props = $props();
+	let { label, value, suffix, muted = false, note, class: className }: Props = $props();
 </script>
 
-<div>
+<div class={cn(className)}>
 	<p class="text-xs text-ty-silent">{label}</p>
 	<p class="mt-text-2xs text-2xl font-semibold {muted ? 'text-ty-silent' : 'text-ty-primary'}">
 		{value}

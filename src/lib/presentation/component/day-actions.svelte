@@ -5,6 +5,7 @@
 	import Upload from '@lucide/svelte/icons/upload';
 	import X from '@lucide/svelte/icons/x';
 	import * as m from '$lib/paraglide/messages.js';
+	import { cn } from '$lib/presentation/utils';
 	import type { SessionTimer } from '$lib/business/utils/session-timer';
 	import { Button } from '$lib/presentation/component/ui/button';
 	import SessionClock from '$lib/presentation/component/session-clock.svelte';
@@ -25,6 +26,7 @@
 		onimportdate: (date: string) => Promise<number>;
 		onsaveroutine: (name: string) => void;
 		ondeleteroutine: (id: string) => void;
+		class?: string;
 	}
 
 	let {
@@ -39,6 +41,7 @@
 		onimportdate,
 		onsaveroutine,
 		ondeleteroutine,
+		class: className,
 	}: Props = $props();
 
 	const id = $props.id();
@@ -91,15 +94,7 @@
 	function importYesterday() {
 		if (!yesterdaySession?.tasks.length) return;
 
-		const tasksToImport = yesterdaySession.tasks.map((t) => ({
-			title: t.title,
-			physicalDifficulty: t.physicalDifficulty,
-			mentalDifficulty: t.mentalDifficulty,
-			enjoyment: t.enjoyment,
-			tags: t.tags,
-		}));
-
-		onimport(tasksToImport);
+		onimport(yesterdaySession.tasks);
 	}
 
 	function importRoutine(routine: SavedRoutine) {
@@ -122,7 +117,7 @@
 <!-- Wraps, and gives up width when asked: two ~150px menus, the length field and a stopped
      reading's line of copy sit beside the readout, which is more than 375px holds in a row.
      Wrapped rows align left, against the same edge as everything above them. -->
-<div class="flex flex-wrap items-center justify-start sm:justify-end gap-grid-xs">
+<div class={cn('flex flex-wrap items-center justify-start sm:justify-end gap-grid-xs', className)}>
 	<!-- Today only, unlike its neighbours: a day being planned can be loaded and saved,
 	     but a new 🪫 measurement is today's alone, and this reading fills one. -->
 	{#if isToday}

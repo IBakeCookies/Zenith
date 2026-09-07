@@ -53,6 +53,7 @@
 		 *  shell prop. The Lab's other control callbacks are `onchange`; this one is not
 		 *  one of them. */
 		onupdate: (edit: TaskEdit) => void;
+		class?: string;
 	}
 
 	let {
@@ -85,6 +86,7 @@
 		ondrainedit,
 		ondraindelete,
 		onupdate,
+		class: className,
 	}: Props = $props();
 </script>
 
@@ -150,5 +152,6 @@
 		{lead}
 		{readings}
 		{planned}
+		class={className}
 	/>
 </Tooltip.Provider>

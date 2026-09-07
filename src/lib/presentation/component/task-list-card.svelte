@@ -2,6 +2,7 @@
 	import type { Snippet } from 'svelte';
 	import * as m from '$lib/paraglide/messages.js';
 	import * as Dialog from '$lib/presentation/component/ui/dialog';
+	import { cn } from '$lib/presentation/utils';
 
 	interface Props {
 		/** Mounted in the dialog below, so it renders only while that is open — every
@@ -27,9 +28,10 @@
 		};
 		/** Where the empty state's example-day link points; the Lab passes none. */
 		exampleDayHref?: string;
+		class?: string;
 	}
 
-	let { form, strip, heading, rows, split, exampleDayHref }: Props = $props();
+	let { form, strip, heading, rows, split, exampleDayHref, class: className }: Props = $props();
 
 	let addOpen = $state(false);
 </script>
@@ -42,14 +44,14 @@
 <!-- `pt-text-sm` — wider than the card's rhythm, and on the plain `<ul>` below too:
      the strip is a picture of the day and the list is the day itemised. -->
 {#snippet group(label: string, items: Snippet, ruled: boolean)}
-	<div class="space-y-text-2xs pt-text-sm {ruled ? 'border-t border-line-strong' : ''}">
+	<div class={cn('space-y-text-2xs pt-text-sm', ruled && 'border-t border-line-strong')}>
 		<p class="text-2xs font-semibold tracking-wider text-ty-silent uppercase">{label}</p>
 		<ul aria-label={label} class="divide-y divide-line-soft">{@render items()}</ul>
 	</div>
 {/snippet}
 
 <Dialog.Root bind:open={addOpen}>
-	<div class="card-shell space-y-text-xs p-box-sm sm:p-box-xl">
+	<div class={cn('card-shell space-y-text-xs p-box-sm sm:p-box-xl', className)}>
 		<div class="flex flex-wrap items-center justify-between gap-text-xs">
 			<h3 class="text-xs font-semibold tracking-wider text-ty-secondary uppercase">
 				{m.list_title()}
@@ -60,7 +62,6 @@
 					variant="ghost"
 					size="icon-xs"
 					aria-label={m.form_add_task_title()}
-					title={m.form_add_task_title()}
 					class="mr-auto text-base leading-none">+</Dialog.Trigger
 				>
 			{/if}
@@ -76,7 +77,13 @@
 		{:else}
 			<div class="flex flex-col items-center justify-center py-empty-state text-center">
 				<div class="text-ty-silent mb-text-xs">
-					<svg class="w-12 h-12 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+					<svg
+						class="w-12 h-12 mx-auto"
+						aria-hidden="true"
+						fill="none"
+						viewBox="0 0 24 24"
+						stroke="currentColor"
+					>
 						<path
 							stroke-linecap="round"
 							stroke-linejoin="round"

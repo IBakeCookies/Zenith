@@ -99,6 +99,31 @@
 />
 
 <Story
+	name="A tag named like the untagged row"
+	args={{
+		breakdown: {
+			tags: [
+				{
+					tag: 'Untagged',
+					hours: 2,
+				},
+			],
+			untaggedHours: 3,
+		},
+	}}
+	play={async ({ canvas }) => {
+		// Hand-built, because `tagHours` lower-cases a tag and this locale's untagged
+		// label is capitalised: zh's is 无标签, which normalizes to itself, so the two
+		// labels really do collide and a duplicate key takes the whole card down.
+		const rows = canvas.getAllByRole('listitem');
+
+		await expect(rows).toHaveLength(2);
+		await expect(within(rows[0]).getByText('2')).toBeInTheDocument();
+		await expect(within(rows[1]).getByText('3')).toBeInTheDocument();
+	}}
+/>
+
+<Story
 	name="Nothing logged"
 	args={{
 		breakdown: tagHours([], [], RANGE_START),

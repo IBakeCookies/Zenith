@@ -1,5 +1,6 @@
 <script lang="ts">
 	import * as m from '$lib/paraglide/messages.js';
+	import { cn } from '$lib/presentation/utils';
 	import * as Tooltip from '$lib/presentation/component/ui/tooltip';
 	import { NumberInput } from '$lib/presentation/component/ui/number-input';
 
@@ -22,12 +23,26 @@
 		accent?: string;
 		/** What the user's own logs fit, formatted; `null` when they carry no signal, absent when there are none */
 		fit?: string | null;
+		class?: string;
 	}
 
-	let { id, label, hint, value, onchange, min, max, step, unit, accent, fit }: Props = $props();
+	let {
+		id,
+		label,
+		hint,
+		value,
+		onchange,
+		min,
+		max,
+		step,
+		unit,
+		accent,
+		fit,
+		class: className,
+	}: Props = $props();
 </script>
 
-<div>
+<div class={cn(className)}>
 	<div class="mb-text-2xs flex items-baseline justify-between gap-text-xs">
 		<!-- Its own provider, like every other explained label in the app: a row that only
 		     works under an ancestor provider is a row no story or spec can mount. -->

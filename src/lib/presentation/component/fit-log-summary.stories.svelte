@@ -11,7 +11,6 @@
 		tags: ['autodocs'],
 		args: {
 			label: 'Personalized from 3 flow logs',
-			title: 'Time-to-flow measurements feeding the ϕ fit',
 			count: 3,
 			confirmLabel: 'Delete all 3 logs?',
 			resetLabel: 'Reset personalization',
@@ -87,11 +86,15 @@
 
 		// `getByText`, not `getByRole`: "Reset personalization" also matches the name
 		// "Reset", and only one of the two is the confirm.
-		await userEvent.click(
-			canvas.getByText('Reset', {
-				exact: true,
-			}),
-		);
+		const confirm = canvas.getByText('Reset', {
+			exact: true,
+		});
+
+		// The consequence reaches the destructive button itself — the sentence beside it is
+		// never announced, and focus arrives on Cancel.
+		await expect(confirm).toHaveAccessibleDescription('Delete all 3 logs?');
+
+		await userEvent.click(confirm);
 
 		await expect(args.onreset).toHaveBeenCalledOnce();
 	}}

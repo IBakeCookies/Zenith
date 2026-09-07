@@ -110,7 +110,7 @@ describe('nav.svelte', () => {
 
 		await page
 			.getByRole('button', {
-				name: 'Switch language',
+				name: /Switch language/,
 			})
 			.click();
 

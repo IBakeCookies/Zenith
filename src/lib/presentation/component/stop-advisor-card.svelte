@@ -4,6 +4,7 @@
 	import * as Tooltip from '$lib/presentation/component/ui/tooltip';
 	import { formatDuration } from '$lib/presentation/utils/duration-format';
 	import { formatDecimals } from '$lib/presentation/utils/number-format';
+	import { cn } from '$lib/presentation/utils';
 
 	interface Props {
 		advice: StopAdvice;
@@ -12,15 +13,16 @@
 		freeTimeValue: number;
 		/** BCP-47 tag for the decimals, like every locale-aware format on this page */
 		locale: string;
+		class?: string;
 	}
 
-	let { advice, taskTitle, freeTimeValue, locale }: Props = $props();
+	let { advice, taskTitle, freeTimeValue, locale, class: className }: Props = $props();
 </script>
 
 <!-- The in-day verdict (MATH.md §8.11): is the best next session still worth
      more per hour than free time? Renders only while there is one to price —
      the page hides the card when the store has nothing to advise on. -->
-<div class="card-shell p-box-md sm:p-box-xl">
+<div class={cn('card-shell p-box-md sm:p-box-xl', className)}>
 	<Tooltip.Provider>
 		<Tooltip.Root>
 			<Tooltip.Trigger>

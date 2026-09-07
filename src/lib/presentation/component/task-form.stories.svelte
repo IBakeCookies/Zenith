@@ -647,6 +647,12 @@
 		await expect(canvas.getByText('school')).toBeInTheDocument();
 		await expect(tags).toHaveValue(' reading');
 
+		await userEvent.clear(tags);
+		await userEvent.type(tags, 'School{Enter}');
+
+		await expect(canvas.queryByText('School')).not.toBeInTheDocument();
+		await expect(canvas.getAllByText('school')).toHaveLength(1);
+
 		// A leading comma files nothing, and must not be left in the field for the next
 		// keystroke to file a one-character tag
 		await userEvent.clear(tags);

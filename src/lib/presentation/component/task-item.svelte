@@ -5,6 +5,7 @@
 	import * as Tooltip from '$lib/presentation/component/ui/tooltip';
 	import type { TaskEdit } from '$lib/presentation/component/task-form-fields.svelte';
 	import TaskRowShell from '$lib/presentation/component/task-row-shell.svelte';
+	import { cn } from '$lib/presentation/utils';
 	import { natureBadge, type TaskNature } from '$lib/presentation/utils/task-nature';
 	import { formatDuration, formatDurationBand } from '$lib/presentation/utils/duration-format';
 	import type {
@@ -53,18 +54,19 @@
 		onremove?: (id: number) => void;
 		flowDraft?: EditorDraft | null;
 		onflowopen?: (id: number, source: EditorSource) => void;
-		onflowedit?: (id: number, source: EditorSource) => void;
-		onflowclose?: (id: number) => void;
-		onlogflow?: (id: number, minutes: number) => void;
-		onflowdelete?: (id: number) => void;
+		onflowedit: (id: number, source: EditorSource) => void;
+		onflowclose: (id: number) => void;
+		onlogflow: (id: number, minutes: number) => void;
+		onflowdelete: (id: number) => void;
 		drainDraft?: DrainDraft | null;
 		drainLogs?: Persisted<DrainObservationRecord>[];
 		ondrainopen?: (id: number, source: EditorSource) => void;
-		ondrainclose?: (id: number) => void;
-		ondrainsave?: (id: number, entry: { hours: number; mind: number; body: number }) => void;
+		ondrainclose: (id: number) => void;
+		ondrainsave: (id: number, entry: { hours: number; mind: number; body: number }) => void;
 		ondrainedit: (id: number, log: Persisted<DrainObservationRecord>) => void;
 		ondraindelete: (id: number, recordId: number) => void;
 		onupdate?: (id: number, changes: TaskEdit) => void;
+		class?: string;
 	}
 
 	let {
@@ -106,6 +108,7 @@
 		ondrainedit,
 		ondraindelete,
 		onupdate,
+		class: className,
 	}: Props = $props();
 
 	const badge = $derived(natureBadge(nature));
@@ -145,7 +148,7 @@
 {#snippet badges()}
 	<Tooltip.Root>
 		<Tooltip.Trigger class="cursor-help">
-			<Badge class="border-transparent uppercase tracking-wide {badge.class}">
+			<Badge class={cn('uppercase tracking-wide', badge.class)}>
 				{badge.label}
 			</Badge>
 		</Tooltip.Trigger>
@@ -156,7 +159,7 @@
 	{#if mustDoToday}
 		<Tooltip.Root>
 			<Tooltip.Trigger class="cursor-help">
-				<Badge class="border-transparent bg-warning/20 uppercase tracking-wide text-warning">
+				<Badge class="bg-warning/20 uppercase tracking-wide text-warning-strong">
 					{m.task_must_do_badge()}
 				</Badge>
 			</Tooltip.Trigger>
@@ -170,9 +173,12 @@
 		<Tooltip.Root>
 			<Tooltip.Trigger class="cursor-help">
 				<Badge
-					class="border-transparent uppercase tracking-wide {importance === 'high'
-						? 'bg-danger/20 text-danger'
-						: 'bg-surface-inset text-ty-silent'}"
+					class={cn(
+						'uppercase tracking-wide',
+						importance === 'high'
+							? 'bg-danger/20 text-danger-strong'
+							: 'bg-surface-inset text-ty-silent',
+					)}
 				>
 					{importance === 'high' ? m.task_importance_high_badge() : m.task_importance_low_badge()}
 				</Badge>
@@ -185,7 +191,7 @@
 	{#if slideDay}
 		<Tooltip.Root>
 			<Tooltip.Trigger class="cursor-help">
-				<Badge class="border-transparent bg-info/20 uppercase tracking-wide text-info">
+				<Badge class="bg-info/20 uppercase tracking-wide text-info-strong">
 					{m.task_slide_badge({
 						day: slideDay,
 					})}
@@ -299,15 +305,15 @@
 		{flowMinutes}
 		{flowDraft}
 		onflowopen={onflowopen && ((source) => onflowopen(id, source))}
-		onflowedit={onflowedit && (() => onflowedit(id, 'button'))}
-		onflowclose={onflowclose && (() => onflowclose(id))}
-		onlogflow={onlogflow && ((minutes) => onlogflow(id, minutes))}
-		onflowdelete={onflowdelete && (() => onflowdelete(id))}
+		onflowedit={() => onflowedit(id, 'button')}
+		onflowclose={() => onflowclose(id)}
+		onlogflow={(minutes) => onlogflow(id, minutes)}
+		onflowdelete={() => onflowdelete(id)}
 		{drainDraft}
 		{drainLogs}
 		ondrainopen={ondrainopen && ((source) => ondrainopen(id, source))}
-		ondrainclose={ondrainclose && (() => ondrainclose(id))}
-		ondrainsave={ondrainsave && ((entry) => ondrainsave(id, entry))}
+		ondrainclose={() => ondrainclose(id)}
+		ondrainsave={(entry) => ondrainsave(id, entry)}
 		ondrainedit={(log) => ondrainedit(id, log)}
 		ondraindelete={(recordId) => ondraindelete(id, recordId)}
 		onupdate={onupdate && ((edit) => onupdate(id, edit))}
@@ -317,5 +323,6 @@
 		{readings}
 		{meta}
 		{planned}
+		class={className}
 	/>
 </Tooltip.Provider>

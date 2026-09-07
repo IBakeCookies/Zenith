@@ -1,5 +1,6 @@
 <script lang="ts">
 	import * as m from '$lib/paraglide/messages.js';
+	import { cn } from '$lib/presentation/utils';
 	import * as Tooltip from '$lib/presentation/component/ui/tooltip';
 	import { BAND_TEXT_CLASS } from '$lib/presentation/utils/band';
 	import { formatDuration } from '$lib/presentation/utils/duration-format';
@@ -13,13 +14,24 @@
 		workHours: number;
 		/** This plan against the classic allocator's, under the model's own objective, in per cent */
 		valueVsClassic: number | null;
+		class?: string;
 	}
 
-	let { totalOutput, endCog, endPhys, workHours, valueVsClassic }: Props = $props();
+	let {
+		totalOutput,
+		endCog,
+		endPhys,
+		workHours,
+		valueVsClassic,
+		class: className,
+	}: Props = $props();
 </script>
 
 <div
-	class="mt-text-lg grid grid-cols-2 gap-grid-md border-t border-line-soft pt-box-md sm:grid-cols-4"
+	class={cn(
+		'mt-text-lg grid grid-cols-2 gap-grid-md border-t border-line-soft pt-box-md sm:grid-cols-4',
+		className,
+	)}
 >
 	<div>
 		<p class="text-lg font-semibold text-ty-primary">{totalOutput}</p>

@@ -10,12 +10,14 @@
 
 	import * as m from '$lib/paraglide/messages.js';
 	import type { DailyQuadrant } from '$lib/business/model/metric/calculation';
+	import { cn } from '$lib/presentation/utils';
 
 	interface Props {
 		counts: Record<DailyQuadrant, number>;
+		class?: string;
 	}
 
-	let { counts }: Props = $props();
+	let { counts, class: className }: Props = $props();
 
 	// The bar's 100% is the days that HAVE a profile, which is exactly what `counts`
 	// sums to: a day booking no hours has no profile and is counted nowhere, so the
@@ -64,7 +66,10 @@
 				});
 </script>
 
-<div class="mt-text-md flex h-3 w-full gap-text-3xs overflow-hidden rounded-full">
+<div
+	aria-hidden="true"
+	class={cn('mt-text-md flex h-3 w-full gap-text-3xs overflow-hidden rounded-full', className)}
+>
 	{#each QUADRANTS as quadrant (quadrant.key)}
 		{#if counts[quadrant.key] > 0}
 			<div
@@ -80,7 +85,7 @@
 		<div class="flex items-center gap-grid-2xs text-xs">
 			<span class="h-2 w-2 rounded-full" style="background: {quadrant.color}"></span>
 			<span class="text-ty-secondary">{quadrant.label}</span>
-			<span class="font-medium text-ty-primary" style="font-variant-numeric: tabular-nums">
+			<span class="font-medium tabular-nums text-ty-primary">
 				{counts[quadrant.key]}
 			</span>
 		</div>

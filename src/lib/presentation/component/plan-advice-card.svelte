@@ -23,13 +23,23 @@
 		 * retyped from what the card shows is one the model never priced.
 		 */
 		onapplybudget: (hours: number) => void;
+		class?: string;
 	}
 
-	let { advice, isBusy, isStale, destination, hasError, oncheck, onapply, onapplybudget }: Props =
-		$props();
+	let {
+		advice,
+		isBusy,
+		isStale,
+		destination,
+		hasError,
+		oncheck,
+		onapply,
+		onapplybudget,
+		class: className,
+	}: Props = $props();
 </script>
 
-<div class="card-shell p-box-md sm:p-box-xl">
+<div class={cn('card-shell p-box-md sm:p-box-xl', className)}>
 	<div class="flex items-start justify-between gap-grid-xs">
 		<div class="min-w-0">
 			<h3 class="text-xs font-semibold text-ty-secondary uppercase tracking-wider">
@@ -97,7 +107,7 @@
 					<li class="rounded-xl border border-line-soft p-box-sm">
 						<div class="flex items-baseline justify-between gap-grid-xs">
 							<span class="text-xs font-medium text-ty-secondary">{row.label}</span>
-							<span class="text-sm font-semibold {BAND_TEXT_CLASS[row.beforeBand]}"
+							<span class={cn('text-sm font-semibold', BAND_TEXT_CLASS[row.beforeBand])}
 								>{row.before}</span
 							>
 							{@render bandText(row.beforeBand)}
@@ -122,7 +132,7 @@
 									>
 										<span class="min-w-0 text-xs text-ty-primary">{option.action}</span>
 										<span class="flex shrink-0 items-baseline gap-text-xs text-xs">
-											<span class="font-semibold {BAND_TEXT_CLASS[option.afterBand]}"
+											<span class={cn('font-semibold', BAND_TEXT_CLASS[option.afterBand])}
 												>{option.after}</span
 											>
 											{@render bandText(option.afterBand)}

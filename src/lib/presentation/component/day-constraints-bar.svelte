@@ -1,5 +1,6 @@
 <script lang="ts">
 	import * as m from '$lib/paraglide/messages.js';
+	import { cn } from '$lib/presentation/utils';
 	import { BUDGET_BOUNDS } from '$lib/presentation/utils/budget-bounds';
 	import { NumberInput } from '$lib/presentation/component/ui/number-input';
 
@@ -15,6 +16,7 @@
 		// because a live value would slam the panel shut the moment its own hours field
 		// stops reading 0.
 		isOpen?: boolean;
+		class?: string;
 	}
 
 	let {
@@ -25,6 +27,7 @@
 		remainingSuggestedHours,
 		planSlackHours,
 		isOpen = false,
+		class: className,
 	}: Props = $props();
 
 	// svelte-ignore state_referenced_locally -- deliberately initial-value only
@@ -72,15 +75,17 @@
      would shut the panel under the caret the first time a task landed; bound, the click
      goes into the state and the re-render agrees with it. `list-none` for the marker
      Safari draws even with a flex summary; the chevron below is this design's own. -->
-<details class="card-shell group px-box-md py-box-sm sm:px-box-xl" bind:open>
+<details class={cn('card-shell group px-box-md py-box-sm sm:px-box-xl', className)} bind:open>
 	<summary class="flex list-none cursor-pointer items-baseline justify-between gap-grid-xs">
 		<span class="shrink-0 text-xs font-semibold text-ty-secondary uppercase tracking-wider">
 			{m.budget_title()}
 		</span>
 		<span class="flex min-w-0 items-baseline gap-grid-xs text-xs text-ty-silent">
 			<span class="truncate group-open:hidden">{summary}</span>
-			<span class="shrink-0 text-lg leading-none group-open:hidden">▾</span>
-			<span class="hidden shrink-0 text-lg leading-none group-open:inline">▴</span>
+			<span aria-hidden="true" class="shrink-0 text-lg leading-none group-open:hidden">▾</span>
+			<span aria-hidden="true" class="hidden shrink-0 text-lg leading-none group-open:inline"
+				>▴</span
+			>
 		</span>
 	</summary>
 

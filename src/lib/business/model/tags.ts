@@ -9,7 +9,7 @@
  */
 
 import type { DailySession, DrainObservationRecord, Task } from '$lib/data/type';
-import { normalizeTitle } from '$lib/business/model/title-memory';
+import { normalizeTitle } from '$lib/business/utils/title';
 
 export interface TagHours {
 	tag: string;

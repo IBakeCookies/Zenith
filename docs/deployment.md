@@ -90,10 +90,11 @@ unprefixed. Three consequences that are easy to get wrong:
 - Adding a locale is four edits and no new component: the catalogue
   (`messages/<locale>.json`, key-for-key with `en.json`), `locales` in
   `project.inlang/settings.json`, `LOCALE_DISPLAY` in
-  `presentation/utils/locale.svelte.ts` (total record — it fails to compile
-  until label, `Intl` tag and week start are filled in) and `OG_LOCALES` in
-  `seo-head.svelte`. Everything else — nav picker, sitemap, hreflang, the
-  offline shells — is derived from the runtime's `locales`.
+  `presentation/utils/locale.svelte.ts` and `OG_LOCALES` in `seo-head.svelte`.
+  The last two are total records keyed by `Locale`, so both fail to compile
+  until the new locale's label, `Intl` tag, week start and `og:locale` are
+  filled in. Everything else — nav picker, sitemap, hreflang, the offline
+  shells — is derived from the runtime's `locales`.
 - The strategy is declared **twice** — in `vite.config.ts` for
   build/dev/vitest, and in the `paraglide` npm script for `check`/`prepare`.
   paraglide 2.x has no config file for it, so this is a deliberate, documented

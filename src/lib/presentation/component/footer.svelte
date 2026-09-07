@@ -2,6 +2,13 @@
 	import { resolve } from '$app/paths';
 	import { localizeHref } from '$lib/paraglide/runtime';
 	import * as m from '$lib/paraglide/messages.js';
+	import { cn } from '$lib/presentation/utils';
+
+	interface Props {
+		class?: string;
+	}
+
+	let { class: className }: Props = $props();
 
 	// § 5 DDG requires the imprint (and by extension the privacy policy) to be
 	// easily recognizable and directly reachable from every page — hence a
@@ -23,7 +30,12 @@
 	];
 </script>
 
-<footer class="border-t border-line-soft bg-surface-float text-xs text-ty-silent backdrop-blur">
+<footer
+	class={cn(
+		'border-t border-line-soft bg-surface-float text-xs text-ty-silent backdrop-blur',
+		className,
+	)}
+>
 	<div class="page-column flex items-center gap-text-md py-box-md">
 		{#each links as link (link.href)}
 			<!-- internal hrefs are resolve()d in the links array; the rule can't trace through it -->

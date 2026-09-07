@@ -7,16 +7,19 @@
 
 	import type { TrendSeries } from '$lib/presentation/utils/metric-trend-series';
 	import { runsOf } from '$lib/presentation/utils/series-runs';
+	import { cn } from '$lib/presentation/utils';
 
 	interface Props {
-		/** One per slot; `''` on the slots the axis does not print. */
+		/** One per slot; `''` on the slots the axis does not print. The slot count every
+		 *  series is drawn against — a value's index is the slot it belongs to. */
 		labels: string[];
 		series: TrendSeries[];
 		/** Names the whole plot — an <svg role="img"> has no other accessible name */
 		ariaLabel: string;
+		class?: string;
 	}
 
-	let { labels, series, ariaLabel }: Props = $props();
+	let { labels, series, ariaLabel, class: className }: Props = $props();
 
 	const CHART = {
 		w: 800,
@@ -37,7 +40,7 @@
 
 	const plotted = $derived(
 		series.map((line) => {
-			const runs = runsOf(line.values, (index) => xPos(index, line.values.length), yPos);
+			const runs = runsOf(line.values, (index) => xPos(index, labels.length), yPos);
 
 			return {
 				...line,
@@ -78,7 +81,12 @@
 	);
 </script>
 
-<svg viewBox="0 0 {CHART.w} {CHART.h}" class="mt-text-md w-full" role="img" aria-label={ariaLabel}>
+<svg
+	viewBox="0 0 {CHART.w} {CHART.h}"
+	class={cn('mt-text-md w-full', className)}
+	role="img"
+	aria-label={ariaLabel}
+>
 	{#each yTicks as tick (tick)}
 		<line
 			x1={CHART.left}

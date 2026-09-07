@@ -16,15 +16,17 @@
 
 	import type { ChartPoint } from '$lib/presentation/utils/completion-chart-points';
 	import { runsOf } from '$lib/presentation/utils/series-runs';
+	import { cn } from '$lib/presentation/utils';
 	import * as m from '$lib/paraglide/messages.js';
 
 	interface Props {
 		points: ChartPoint[];
 		/** Names the whole plot — an <svg role="img"> has no other accessible name */
 		ariaLabel: string;
+		class?: string;
 	}
 
-	let { points, ariaLabel }: Props = $props();
+	let { points, ariaLabel, class: className }: Props = $props();
 
 	// Fixed viewBox, responsive via width: 100%
 	const CHART = {
@@ -71,9 +73,17 @@
 
 	const rate = $derived(plot((point) => point.value));
 	const yield_ = $derived(plot((point) => point.line));
+
+	const readingOf = (point: ChartPoint) =>
+		`${point.full} — ${point.value === null ? m.ana_no_data() : `${point.value}% · ${point.sub}`}`;
 </script>
 
-<svg viewBox="0 0 {CHART.w} {CHART.h}" class="mt-text-md w-full" role="img" aria-label={ariaLabel}>
+<svg
+	viewBox="0 0 {CHART.w} {CHART.h}"
+	class={cn('mt-text-md w-full', className)}
+	role="img"
+	aria-label={ariaLabel}
+>
 	{#each yTicks as tick (tick)}
 		<line
 			x1={CHART.left}
@@ -87,9 +97,8 @@
 			x={CHART.left - 8}
 			y={yPos(tick) + 3}
 			text-anchor="end"
-			class="fill-ty-silent"
+			class="fill-ty-silent tabular-nums"
 			font-size="10"
-			style="font-variant-numeric: tabular-nums"
 		>
 			{tick}
 		</text>
@@ -144,14 +153,18 @@
 	     only tooltip is a dangling dash. -->
 	{#each slots as slot, i (i)}
 		<rect x={slot.x} y={CHART.top} width={slot.width} height={innerH} fill="transparent">
-			<title
-				>{slot.full} — {slot.value === null
-					? m.ana_no_data()
-					: `${slot.value}% · ${slot.sub}`}</title
-			>
+			<title>{readingOf(slot)}</title>
 		</rect>
 	{/each}
 </svg>
+
+<!-- `role="img"` prunes the plot's own subtree, tooltips included, so the per-slot
+     readings are announced here or nowhere. -->
+<div class="sr-only">
+	{#each points as point, i (i)}
+		<p>{readingOf(point)}</p>
+	{/each}
+</div>
 
 <div class="mt-text-2xs flex flex-wrap gap-grid-md text-xs text-ty-silent">
 	<span class="flex items-center gap-grid-2xs">

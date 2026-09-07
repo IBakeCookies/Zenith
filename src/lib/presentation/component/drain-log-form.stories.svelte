@@ -138,9 +138,14 @@
 		onsave: fn(),
 		oncancel: fn(),
 	}}
-	play={async ({ canvas }) => {
+	play={async ({ canvas, userEvent }) => {
 		// Opened by the row's own 🪫 button: the only opening that takes the caret
 		await expect(canvas.getByPlaceholderText('min')).toHaveFocus();
+
+		// One Tab per field: the tooltip belongs to the rating, and hung on the <label>
+		// instead it made a roleless stop the caret hit on the way to it.
+		await userEvent.tab();
+		await expect(canvas.getByLabelText('Mind')).toHaveFocus();
 	}}
 />
 

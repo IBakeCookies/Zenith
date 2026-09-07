@@ -4,9 +4,10 @@
 	import { type VariantProps, tv } from 'tailwind-variants';
 
 	export const buttonVariants = tv({
-		// `dark:` only matches .dark — 1 of the 25 dark themes in the catalogue — so
-		// it is never used here. Every light/dark difference comes from a token the
-		// themes already swap (--input, --surface-hover, --card-shadow).
+		// `dark:` bakes one hardcoded dark look across every dark theme, which
+		// `themes.css` then contradicts per theme — so it is never used here. Every
+		// light/dark difference comes from a token the themes already swap
+		// (--input, --surface-hover, --card-shadow).
 		base: "focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 aria-invalid:border-destructive rounded-md border border-transparent bg-clip-padding text-sm font-medium focus-visible:ring-3 active:not-aria-[haspopup]:translate-y-px aria-invalid:ring-3 [&_svg:not([class*='size-'])]:size-4 group/button inline-flex shrink-0 items-center justify-center whitespace-nowrap transition-all outline-none select-none disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0",
 		variants: {
 			variant: {

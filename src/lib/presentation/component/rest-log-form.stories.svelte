@@ -1,6 +1,6 @@
 <script module lang="ts">
 	import { defineMeta } from '@storybook/addon-svelte-csf';
-	import { expect, fn } from 'storybook/test';
+	import { expect, fn, waitFor, within } from 'storybook/test';
 	import RestLogForm from '$lib/presentation/component/rest-log-form.svelte';
 
 	const { Story } = defineMeta({
@@ -31,6 +31,10 @@
 		const save = canvas.getByRole('button', {
 			name: 'Save',
 		});
+
+		// One editor spacing for all three instruments: the shared MEASUREMENT_FORM_CLASS
+		// with ☕'s border tint over it, not a hand copy that also moved the top margin
+		await expect(minutes.closest('form')).toHaveClass('mt-text-xs');
 
 		// The ☕ button is the only way in, so the caret is always asked for
 		await expect(minutes).toHaveFocus();
@@ -132,7 +136,7 @@
 		onsave: fn(),
 		oncancel: fn(),
 	}}
-	play={async ({ canvas, userEvent }) => {
+	play={async ({ canvas, canvasElement, userEvent }) => {
 		// The state axe never sees: it reads a story at rest, so the ring is asserted here or
 		// nowhere. These are raw inputs, so each rings on itself — no wrapper, unlike
 		// `number-input.svelte`. The ring is asserted equal to the field's own focus border
@@ -157,6 +161,14 @@
 
 		await expect(mindBefore).toHaveFocus();
 		await expect(ring(mindBefore)).toContain(`${border(mindBefore)} 0px 0px 0px 1px`);
+
+		// The explanation is on the field the caret reaches, as 🪫's is: a native `title`
+		// on the wrapping <label> never opens for a keyboard at all
+		const body = within(canvasElement.ownerDocument.body);
+
+		await waitFor(() =>
+			expect(body.getByText('Cognitive drain: 0 = fresh, 10 = completely spent')).toBeVisible(),
+		);
 
 		await userEvent.tab();
 

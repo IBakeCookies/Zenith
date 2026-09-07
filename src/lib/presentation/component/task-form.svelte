@@ -3,6 +3,7 @@
 	import * as m from '$lib/paraglide/messages.js';
 	import type { TitleRating } from '$lib/business/model/title-memory';
 	import type { DraftTask } from '$lib/business/model/metric/draft-impact';
+	import { cn } from '$lib/presentation/utils';
 	import { Button } from '$lib/presentation/component/ui/button';
 	import MustDoToggle from '$lib/presentation/component/must-do-toggle.svelte';
 	import TaskFormFields, {
@@ -26,6 +27,7 @@
 		/** Closes the dialog this is mounted in. Absent, there is no Cancel — the
 		 *  row actions' rule: the button is there when its callback is. */
 		oncancel?: () => void;
+		class?: string;
 	}
 
 	let {
@@ -37,6 +39,7 @@
 		action,
 		ondraftchange,
 		oncancel,
+		class: className,
 	}: Props = $props();
 
 	// The middle of every slider: what a task is rated when nothing says otherwise.
@@ -201,7 +204,7 @@
      order, so the tab order is the column as written: no `order-*`, and never a
      positive `tabindex`. -->
 <form
-	class="grid gap-grid-xl {preview === undefined ? '' : 'md:grid-cols-[2fr_1fr]'}"
+	class={cn('grid gap-grid-xl', preview !== undefined && 'md:grid-cols-[2fr_1fr]', className)}
 	onsubmit={handleSubmit}
 >
 	<!-- Framed only when there is a reading to be told apart from; a form with no

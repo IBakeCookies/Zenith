@@ -122,8 +122,8 @@ Read this before touching markup, classes, or anything under
   page.** An inset is a well cut into a card, and on a light theme that means
   darker while on a dark theme it means LIGHTER — the same thing `.solid-dark`
   says of its three rungs, and the same sense `-strong` carries above: more
-  contrast against this theme's own background, not a fixed direction. 45 themes
-  used to hand-set it and 22 of the 25 dark ones set it to black at alpha, which
+  contrast against this theme's own background, not a fixed direction. Nearly
+  every theme used to hand-set it, and most of the dark ones set it to black at alpha, which
   over a page already at L 0.09-0.16 is a well in a floor that is already the
   bottom — the range track and `log-row` measured 1.013-1.079 against their own
   card, invisible. Now one rule per side in `base.css` (`:root` and `.dark`),
@@ -219,8 +219,8 @@ Read this before touching markup, classes, or anything under
   metrics dashboard's headline tiles were bordered cards and are now bare, each
   marked by a 2px rule down its left in its own band colour, so there is no
   second surface to separate.
-- **Chrome that floats over scrolling content uses `surface-float`, not
-  `surface-card`.** One site today, the sticky nav bar. The two hold the same
+- **A full-bleed bar across the page uses `surface-float`, not
+  `surface-card`.** The sticky nav bar and the footer. The two hold the same
   value everywhere but one theme; they differ where a theme is translucent _and_
   sets `--blur: 0`, which makes the blur a no-op and lets page text read straight
   through the bar. `terminal` is that theme, on purpose — its scanlines

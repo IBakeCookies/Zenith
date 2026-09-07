@@ -1,14 +1,16 @@
 <script lang="ts">
 	import * as m from '$lib/paraglide/messages.js';
 	import type { TrajectoryPoint } from '$lib/business/model/zenith-energy';
+	import { cn } from '$lib/presentation/utils';
 	import { DASH, dashArray, dashGradient } from '$lib/presentation/utils/dash';
 
 	interface Props {
 		trajectory: TrajectoryPoint[];
 		windowHours: number;
+		class?: string;
 	}
 
-	let { trajectory, windowHours }: Props = $props();
+	let { trajectory, windowHours, class: className }: Props = $props();
 
 	// The viewBox is in real CSS pixels, so type and strokes are one size at every
 	// card width — true only while the measured wrapper stays padding-free:
@@ -45,6 +47,9 @@
 	// The percentage axis is the two reservoirs'. The output area is NOT — it is
 	// scaled to its own peak (`rate / maxRate`), which is why its legend says so.
 	const ENERGY_TICKS = [0, 0.5, 1];
+	// Carried as `currentColor` by both the area and the swatch that keys it, so the
+	// legend cannot come to paint a different alpha from the thing it names.
+	const OUTPUT_TINT = 'text-brand/20';
 	const hourTicks = $derived.by(() => {
 		// One label per ~44px of plot, so a narrow axis thins out instead of
 		// overprinting its own numbers.
@@ -56,7 +61,7 @@
 	});
 </script>
 
-<div class="mt-text-md" bind:clientWidth={width}>
+<div class={cn('mt-text-md', className)} bind:clientWidth={width}>
 	<svg
 		viewBox="0 0 {width} {height}"
 		style="height: {height}px"
@@ -64,8 +69,7 @@
 		role="img"
 		aria-label={m.energy_chart_aria()}
 	>
-		<!-- The fill opacity here must stay in step with the legend swatch below. -->
-		<path d={ratePath} class="fill-brand/20" />
+		<path d={ratePath} class="fill-current {OUTPUT_TINT}" />
 		{#each ENERGY_TICKS as v (v)}
 			<line x1={PAD_L} y1={yAt(v)} x2={PAD_L + plotW} y2={yAt(v)} class="stroke-line-soft" />
 			<text x={PAD_L - 6} y={yAt(v) + 3} class="fill-ty-silent" font-size="9" text-anchor="end">
@@ -101,7 +105,7 @@
 		{m.energy_legend_physical()}
 	</span>
 	<span class="flex items-center gap-grid-2xs">
-		<span class="h-2 w-4 rounded-full bg-brand/20"></span>
+		<span class="h-2 w-4 rounded-full bg-current {OUTPUT_TINT}"></span>
 		{m.energy_legend_output()}
 	</span>
 </div>

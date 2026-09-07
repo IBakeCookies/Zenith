@@ -4,6 +4,7 @@
 	import X from '@lucide/svelte/icons/x';
 	import type { TagHoursBreakdown } from '$lib/business/model/tags';
 	import * as m from '$lib/paraglide/messages.js';
+	import { cn } from '$lib/presentation/utils';
 
 	interface Props {
 		breakdown: TagHoursBreakdown | null;
@@ -14,15 +15,27 @@
 		/** Whether saving `draft` over `from` folds two rows into one. Asked of the
 		 *  caller because a component may not value-import a model. */
 		willMerge: (from: string, draft: string) => boolean;
+		class?: string;
 	}
 
-	let { breakdown, hasFailed, locale, ondelete, onrename, willMerge }: Props = $props();
+	let {
+		breakdown,
+		hasFailed,
+		locale,
+		ondelete,
+		onrename,
+		willMerge,
+		class: className,
+	}: Props = $props();
 
 	const id = $props.id();
 
 	// Rounded here rather than in the fold, which has to stay exact: the parts add
 	// up to the "Logged hours" tile this card breaks down.
-	const hours = (value: number) => (Math.round(value * 10) / 10).toLocaleString(locale);
+	const hours = (value: number) =>
+		value.toLocaleString(locale, {
+			maximumFractionDigits: 1,
+		});
 
 	// The untagged row last, and only when there is one: it is the coverage
 	// disclosure, not a slot the card always keeps. `tag` is absent on it — it is
@@ -91,7 +104,7 @@
 	}
 </script>
 
-<div class="card-shell mt-grid-xl rounded-xl p-box-lg">
+<div class={cn('card-shell mt-grid-xl rounded-xl p-box-lg', className)}>
 	<h2 class="text-sm font-medium text-ty-primary">{m.ana_tag_hours()}</h2>
 	<p class="mt-text-3xs text-xs text-ty-silent">{m.ana_tag_hours_hint()}</p>
 
@@ -103,14 +116,16 @@
 		<p class="mt-text-md text-sm text-ty-secondary">{m.ana_tag_hours_empty()}</p>
 	{:else}
 		<ul class="mt-text-md grid gap-text-xs">
-			{#each rows as row (row.label)}
+			<!-- Keyed on the tag, never the label: a locale whose untagged label is a legal
+			     tag (zh's 无标签) collides, and a duplicate key crashes the card. -->
+			{#each rows as row (row.tag ?? null)}
 				<li>
 					<!-- The ✎ and ✕ at the far end, past the hours, where the log rows put theirs. -->
 					<div class="flex flex-wrap items-center justify-between gap-x-grid-xs">
 						<div class="text-xs text-ty-silent">{row.label}</div>
 						<div class="flex items-center gap-grid-2xs">
 							<span class="text-sm font-medium text-ty-primary">
-								<span style="font-variant-numeric: tabular-nums">{hours(row.hours)}</span>
+								<span class="tabular-nums">{hours(row.hours)}</span>
 								{m.unit_hours()}
 							</span>
 							{#if row.tag !== undefined}
@@ -177,6 +192,7 @@
 									type="text"
 									bind:value={draft}
 									required
+									aria-describedby={willMerge(tag, draft) ? `${id}-merge` : undefined}
 									{@attach (node) => node.focus()}
 									class="field-input"
 								/>
@@ -196,8 +212,12 @@
 							>
 								<X />
 							</button>
+							<!-- `role="alert"`, and named from the field: the merge is irreversible and
+							     appears mid-typing, so it has to reach a reader who cannot see it. -->
 							{#if willMerge(tag, draft)}
-								<p class="w-full text-2xs text-ty-secondary">{m.ana_tag_hours_rename_merge()}</p>
+								<p id="{id}-merge" role="alert" class="w-full text-2xs text-ty-secondary">
+									{m.ana_tag_hours_rename_merge()}
+								</p>
 							{/if}
 						</form>
 					{/if}

@@ -10,6 +10,7 @@
 	import type { DraftChange, DraftImpact } from '$lib/business/model/metric/draft-impact';
 	import type { NextTaskSuggestion } from '$lib/business/model/metric/next-task-suggestion';
 	import type { TitleRating } from '$lib/business/model/title-memory';
+	import { cn } from '$lib/presentation/utils';
 	import {
 		AXIS_BAND,
 		BAND_BAR_CLASS,
@@ -31,9 +32,17 @@
 		/** Runs the ranking. Called once, on mount — see below. */
 		onnexttasks: () => void;
 		onpicknexttask: (rating: TitleRating) => void;
+		class?: string;
 	}
 
-	let { impact, nextTasks, hasNextTaskRoom, onnexttasks, onpicknexttask }: Props = $props();
+	let {
+		impact,
+		nextTasks,
+		hasNextTaskRoom,
+		onnexttasks,
+		onpicknexttask,
+		class: className,
+	}: Props = $props();
 
 	// The dialog mounts this panel fresh on every open, so ranking here is what
 	// keeps the reading from outliving the day it was solved against. `onMount`
@@ -70,7 +79,7 @@
 
 {#snippet changeRow(label: string, change: DraftChange, band: Band)}
 	<div>
-		<p class="flex items-baseline justify-between gap-grid-xs text-xs">
+		<p class="stat-line">
 			<span class="text-ty-secondary">{label}</span>
 			<span class="font-semibold tabular-nums {BAND_TEXT_CLASS[band]}">
 				{m.form_impact_percent_change({
@@ -92,7 +101,7 @@
 	</div>
 {/snippet}
 
-<section class="space-y-grid-md">
+<section class={cn('space-y-grid-md', className)}>
 	<h3 class="text-xs font-semibold tracking-wider text-ty-secondary uppercase">
 		{m.form_impact_heading()}
 	</h3>
@@ -119,7 +128,7 @@
 						<button
 							type="button"
 							onclick={() => onpicknexttask(suggestion.rating)}
-							class="flex w-full items-baseline gap-grid-xs rounded-lg border border-line-soft bg-surface-inset px-box-sm py-box-xs text-xs text-ty-primary transition hover:bg-surface-hover"
+							class="flex w-full items-baseline gap-grid-xs rounded-lg border border-line-soft bg-surface-inset px-box-sm py-box-xs text-xs text-ty-primary transition hover:border-line-strong"
 						>
 							<span class="font-semibold text-ty-secondary tabular-nums">{index + 1}</span>
 							<span class="min-w-0 wrap-break-word">{suggestion.rating.title}</span>
@@ -154,7 +163,7 @@
 			</StatTile>
 		</div>
 
-		<p class="flex items-baseline justify-between gap-grid-xs text-xs">
+		<p class="stat-line">
 			<span class="text-ty-secondary">{m.form_impact_priority()}</span>
 			<span class="font-semibold text-ty-primary tabular-nums">
 				{impact.priorityScore.toFixed(1)}
@@ -162,7 +171,7 @@
 		</p>
 
 		<div>
-			<p class="flex items-baseline justify-between gap-grid-xs text-xs">
+			<p class="stat-line">
 				<span class="text-ty-secondary">{m.form_impact_flow()}</span>
 				<span class="font-semibold tabular-nums {BAND_TEXT_CLASS[flowBand]}">
 					{flowBand === 'success'
@@ -196,7 +205,7 @@
 			AXIS_BAND.burnoutRisk(impact.burnoutRisk.after),
 		)}
 
-		<p class="flex items-baseline justify-between gap-grid-xs text-xs">
+		<p class="stat-line">
 			<span class="text-ty-secondary">{m.form_impact_slack()}</span>
 			<span class="font-semibold text-ty-primary tabular-nums">
 				{m.form_impact_hours_change({

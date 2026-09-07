@@ -57,25 +57,26 @@
 		/** The viewed day's ⚡ readings in minutes, by task — one per task per day. */
 		flowLogs?: ReadonlyMap<number, number>;
 		onflowopen?: (id: number, source: EditorSource) => void;
-		/** Required, unlike the logging callbacks, for the reason `ondrainedit` is: a
+		/** Required, unlike the two openers, for the reason `ondrainedit` is: a
 		 *  reading is correctable on every day the list renders. */
 		onflowedit: (id: number, source: EditorSource) => void;
-		onflowclose?: (id: number) => void;
-		onlogflow?: (id: number, minutes: number) => void;
-		onflowdelete?: (id: number) => void;
+		onflowclose: (id: number) => void;
+		onlogflow: (id: number, minutes: number) => void;
+		onflowdelete: (id: number) => void;
 		/** The 🪫 editors open on this list, by task. */
 		drainDrafts?: Record<number, DrainDraft>;
 		/** The viewed day's 🪫 ratings, by task — several per task is normal, since each
 		 *  row is one session (MATH.md §8.7). */
 		drainLogs?: ReadonlyMap<number, Persisted<DrainObservationRecord>[]>;
 		ondrainopen?: (id: number, source: EditorSource) => void;
-		ondrainclose?: (id: number) => void;
-		ondrainsave?: (id: number, entry: { hours: number; mind: number; body: number }) => void;
-		/** Required, unlike the logging callbacks: a rating stays correctable on every day
+		ondrainclose: (id: number) => void;
+		ondrainsave: (id: number, entry: { hours: number; mind: number; body: number }) => void;
+		/** Required, unlike the two openers: a rating stays correctable on every day
 		 *  the list renders — see `task-row-shell.svelte`. */
 		ondrainedit: (id: number, log: Persisted<DrainObservationRecord>) => void;
 		ondraindelete: (id: number, recordId: number) => void;
 		onupdate?: (id: number, changes: TaskEdit) => void;
+		class?: string;
 	}
 
 	let {
@@ -107,6 +108,7 @@
 		ondrainedit,
 		ondraindelete,
 		onupdate,
+		class: className,
 	}: Props = $props();
 
 	// The plan's two answers about a task, read as two groups: hours today, or none.
@@ -194,4 +196,5 @@
 				rest: unfundedRows,
 			}
 		: undefined}
+	class={className}
 />

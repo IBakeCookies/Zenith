@@ -366,7 +366,8 @@
 }
 
 /* The controls a row carries at its right edge — ⚡ 🪫 to log, ✎ to correct, ✕ to drop,
-   and the same pair on the analytics log rows and the tag rows. The hover is in the
+   and the same pair on the analytics log rows and the tag rows; the ✕ on a tag chip in
+   the task form takes it too, for the tap target below. The hover is in the
    COLOUR only, which the call site owns (`hover:text-danger` on a drop): `ghost`'s
    `hover:bg-surface-hover` puts a second plate under the mark, inside a row that
    already lifts on hover, and the two surfaces read as a button landing on the row
@@ -396,6 +397,14 @@
 
 @utility log-row {
 	@apply flex items-center justify-between gap-text-xs rounded-sm bg-surface-inset px-box-2xs py-text-2xs text-xs text-ty-secondary;
+}
+
+/* One reading on one line — a quiet label at the left edge, the figure at the right —
+   in both add-task forms' reading panels. The ink is the call site's on both halves:
+   a banded row paints its figure from `BAND_TEXT_CLASS`, a plain one from
+   `text-ty-primary`. */
+@utility stat-line {
+	@apply flex items-baseline justify-between gap-grid-xs text-xs;
 }
 
 /* One bar standing in for a reading that has not been read yet, so a page whose

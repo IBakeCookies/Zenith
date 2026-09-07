@@ -10,7 +10,7 @@
 </script>
 
 <!-- `bg-scrim`, not a `--ty-primary` wash: a scrim dims toward black on light and
-     dark themes alike, so an ink-derived one would BRIGHTEN the 31 dark ones. -->
+     dark themes alike, so an ink-derived one would BRIGHTEN every dark theme. -->
 <DialogPrimitive.Overlay
 	bind:ref
 	data-slot="dialog-overlay"

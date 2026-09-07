@@ -6,9 +6,10 @@
 
 	interface Props {
 		importance: TaskImportance;
+		class?: string;
 	}
 
-	let { importance = $bindable() }: Props = $props();
+	let { importance = $bindable(), class: className }: Props = $props();
 
 	// `$props.id()`, because both forms can be mounted at once (the add dialog and a
 	// row's editor) and one shared name would make them a single radio group.
@@ -38,7 +39,7 @@
      labels beside it — three bare buttons in a form say nothing about what they set.
      Above rather than beside because `<legend>` is not a flex item in its own
      fieldset, and because that is how the sliders label themselves. -->
-<fieldset title={m.form_importance_title()} class="block space-y-text-xs">
+<fieldset title={m.form_importance_title()} class={cn('block space-y-text-xs', className)}>
 	<legend class="text-xs font-medium text-ty-secondary">{m.form_importance()}</legend>
 	<!-- Joined, not three buttons with gaps between them: one control set to one of
 	     three values. The segments share a border (`-ms-px`), only the ends are
