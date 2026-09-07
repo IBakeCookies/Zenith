@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import { toast } from 'svelte-sonner';
 import { playAlarmSound } from '$lib/presentation/utils/alarm-sound';
-import DayActions from '$lib/presentation/component/day-actions.svelte';
+import SessionClock from '$lib/presentation/component/session-clock.svelte';
 
 vi.mock('$lib/presentation/utils/alarm-sound', () => ({
 	playAlarmSound: vi.fn(),
@@ -11,13 +11,9 @@ vi.mock('$lib/presentation/utils/alarm-sound', () => ({
 
 /** A spec and not a story `play`: the undo lives on a toast, and the `Toaster`
  *  the story would need is the layout's (docs/testing.md). */
-describe('day-actions.svelte', () => {
+describe('session-clock.svelte', () => {
 	const props = {
-		selectedDate: '2026-09-07',
 		today: '2026-09-07',
-		yesterdaySession: null,
-		routines: [],
-		currentTasks: [],
 		timer: {
 			phase: 'stopped' as const,
 			startedOn: '2026-09-07',
@@ -26,10 +22,6 @@ describe('day-actions.svelte', () => {
 			targetMs: null,
 		},
 		getSuggestedMinutes: () => 45,
-		onimport: () => {},
-		onimportdate: () => Promise.resolve(0),
-		onsaveroutine: () => {},
-		ondeleteroutine: () => {},
 	};
 
 	// Both the mocked alarm and any leaked `toast` spy count calls across tests, and
@@ -46,7 +38,7 @@ describe('day-actions.svelte', () => {
 	it('offers a discarded session reading back', async () => {
 		const info = vi.spyOn(toast, 'info').mockImplementation(() => '');
 
-		render(DayActions, props);
+		render(SessionClock, props);
 
 		await expect.element(page.getByText('45m')).toBeVisible();
 
@@ -70,7 +62,7 @@ describe('day-actions.svelte', () => {
 	it('refuses the undo once a new session is running', async () => {
 		const info = vi.spyOn(toast, 'info').mockImplementation(() => '');
 
-		render(DayActions, props);
+		render(SessionClock, props);
 
 		await page
 			.getByRole('button', {
@@ -133,7 +125,7 @@ describe('day-actions.svelte', () => {
 		const restoreTimers = withFakeTicks();
 		const info = vi.spyOn(toast, 'info').mockImplementation(() => '');
 
-		render(DayActions, atTarget());
+		render(SessionClock, atTarget());
 		vi.advanceTimersByTime(1000);
 
 		expect(info).toHaveBeenCalledTimes(1);
@@ -148,7 +140,7 @@ describe('day-actions.svelte', () => {
 		const restoreTimers = withFakeTicks();
 		const info = vi.spyOn(toast, 'info').mockImplementation(() => '');
 
-		render(DayActions, atTarget());
+		render(SessionClock, atTarget());
 		vi.advanceTimersByTime(3000);
 
 		expect(playAlarmSound).toHaveBeenCalledTimes(1);
@@ -163,7 +155,7 @@ describe('day-actions.svelte', () => {
 		const restoreTimers = withFakeTicks();
 		const info = vi.spyOn(toast, 'info').mockImplementation(() => '');
 
-		render(DayActions, atTarget());
+		render(SessionClock, atTarget());
 		vi.advanceTimersByTime(1000);
 		restoreTimers();
 
@@ -187,7 +179,7 @@ describe('day-actions.svelte', () => {
 		const restoreTimers = withFakeTicks();
 		const info = vi.spyOn(toast, 'info').mockImplementation(() => '');
 
-		render(DayActions, atTarget(45 * 60_000 - 200));
+		render(SessionClock, atTarget(45 * 60_000 - 200));
 
 		await expect.element(page.getByText('1m left')).toBeVisible();
 
@@ -208,7 +200,7 @@ describe('day-actions.svelte', () => {
 		const restoreTimers = withFakeTicks();
 		const info = vi.spyOn(toast, 'info').mockImplementation(() => '');
 
-		render(DayActions, atTarget(20 * 60_000));
+		render(SessionClock, atTarget(20 * 60_000));
 
 		await page.getByLabelText('Session length in minutes').fill('0');
 		vi.advanceTimersByTime(1000);

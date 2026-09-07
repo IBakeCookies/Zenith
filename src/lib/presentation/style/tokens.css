@@ -385,6 +385,15 @@
 	@apply inline-flex h-6 min-w-6 shrink-0 items-center justify-center rounded-md transition-colors outline-none focus-visible:ring-3 focus-visible:ring-ring/50 [&_svg]:size-3 [&_svg]:shrink-0;
 }
 
+/* The ± either side of a number field — `number-input.svelte`'s composite field and
+   the session clock's length segment. Each stepper paints over its parent's own fill,
+   so the hover is the `surface-hover` family (STYLE.md, "Two hover families").
+   Padding and radius are the call site's: the composite field rounds its two ends,
+   the clock's field is square inside a larger object and grows for a thumb. */
+@utility number-step {
+	@apply text-ty-silent transition select-none hover:bg-surface-hover hover:text-ty-primary disabled:cursor-default disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-ty-silent;
+}
+
 @utility log-row {
 	@apply flex items-center justify-between gap-text-xs rounded-sm bg-surface-inset px-box-2xs py-text-2xs text-xs text-ty-secondary;
 }
