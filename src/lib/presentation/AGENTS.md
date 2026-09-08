@@ -185,18 +185,18 @@ Untestable at every level is the signal.
   held, which reads as a form that is not listening, so the panel takes
   `hasDraft` and says which state it is in.
 - **The same card, once stale, keeps its numbers and withdraws its levers.**
-  Both cards above: the reading stays on screen (it is a warning about the
-  numbers, not a reason to hide them), and every Apply button gates on
+  Both cards above: the reading stays on screen, and every Apply button gates on
   `isBusy || isStale` — each option is priced as the ONE next move on the day
-  that was solved, so on any other day they are wrong together,
-  and a run in flight is about to replace the one being held. Only the recheck
-  button stays live: it is the way out. The stale banner is also the only
-  statement of WHY, since a disabled button is not focusable.
+  that was solved, so on any other day they are wrong together, and a run in
+  flight is about to replace the one being held. Only the recheck button stays
+  live: it is the way out. The stale banner is also the only statement of WHY,
+  since a disabled button is not focusable.
   **The one reading that is withdrawn instead of kept shows the rule's scope:**
-  the destination line (ROADMAP item 21) is about ANOTHER day, so a session write
+  the destination tile (ROADMAP item 21) is about ANOTHER day, so a session write
   refutes it rather than merely dating it — it carries its own key off
-  `SessionStore.writeGenerationFor` and the card simply drops the line. What stays
-  through staleness is the numbers priced on the day that was solved.
+  `SessionStore.writeGenerationFor` and the card simply drops the tile.
+- **Columns aligned down a card are one CSS grid with subgrid rows, never a
+  `<table>` restyled at a breakpoint** — `plan-advice-card`'s lever table.
 - **A seeded editor copies its seed at mount** — `flow-log-form`,
   `drain-log-form`, `rest-log-form`, `task-edit-form` all read `seed` (and
   `focusMinutes`) once and never again, so **every re-opening must be a fresh

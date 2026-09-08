@@ -73,14 +73,21 @@ export interface AdviceDisplay {
 	 * them.
 	 */
 	unfundedMustDo: string[];
-	/** The budget's shadow price as a sentence — always a reading. */
-	marginal: string;
+	/** The budget's shadow price — always a reading. */
+	marginal: AdviceFact;
 	/**
 	 * What the day's declared switch cost reserves, and where the day would come
 	 * out re-solved at zero and at double — always a reading, and never
 	 * phrased as something to act on.
 	 */
-	switchCost: string;
+	switchCost: AdviceFact;
+}
+
+/** One day-level reading as the card tiles it: a label, the reading, the line under it. */
+export interface AdviceFact {
+	label: string;
+	primary: string;
+	secondary: string | null;
 }
 
 const AXIS_LABEL: Record<AdviceAxis, () => string> = {
@@ -199,8 +206,9 @@ function formatApplyLabel(lever: AdviceLever, isUnpriced: boolean, locale: strin
 }
 
 /**
- * A change in plan value, signed: "+3.1% plan value", "−6.2% plan value", or
- * "N/A" when there is no Σ P̄ to compare against.
+ * A change in plan value, signed: "+3.1%", "−6.2%", or "N/A" when there is no
+ * Σ P̄ to compare against. No unit: the column head names it, and the one tile
+ * that prints it alone adds `advice_cost` itself.
  *
  * An explicit sign both ways, because "+3.1%" and "−6.2%" have to be told apart
  * at a glance and a bare "6.2%" reads as a gain. One signing for all three
@@ -216,9 +224,7 @@ function signedPlanValue(deltaPercent: number | null, locale: string): string {
 		maximumFractionDigits: 1,
 	});
 
-	return m.advice_cost({
-		percent: `${sign}${magnitude}`,
-	});
+	return `${sign}${magnitude}%`;
 }
 
 function formatCost(deltaPercent: number | null, locale: string): string {
@@ -231,30 +237,41 @@ function formatCost(deltaPercent: number | null, locale: string): string {
 
 /**
  * The block the budget would buy, and who gets it. Priced in the
- * same "% plan value" as the cost column — `advice_cost` spells that half — but
- * signed +, because a wider budget can only add.
+ * same "% plan value" as the cost column — `advice_cost` spells the unit, since
+ * no column head names it here — but signed +, because a wider budget can only add.
  */
-function formatMarginal(marginal: BudgetMarginal, locale: string): string {
-	const minutes = Math.round(marginal.blockHours * 60);
+function formatMarginal(marginal: BudgetMarginal, locale: string): AdviceFact {
+	const label = m.advice_fact_marginal({
+		minutes: Math.round(marginal.blockHours * 60),
+	});
 
 	// Keyed on the gain as well as the recipient: the pooled heuristic can hand a
 	// task the block while the day's value nets out flat, and
 	// "goes to X · +0% plan value" is the same non-advice as no recipient at all.
 	//
-	// The sentence is scoped to output, not to the worth of the time: on these
+	// The reading is scoped to output, not to the worth of the time: on these
 	// same days the unpriced `budget + 1` lever below is still right, because Load
 	// is `weightedHours / budget` and a longer day for the same work is real
 	// relief. "Adds nothing to this plan" contradicted that row.
 	if (!marginal.recipient || marginal.planValueGainPercent === 0)
-		return m.advice_marginal_none({
-			minutes,
-		});
+		return {
+			label,
+			primary: m.advice_marginal_none(),
+			secondary: null,
+		};
 
-	return m.advice_marginal({
-		minutes,
-		title: marginal.recipient.title,
-		gain: signedPlanValue(marginal.planValueGainPercent, locale),
-	});
+	return {
+		label,
+		primary: m.advice_marginal_recipient({
+			title: marginal.recipient.title,
+		}),
+		secondary:
+			marginal.planValueGainPercent === null
+				? m.na_value()
+				: m.advice_cost({
+						percent: signedPlanValue(marginal.planValueGainPercent, locale),
+					}),
+	};
 }
 
 /**
@@ -262,12 +279,12 @@ function formatMarginal(marginal: BudgetMarginal, locale: string): string {
  *
  * Conditional on purpose: each alternative is what the day would come out at *if*
  * the declaration were that number — a re-solve producing its own allocation, not
- * this plan re-read, so the sentence may not state the reading as this plan's own.
+ * this plan re-read, so the reading may not be stated as this plan's own.
  * Never "switch faster and gain this" either: the user cannot decide to switch
  * tasks more cheaply, only report how cheaply they do — which is the same reason
  * the model refuses to make this a lever.
  */
-function formatSwitchCostPrice(price: SwitchCostPrice, locale: string): string {
+function formatSwitchCostPrice(price: SwitchCostPrice, locale: string): AdviceFact {
 	const declared = formatDuration(price.declared);
 	// Both arms or neither: `plan-advice.ts` drops them on the same test, |s| under
 	// a minute, so a length-1 `alternatives` does not exist.
@@ -275,48 +292,45 @@ function formatSwitchCostPrice(price: SwitchCostPrice, locale: string): string {
 
 	// TWO INDEPENDENT SUPPRESSIONS, and unioning them was a defect: a plan can
 	// reserve nothing and still have a large bracket, because the declaration is
-	// *why* it funds too few tasks to switch between. That is the generic 3-task
-	// day at budget 0.5 h and s = 15 min, not a corner — every case swept lands in
-	// it, at a median +41.9% and up to +63.4% at s = 0 — and the
-	// unioned version printed "pays for no switching" — discarding the reading
-	// both extra solves existed to produce, on precisely the day the constant did
-	// the most damage.
-	const head =
+	// *why* it funds too few tasks to switch between — the generic 3-task day at
+	// budget 0.5 h and s = 15 min. The unioned version printed "pays for no
+	// switching" there, discarding the reading both extra solves existed to produce.
+	const primary =
 		price.reservedHours === 0
-			? m.advice_switch_cost_none({
-					declared,
-				})
+			? m.advice_switch_cost_none()
 			: m.advice_switch_cost({
 					reserved: formatDuration(price.reservedHours),
 					// Non-null by the branch: the share is null only at budget 0, where
 					// the allocator funds nothing and `reservedHours` is 0.
 					share: Math.round(price.reservedShare! * 100),
-					declared,
 				});
 
-	// The bracket is dropped only when it would say nothing, and that is read off
-	// the numbers rather than guessed from the day's shape: a null delta means the
-	// plan's Σ P̄ is 0 and there is no ratio to state, and two
-	// zero deltas mean both declarations reproduce this exact plan — which is what
-	// a day with a single task on the list looks like, as against a day the
-	// declaration starved down to one funded task, where the free arm is large.
-	//
-	// One arm answers for the pair: the two deltas share a single `baseValue > 0`
-	// test in the model, so they are both null or both numbers. `doubled` is named
+	// The bracket is dropped only when it would say nothing, read off the numbers
+	// rather than guessed from the day's shape: a null delta means the plan's Σ P̄
+	// is 0 and there is no ratio to state, and two zero deltas mean both
+	// declarations reproduce this exact plan. One arm answers for the pair: the two
+	// deltas share a single `baseValue > 0` test in the model. `doubled` is named
 	// here only to narrow the type.
-	if (
+	const isBracketSilent =
 		!free ||
 		!doubled ||
 		free.planValueDeltaPercent === null ||
-		(free.planValueDeltaPercent === 0 && doubled.planValueDeltaPercent === 0)
-	)
-		return head;
+		(free.planValueDeltaPercent === 0 && doubled.planValueDeltaPercent === 0);
 
-	return `${head} ${m.advice_switch_cost_bracket({
-		free: signedPlanValue(free.planValueDeltaPercent, locale),
-		doubled: formatDuration(doubled.switchCost),
-		cost: signedPlanValue(doubled.planValueDeltaPercent, locale),
-	})}`;
+	return {
+		label: m.advice_fact_switching(),
+		primary,
+		secondary: isBracketSilent
+			? m.advice_switch_cost_declared({
+					declared,
+				})
+			: m.advice_switch_cost_bracket({
+					declared,
+					free: signedPlanValue(free.planValueDeltaPercent, locale),
+					doubled: formatDuration(doubled.switchCost),
+					cost: signedPlanValue(doubled.planValueDeltaPercent, locale),
+				}),
+	};
 }
 
 /**
@@ -342,32 +356,48 @@ function cap(options: AdviceOption[]): AdviceOption[] {
  * that object is built from `PlanAdvice`, which is contractually today's inputs
  * alone, and this is a reading about another day.
  */
-export function describeDeferDestination(destination: DeferDestination | null): string | null {
+export function describeDeferDestination(destination: DeferDestination | null): AdviceFact | null {
 	if (!destination) return null;
 
+	const label = m.advice_fact_destination();
 	const hours = formatDuration(destination.budgetHours);
+	const funded = destination.fundedCount;
 
 	// Nothing on it and no hours to spend is nothing to say — the dead row item 21's
 	// own kill criterion names, which only a user with no budgeted day in history
 	// reaches (item 16). The pair, never the hours alone: an over-subscribed unseen
-	// day is the most useful thing this line says.
+	// day is the most useful thing this tile says.
 	if (destination.taskCount === 0)
 		return destination.budgetHours === 0
 			? null
-			: m.advice_destination_empty({
-					hours,
-				});
+			: {
+					label,
+					primary: m.advice_destination_empty({
+						hours,
+					}),
+					secondary: null,
+				};
 
 	return destination.taskCount === 1
-		? m.advice_destination_one({
-				hours,
-				funded: destination.fundedCount,
-			})
-		: m.advice_destination({
-				hours,
-				count: destination.taskCount,
-				funded: destination.fundedCount,
-			});
+		? {
+				label,
+				primary: m.advice_destination_one({
+					hours,
+				}),
+				secondary: m.advice_destination_funded_one({
+					funded,
+				}),
+			}
+		: {
+				label,
+				primary: m.advice_destination({
+					hours,
+					count: destination.taskCount,
+				}),
+				secondary: m.advice_destination_funded({
+					funded,
+				}),
+			};
 }
 
 /** The one reason a task got no hours, in words — the model carries only the data. */

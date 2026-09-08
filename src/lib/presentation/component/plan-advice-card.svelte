@@ -1,8 +1,10 @@
 <script lang="ts">
 	import * as m from '$lib/paraglide/messages.js';
-	import type { AdviceDisplay } from '$lib/presentation/utils/plan-advice-descriptor';
+	import ArrowRight from '@lucide/svelte/icons/arrow-right';
+	import type { AdviceDisplay, AdviceFact } from '$lib/presentation/utils/plan-advice-descriptor';
 	import { BAND_TEXT_CLASS, bandLabel, type Band } from '$lib/presentation/utils/band';
 	import { Button } from '$lib/presentation/component/ui/button';
+	import MetricLabel from '$lib/presentation/component/metric-label.svelte';
 	import { cn } from '$lib/presentation/utils';
 
 	interface Props {
@@ -12,7 +14,7 @@
 		/** The day moved after this was calculated (presentation/AGENTS.md, Components). */
 		isStale: boolean;
 		/** What the day every defer lever sends to already holds (ROADMAP item 21). */
-		destination: string | null;
+		destination: AdviceFact | null;
 		/** The last check failed; the advice shown (if any) predates the failure. */
 		hasError: boolean;
 		oncheck: () => void;
@@ -74,6 +76,18 @@
 			</p>
 		{/if}
 
+		<!-- The day-level readings, tiled: none of the three is a lever, so none is a
+		     row in the menu below. A missing destination leaves two tiles, never an
+		     empty third (ROADMAP item 21). -->
+		<div class="mt-grid-sm grid gap-text-xs sm:grid-flow-col sm:auto-cols-fr">
+			{#each [advice.marginal, advice.switchCost] as fact (fact.label)}
+				{@render tile(fact)}
+			{/each}
+			{#if destination}
+				{@render tile(destination)}
+			{/if}
+		</div>
+
 		<!-- One paragraph per task, never one joined sentence: each carries its own
 		     reason, and two run together read as one claim about both. Keyed by
 		     position, never by the words: two tasks sharing a title and a branch
@@ -86,20 +100,6 @@
 		{#each advice.unfundedMustDo as sentence, index (index)}
 			<p class="mt-grid-sm text-xs text-warning-strong">{sentence}</p>
 		{/each}
-
-		<!-- The budget's shadow price: a day-level reading, so it sits above the
-		     per-axis menu rather than inside one row's budget levers. -->
-		<p class="mt-grid-sm text-xs text-ty-silent">{advice.marginal}</p>
-
-		<!-- Not a row in the menu below: the switch cost is a measurement of the
-		     user, so there is no lever to offer. -->
-		<p class="mt-text-xs text-xs text-ty-silent">{advice.switchCost}</p>
-
-		<!-- Day-level like the two above: every defer lever below sends the task to the
-		     same day, so it is one reading and not a row per lever (ROADMAP item 21). -->
-		{#if destination}
-			<p class="mt-text-xs text-xs text-ty-silent">{destination}</p>
-		{/if}
 
 		{#if advice.rows.length > 0}
 			<ul class="mt-grid-sm space-y-grid-sm">
@@ -117,57 +117,89 @@
 						{#if row.options.length === 0}
 							<p class="mt-text-xs text-xs text-ty-silent">{m.advice_no_lever()}</p>
 						{:else}
-							<ul class="mt-text-xs space-y-text-xs">
-								<!-- Keyed on the lever, never the option's words: two tasks sharing a
-								     title spell the same sentence, and a duplicate key crashes the card. -->
-								{#each row.options as option (option.lever)}
-									{@const lever = option.lever}
-									<!-- Ruled off from the priced options: the unpriced increase is off the
-									     frontier and its cost is denominated in something else. -->
-									<li
-										class={cn(
-											'flex flex-wrap items-baseline justify-between gap-x-text-md gap-y-text-xs',
-											option.isUnpriced && 'border-t border-line-soft pt-text-xs',
-										)}
-									>
-										<span class="min-w-0 text-xs text-ty-primary">{option.action}</span>
-										<span class="flex shrink-0 items-baseline gap-text-xs text-xs">
-											<span class={cn('font-semibold', BAND_TEXT_CLASS[option.afterBand])}
-												>{option.after}</span
+							<!-- One grid owns the tracks; the head, the list and every option are
+							     subgrids of it, so auto-sized columns line up down the axis while
+							     the options stay a real list. Below sm the reading sits under its
+							     lever, so the head that named it has nothing to sit over. -->
+							<div
+								class="mt-text-xs grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-text-md gap-y-text-xs sm:grid-cols-[minmax(0,1fr)_auto_auto_auto]"
+							>
+								<div class="col-span-full grid grid-cols-subgrid text-xs text-ty-silent">
+									<span>{m.advice_col_lever()}</span>
+									<span class="hidden sm:block">{m.advice_col_reading()}</span>
+									<MetricLabel
+										text={m.advice_col_plan_value()}
+										description={m.advice_plan_value_tooltip()}
+										class="text-right text-ty-silent sm:col-start-3"
+									/>
+								</div>
+								<ul class="col-span-full grid grid-cols-subgrid gap-y-text-xs">
+									<!-- Keyed on the lever, never the option's words: two tasks sharing a
+									     title spell the same action, and a duplicate key crashes the card. -->
+									{#each row.options as option (option.lever)}
+										{@const lever = option.lever}
+										<!-- Every option is ruled off from the one above; the unpriced increase gets a
+										     dashed rule, because it is off the frontier and priced in something else. -->
+										<li
+											class={cn(
+												'col-span-full grid grid-cols-subgrid items-center gap-y-text-xs border-t border-line-soft pt-text-xs',
+												option.isUnpriced && 'border-dashed',
+											)}
+										>
+											<span
+												class="col-start-1 row-start-1 flex min-w-0 flex-col gap-y-text-2xs text-xs"
 											>
-											{@render bandText(option.afterBand)}
-											<span class="text-ty-silent">· {option.cost}</span>
+												<span class="wrap-break-word text-ty-primary">{option.action}</span>
+												{#if option.profileFlip}
+													<span class="text-ty-silent">{option.profileFlip}</span>
+												{/if}
+											</span>
+											<span
+												class="col-start-1 row-start-2 flex items-center gap-text-2xs text-xs sm:col-start-2 sm:row-start-1"
+											>
+												<span class="text-ty-silent">{row.before}</span>
+												<ArrowRight class="size-3 text-ty-silent" aria-hidden="true" />
+												<span class={cn('font-semibold', BAND_TEXT_CLASS[option.afterBand])}
+													>{option.after}</span
+												>
+												{@render bandText(option.afterBand)}
+											</span>
+											<span
+												class="col-start-2 row-start-1 text-right text-xs text-ty-silent sm:col-start-3"
+												>{option.cost}</span
+											>
 											<!-- A deferral prices "off today" while the button commits to a
 											     destination: the aria-label carries both, and the task title. -->
-											{#if lever.kind === 'defer-task'}
-												<Button
-													variant="outline"
-													size="sm"
-													disabled={isBusy || isStale}
-													aria-label={m.advice_apply_label({
-														title: lever.title,
-													})}
-													onclick={() => onapply(lever.taskId)}
-												>
-													{m.advice_apply()}
-												</Button>
-											{:else}
-												<Button
-													variant="outline"
-													size="sm"
-													disabled={isBusy || isStale}
-													onclick={() => onapplybudget(lever.hours)}
-												>
-													{option.applyLabel}
-												</Button>
-											{/if}
-										</span>
-										{#if option.profileFlip}
-											<span class="basis-full text-xs text-ty-silent">{option.profileFlip}</span>
-										{/if}
-									</li>
-								{/each}
-							</ul>
+											<span
+												class="col-start-2 row-start-2 justify-self-end sm:col-start-4 sm:row-start-1"
+											>
+												{#if lever.kind === 'defer-task'}
+													<Button
+														variant="outline"
+														size="sm"
+														disabled={isBusy || isStale}
+														aria-label={m.advice_apply_label({
+															title: lever.title,
+														})}
+														onclick={() => onapply(lever.taskId)}
+													>
+														{m.advice_apply()}
+													</Button>
+												{:else}
+													<Button
+														variant="outline"
+														size="sm"
+														disabled={isBusy || isStale}
+														onclick={() => onapplybudget(lever.hours)}
+													>
+														{option.applyLabel}
+													</Button>
+												{/if}
+											</span>
+										</li>
+									{/each}
+								</ul>
+							</div>
 						{/if}
 					</li>
 				{/each}
@@ -179,6 +211,16 @@
 		{/if}
 	{/if}
 </div>
+
+{#snippet tile(fact: AdviceFact)}
+	<div class="min-w-0 rounded-lg bg-surface-inset p-box-sm">
+		<span class="block text-xs tracking-wider text-ty-silent uppercase">{fact.label}</span>
+		<span class="block text-sm font-semibold wrap-break-word text-ty-primary">{fact.primary}</span>
+		{#if fact.secondary !== null}
+			<span class="block text-xs text-ty-silent">{fact.secondary}</span>
+		{/if}
+	</div>
+{/snippet}
 
 <!-- The band is otherwise carried by colour alone (WCAG 1.4.1). Sibling of the
      value, never nested, so the value element's text stays exactly the reading. -->
