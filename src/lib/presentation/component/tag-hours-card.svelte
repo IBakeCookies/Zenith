@@ -120,14 +120,10 @@
 			     tag (zh's 无标签) collides, and a duplicate key crashes the card. -->
 			{#each rows as row (row.tag ?? null)}
 				<li>
-					<!-- The ✎ and ✕ at the far end, past the hours, where the log rows put theirs. -->
 					<div class="flex flex-wrap items-center justify-between gap-x-grid-xs">
-						<div class="text-xs text-ty-silent">{row.label}</div>
 						<div class="flex items-center gap-grid-2xs">
-							<span class="text-sm font-medium text-ty-primary">
-								<span class="tabular-nums">{hours(row.hours)}</span>
-								{m.unit_hours()}
-							</span>
+							<div class="text-xs text-ty-silent">{row.label}</div>
+
 							{#if row.tag !== undefined}
 								{@const tag = row.tag}
 								<!-- A tag comes off every day it was ever put on and nothing hands it
@@ -176,6 +172,11 @@
 								{/if}
 							{/if}
 						</div>
+
+						<span class="text-sm font-medium text-ty-primary">
+							<span class="tabular-nums">{hours(row.hours)}</span>
+							{m.unit_hours()}
+						</span>
 					</div>
 
 					{#if row.tag !== undefined && editingTag === row.tag}

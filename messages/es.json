@@ -143,6 +143,7 @@
 	"budget_cognitive_hint": "Trabajo mental intenso que sostienes al día (~4 h)",
 	"budget_physical_capacity": "Capacidad física",
 	"budget_physical_hint": "Trabajo físico intenso que sostienes al día (~6 h)",
+	"budget_use_fitted_pool": "Usar {hours} h ajustadas",
 	"budget_model_tooltip": "Las constantes de estado de flow del modelo (c₁, c₂, c₃) son un ajuste ridge por mínimos cuadrados de tus tiempos hasta el flow medidos, anclado a los valores por defecto del artículo.",
 	"budget_delete_log_aria": "Eliminar este registro de flow",
 	"budget_delete_log_title": "Quitar este dato — el modelo se reajusta sin él",

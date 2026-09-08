@@ -143,6 +143,7 @@
 	"budget_cognitive_hint": "你每天能持续的高强度脑力工作（约 4 小时）",
 	"budget_physical_capacity": "体力容量",
 	"budget_physical_hint": "你每天能持续的高强度体力工作（约 6 小时）",
+	"budget_use_fitted_pool": "采用拟合值 {hours} 小时",
 	"budget_model_tooltip": "模型的心流状态常数（c₁、c₂、c₃）是对你实测进入心流时间做的岭回归最小二乘拟合，并锚定在原文的默认值上。",
 	"budget_delete_log_aria": "删除这条心流记录",
 	"budget_delete_log_title": "移除这个数据点——模型会在没有它的情况下重新拟合",

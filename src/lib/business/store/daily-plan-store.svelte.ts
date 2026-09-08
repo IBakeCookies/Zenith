@@ -24,7 +24,12 @@ import {
 import type { DeferDestination } from '$lib/business/model/metric/defer-destination';
 import { calculateRemainingDay, type RemainingDay } from '$lib/business/model/metric/remaining-day';
 import { BLOCK_HOURS } from '$lib/business/model/zenith';
-import { fitEnergyParams, seedMorningReservoirs } from '$lib/business/model/energy-calibration';
+import {
+	calibrateEnergyParams,
+	offerFittedPools,
+	seedMorningReservoirs,
+	type FittedPools,
+} from '$lib/business/model/energy-calibration';
 import { workedHoursByTask } from '$lib/business/model/zenith-energy';
 import { addDays } from '$lib/business/utils/date';
 import type { SessionStore } from '$lib/business/store/session-store.svelte';
@@ -59,16 +64,18 @@ export class DailyPlanStore {
 		drain: this.#observations.drainObservations.filter((o) => o.date < this.#session.selectedDate),
 	});
 
-	#calibratedParams = $derived(
-		fitEnergyParams(this.#fitObservations.rest, this.#fitObservations.drain),
+	#calibration = $derived(
+		calibrateEnergyParams(this.#fitObservations.rest, this.#fitObservations.drain),
 	);
+
+	#fittedPools = $derived(offerFittedPools(this.#calibration));
 
 	// Overnight carry-over: the previous day's 🪫 logs seed the
 	// morning reservoir levels. Keyed to the VIEWED day's predecessor, so a past
 	// day reads with its own morning, not today's.
 	#energyParams = $derived(
 		seedMorningReservoirs(
-			this.#calibratedParams,
+			this.#calibration.params,
 			this.#observations.drainObservations.filter(
 				(o) => o.date === addDays(this.#session.selectedDate, -1),
 			),
@@ -191,6 +198,11 @@ export class DailyPlanStore {
 
 	get daily(): DailyMetrics {
 		return this.#daily;
+	}
+
+	/** The pool each reservoir's causally fitted α offers, `null` where there is none to offer. */
+	get fittedPools(): FittedPools {
+		return this.#fittedPools;
 	}
 
 	/** `null` until today has logged hours to re-plan from. */

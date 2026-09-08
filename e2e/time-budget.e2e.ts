@@ -4,6 +4,7 @@ import {
 	AUTOSAVE_MS,
 	budgetField,
 	isoDate,
+	logDrain,
 	openTimeBudget,
 	setBudget,
 	statValue,
@@ -153,6 +154,54 @@ test('an unseen day opens on the last declared switch cost and pools', async ({ 
 	await expect(header).toContainText(/3h\s*mind/);
 	await expect(header).toContainText(/7h\s*body/);
 	await expect(header).toContainText(/45min\s*per switch/);
+});
+
+/* docs/features/the-pool-the-drain-logs-offer.md: a 🪫 rating with a day behind
+   it fits α, and MATH.md §8.13's map turns that into the pool the field offers.
+   The press is a declaration through the field's own setter, so it is saved like
+   a typed value and item 32 carries it to the days after. */
+test('a rating with a day behind it offers a pool, and the press outlives the day', async ({
+	page,
+}) => {
+	await page.clock.install({
+		time: new Date('2026-08-19T08:00:00'),
+	});
+
+	await page.goto('/');
+	await addTask(page, 'Deep work');
+	await setBudget(page, 8);
+	await logDrain(page, 120, 9, 5);
+	await page.clock.runFor(AUTOSAVE_MS);
+
+	// Midnight: the rating now has a day behind it, which is all the fit was waiting for.
+	await page.clock.fastForward('25:00:00');
+	await page.goto('/');
+	await openTimeBudget(page, /8h budget/);
+
+	// The offer sits on the hint line of the field it is for.
+	const offer = page
+		.locator('p', {
+			has: page.locator('label[for="cognitive-pool"]'),
+		})
+		.getByRole('button', {
+			name: /Use fitted [\d.]+ h/,
+		});
+
+	const hours = (await offer.textContent())!.match(/[\d.]+/)![0];
+	await offer.click();
+
+	const pool = page.locator('#cognitive-pool');
+	await expect(pool).toHaveValue(hours);
+	await expect(offer).toHaveCount(0);
+
+	await page.clock.runFor(AUTOSAVE_MS);
+	await page.reload();
+	await openTimeBudget(page, /8h budget/);
+	await expect(pool).toHaveValue(hours);
+
+	// Tomorrow has no session, so it opens on the pool the press declared.
+	await page.goto('/?date=2026-08-21');
+	await expect(page.locator('summary')).toContainText(new RegExp(`${hours}h\\s*mind`));
 });
 
 /* Fallow allocates durations, not appointments: the model has no notion of when

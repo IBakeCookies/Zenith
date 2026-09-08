@@ -1,6 +1,7 @@
 <script lang="ts">
 	import * as m from '$lib/paraglide/messages.js';
 	import { cn } from '$lib/presentation/utils';
+	import { CAPACITY_POOL_MAX_HOURS } from '$lib/business/utils/capacity-pool-bounds';
 	import { BUDGET_BOUNDS } from '$lib/presentation/utils/budget-bounds';
 	import { NumberInput } from '$lib/presentation/component/ui/number-input';
 
@@ -9,6 +10,8 @@
 		switchCost: number;
 		cognitivePool: number;
 		physicalPool: number;
+		fittedCognitivePool: number | null;
+		fittedPhysicalPool: number | null;
 		remainingSuggestedHours: string;
 		planSlackHours: number;
 		planSwitchHours: number;
@@ -25,6 +28,8 @@
 		switchCost = $bindable(),
 		cognitivePool = $bindable(),
 		physicalPool = $bindable(),
+		fittedCognitivePool,
+		fittedPhysicalPool,
 		remainingSuggestedHours,
 		planSlackHours,
 		planSwitchHours,
@@ -169,7 +174,7 @@
 				value={cognitivePool}
 				onchange={(v) => (cognitivePool = v)}
 				min={0}
-				max={16}
+				max={CAPACITY_POOL_MAX_HOURS}
 				step={0.5}
 				unit={m.unit_hours()}
 				accent="focus-within:border-mind-line"
@@ -178,6 +183,18 @@
 				<label for="cognitive-pool" class="text-ty-secondary">{m.budget_cognitive_capacity()}</label
 				>
 				· {m.budget_cognitive_hint()}
+				{#if fittedCognitivePool !== null && fittedCognitivePool !== cognitivePool}
+					·
+					<button
+						type="button"
+						class="text-xs text-brand transition hover:text-brand-strong"
+						onclick={() => (cognitivePool = fittedCognitivePool)}
+					>
+						{m.budget_use_fitted_pool({
+							hours: String(fittedCognitivePool),
+						})}
+					</button>
+				{/if}
 			</p>
 		</div>
 
@@ -187,7 +204,7 @@
 				value={physicalPool}
 				onchange={(v) => (physicalPool = v)}
 				min={0}
-				max={16}
+				max={CAPACITY_POOL_MAX_HOURS}
 				step={0.5}
 				unit={m.unit_hours()}
 				accent="focus-within:border-body-line"
@@ -195,6 +212,18 @@
 			<p class="mt-text-xs text-xs text-ty-silent">
 				<label for="physical-pool" class="text-ty-secondary">{m.budget_physical_capacity()}</label>
 				· {m.budget_physical_hint()}
+				{#if fittedPhysicalPool !== null && fittedPhysicalPool !== physicalPool}
+					·
+					<button
+						type="button"
+						class="text-xs text-brand transition hover:text-brand-strong"
+						onclick={() => (physicalPool = fittedPhysicalPool)}
+					>
+						{m.budget_use_fitted_pool({
+							hours: String(fittedPhysicalPool),
+						})}
+					</button>
+				{/if}
 			</p>
 		</div>
 		<div>

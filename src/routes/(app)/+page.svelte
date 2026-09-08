@@ -291,6 +291,8 @@
 				bind:switchCost={session.switchCost}
 				bind:cognitivePool={session.cognitivePool}
 				bind:physicalPool={session.physicalPool}
+				fittedCognitivePool={plan.fittedPools.cognitiveHours}
+				fittedPhysicalPool={plan.fittedPools.physicalHours}
 				{remainingSuggestedHours}
 				planSlackHours={daily.planSlackHours}
 				planSwitchHours={daily.planSwitchHours}

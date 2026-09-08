@@ -143,6 +143,7 @@
 	"budget_cognitive_hint": "Intense mental work you sustain per day (~4h)",
 	"budget_physical_capacity": "Physical Capacity",
 	"budget_physical_hint": "Intense physical work you sustain per day (~6h)",
+	"budget_use_fitted_pool": "Use fitted {hours} h",
 	"budget_model_tooltip": "The model's flow-state constants (c₁, c₂, c₃) are a ridge least-squares fit of your measured time-to-flow data, anchored to the article's defaults.",
 	"budget_delete_log_aria": "Delete this flow log",
 	"budget_delete_log_title": "Remove this data point — the model refits without it",

@@ -1,6 +1,6 @@
 <script module lang="ts">
 	import { defineMeta } from '@storybook/addon-svelte-csf';
-	import { expect, fireEvent } from 'storybook/test';
+	import { expect, fireEvent, within } from 'storybook/test';
 	import DayConstraintsBar from '$lib/presentation/component/day-constraints-bar.svelte';
 
 	const { Story } = defineMeta({
@@ -15,6 +15,8 @@
 			remainingSuggestedHours: '5.25',
 			planSlackHours: 0,
 			planSwitchHours: 0.5,
+			fittedCognitivePool: null,
+			fittedPhysicalPool: null,
 			isOpen: true,
 		},
 	});
@@ -28,6 +30,13 @@
 		await expect(canvas.getByLabelText('Switch Cost (per task change)')).toHaveValue(15);
 		await expect(canvas.getByLabelText('Cognitive Capacity')).toHaveValue(8);
 		await expect(canvas.getByLabelText('Physical Capacity')).toHaveValue(4);
+
+		// No fit, no offer: a fresh profile sees no button.
+		expect(
+			canvas.queryByRole('button', {
+				name: /^Use fitted/,
+			}),
+		).toBeNull();
 
 		await expect(
 			canvas.getByText(/5\.25 h planned \+ 0\.50 h switching · fully committed/),
@@ -87,6 +96,62 @@
 
 		await expect(canvas.getByLabelText('Available Hours')).toHaveValue(6.5);
 		await expect(canvas.getByRole('slider')).toHaveValue('6.5');
+	}}
+/>
+
+<Story
+	name="With a fitted offer"
+	args={{
+		fittedCognitivePool: 4.4,
+	}}
+	play={async ({ canvas, userEvent }) => {
+		// The offer sits on the hint line of the field it is for, and only that one:
+		// the gate is per reservoir (docs/features/the-pool-the-drain-logs-offer.md).
+		const cognitiveHint = within(canvas.getByText('Cognitive Capacity').closest('p')!);
+		const physicalHint = within(canvas.getByText('Physical Capacity').closest('p')!);
+
+		const offer = cognitiveHint.getByRole('button', {
+			name: 'Use fitted 4.4 h',
+		});
+
+		await expect(offer).toBeVisible();
+
+		expect(
+			physicalHint.queryByRole('button', {
+				name: /^Use fitted/,
+			}),
+		).toBeNull();
+
+		// Pressing declares the number the button showed; equal, there is nothing
+		// left to adopt, so the button goes.
+		await userEvent.click(offer);
+
+		await expect(canvas.getByLabelText('Cognitive Capacity')).toHaveValue(4.4);
+
+		expect(
+			canvas.queryByRole('button', {
+				name: /^Use fitted/,
+			}),
+		).toBeNull();
+	}}
+/>
+
+<Story
+	name="Pool already at the fit"
+	args={{
+		cognitivePool: 4.4,
+		fittedCognitivePool: 4.4,
+	}}
+	play={async ({ canvas }) => {
+		// A field already reading the fitted value — pressed earlier, or typed by
+		// hand — has nothing to adopt.
+		await expect(canvas.getByLabelText('Cognitive Capacity')).toHaveValue(4.4);
+
+		expect(
+			canvas.queryByRole('button', {
+				name: /^Use fitted/,
+			}),
+		).toBeNull();
 	}}
 />
 

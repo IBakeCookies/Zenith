@@ -540,7 +540,9 @@ writing the constants a day merely opens on would read as a declaration to
 `constraint-memory.ts` and outrank the user's own, older one, pinning untouched
 future days to 4/6. A day a write CREATES records the pools it opens on, the
 rule its hours follow — the difference is whether the day already existed
-without them.
+without them. The fitted-pool offer under each pool field
+(`DailyPlanStore.fittedPools`) is a declaration through the pool setter, never a
+prefill — nothing moves until the user presses it.
 A **blur is not a declaration**, and that rule is one method for all four fields:
 `#declare(value, prefilled)` returns `null` while the field still says what it was
 already showing. `NumberInput` reports on blur whether or not the value moved, so

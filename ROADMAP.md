@@ -50,17 +50,15 @@ today:
 
 - **The one constant the app fits is the cheapest one in the model.** §17
   measured the whole true-ϕ oracle at +0.16% of plan value. Nothing fits
-  `switchCost` (`zenith.ts:92` is a bare literal with a CHI-2008 citation), the
-  capacity pools, or the difficulty sliders — and probes put each of those an
-  order of magnitude above ϕ. Phase 2 exists to close that inversion.
+  `switchCost` (`zenith.ts:92` is a bare literal with a CHI-2008 citation) or
+  the difficulty sliders — and probes put each of those an order of magnitude
+  above ϕ. Phase 2 exists to close that inversion.
 
 **Read every percentage in items 11–23 as a hypothesis, not a result.** They
 come from throwaway ideation probes run on 2026-08-04 against synthetic days;
 none is in MATH.md, none was re-run against real logs, and several are
 explicitly circular where noted. Each item states the probe that would
 establish or kill its own number. Run it before building, per §17's precedent.
-The exception is the α-bias table in item 18, which is a **parameter-recovery**
-measurement through the real fit and does not depend on assuming a user.
 
 `scripts/generate-fixture.mjs` writes an importable year of history simulated
 from known true (c₁,c₂,c₃), (α_cog,α_phys), r and λ₀. It exists for **recovery
@@ -145,121 +143,18 @@ other.**
     [docs/features/budget-prefill-for-unseen-days.md](docs/features/budget-prefill-for-unseen-days.md)
 17. ~~**Switch-cost price diagnostic**~~ — SHIPPED 2026-08-04 (MATH.md §14.3).
     [docs/features/switch-cost-price-diagnostic.md](docs/features/switch-cost-price-diagnostic.md)
-18. **Capacity pools from the fitted drain rates** — your cognitive pool is
-    what your own 🪫 logs say, not 4 hours. Invert the reservoir law at a
-    shared floor: at defaults `C_cog(4 h) = 0.3042` and `C_phys(6 h) = 0.2516`,
-    so a floor of 0.28 gives 4.373 h / 5.307 h, and α = 0.7 gives 1.976 h — two
-    invented constants collapsing into one floor plus a fitted parameter, a
-    real net reduction. **Two hard conditions.** The map has a pole:
-    `C_eq = b·r'/(α + b·r') = 0.0525/(α + 0.0525)` reaches a 0.28 floor at
-    **α = 0.135**, and the neighbourhood explodes (α = 0.20 → 9.49 h, 0.15 →
-    17.7 h, 0.135 → 197.9 h, against 0.35 → 4.37 h), and `ALPHA_FIT_MIN` of
-    0.05 sits inside that divergent region, so a clamp and a stated floor
-    constant go in MATH.md before any code.
-    **α̂ is biased upward, and by how much depends on how often the user logs**
-    (measured 2026-08-04 with an **uncommitted** variant of
-    `scripts/generate-fixture.mjs`, recovering known ground truth through the
-    real `fitEnergyParams` — the committed script hard-codes the 🪫 opt-in and
-    cannot emit these cells, so read the direction, not the percentages): the
-    fit is **exactly
-    unbiased at one 🪫 log per day** (α_cog −0%, α_phys −0%) and then drifts
-    **+17%/+15% at two logs, +28%/+22% at three, +40%/+31% at five**, purely
-    from §8.7's fresh-start assumption — each rating is read as a session from a
-    full reservoir, so a later session's deeper rating can only be explained by
-    a larger α. `r` is untouched throughout (−0% to −1%), which is §8.9's
-    independence claim confirmed. Two consequences for this item: the upward
-    bias pushes α _away_ from the pole, so the divergence risk is smaller than
-    it looks — but a higher α maps to a **smaller** pool, so the derived
-    capacity shrinks the more diligently the user logs, which is an absurd
-    dependency for a capacity estimate and must be corrected or bounded before
-    the map ships.
-    And it must be a **prefill of the per-day session
-    field, never a change to `DEFAULT_CAPACITY_POOLS`**: that constant is the
-    fallback for every stored day with no pools (`session-history.ts`,
-    `metric/history.ts`), so changing it re-scores history against
-    [data/AGENTS.md](src/lib/data/AGENTS.md)'s settled "a past day's fit is what
-    the user had", and prefilling is also what "a fit
-    never writes params silently" requires. **Prereq:** enough 🪫 logs for a
-    credible α, i.e. item 11 in practice. The per-day prefill slot it requires
-    now exists (item 32) — this item replaces the source of the pool prefill,
-    not its wiring.
-    **The gate was attempted on 2026-08-30 and could not be run.** The map, its
-    pole, its validity gate and MATH.md §8.13 shipped as an instrument — no
-    allocation reads it, the pools stay declared —
-    [docs/features/the-pool-the-drain-logs-might-know.md](docs/features/the-pool-the-drain-logs-might-know.md).
-    Two findings closed the attempt, and the second does not depend on the
-    first.
-    **One: plan adherence cannot gate a capacity pool.** The probe sentence
-    this item carried ("does the α-derived pool raise `plan-audit.ts`'s
-    `classicOverlap` against declared 4/6") names an instrument that cannot
-    answer it. Scored against the pool that GENERATED the days,
-    `classicOverlap` ranks the known-correct pool at or below declared 4/6 at
-    three of the four evaluable points (Δ +0.0000, −0.0035, −0.0024, +0.0116) —
-    including the two where the correct pool binds on 43 and 47 of 60 scored
-    days. Only the fourth point can see a pool at all, and there the derived
-    pool beats both 4/6 (+0.0341) and the truth (+0.0116). The cause is
-    structural: a pool of P hours cannot bind on a day shorter than P hours,
-    the fixture's days run to a median 3.25 h against a 6 h declared physical
-    pool, and 4/6 binds on ≤ 16 of 60 days — so the baseline being scored
-    against is very nearly a no-op.
-    **Two: the map's domain and the fitted drain rates barely overlap.** The
-    §8.13 pole sits at `r′·b·(1−C*)/C*`, so the validity gate is proportional
-    to the fitted recovery rate: α ≥ 0.2025 at the default r = 0.7, but
-    α ≥ 0.2893 at the r̂ ≈ 1.0 the fixture actually fits. Physical drain rates
-    land below that — fitted α̂_phys 0.261–0.267 in the misspecified arm — so
-    the map returns nothing for the physical reservoir across that whole arm,
-    and for three of five rows of the logging-rate arm. A capacity map that
-    declines to answer for the reservoir it is most needed on is not blocked by
-    its gate; it is described by it.
-    **Anything that re-opens this item needs a different reading than plan
-    adherence, days long enough for a pool to bind, and a drain-rate regime
-    inside §8.13's domain.** The 2× pool error costed at 4.1–5.7% mean, p90
-    12.9–21.2% is untouched by this — it says a wrong pool is expensive, not
-    that this map finds the right one. The sessions-per-day bias recorded above
-    from an uncommitted 2026-08-04 variant is now **disputed by a committed
-    run**: `scripts/capacity-from-drain.probe.ts`'s logging-rate arm does not
-    reproduce its direction, and finds no monotone trend.
-    **The different reading exists as of 2026-09-03, and it answers the first
-    finding but not the second** —
-    [docs/features/the-pool-adherence-could-not-rank.md](docs/features/the-pool-adherence-could-not-rank.md).
-    Arm D scores the plan on the objective it maximizes rather than on plan
-    adherence: solved under a declared pool, worked under the true one, against
-    the plan that knew the truth. The ceiling is correct by construction, so the
-    pathology that voided the gate cannot occur, and the declared pool no longer
-    has to bind — which retires "days long enough for a pool to bind" as a
-    condition on re-opening. What it reads on the self-consistent arm, and the
-    asymmetry between an under- and an over-declared pool, are in the probe
-    header. **What is still open is the misspecified arm**: §8.13's gate scales
-    with the fitted recovery rate, so no derived pool exists to score there, and
-    the cost of the map being WRONG about a user remains unmeasured. That is the
-    remaining blocker, and it is a question about the floor's parameterization
-    rather than about the reading.
-    **A second reason not to re-parameterize the gate yet — the 2026-09-04 lead
-    was RUN on 2026-09-06, and the spread swamps the margins** —
-    [docs/features/the-margins-that-were-one-draw.md](docs/features/the-margins-that-were-one-draw.md).
-    `scripts/capacity-from-drain.probe.ts` takes a seed now (default 42, so
-    every earlier quote reproduces) and arm A sweeps seeds 42–53. Every
-    four-decimal Δ that closed the first finding is smaller than the spread of
-    its own cell: truth−4/6 −0.0035 over a range of 0.0044, −0.0024 over 0.0129,
-    and the "+0.0116, derived beats the truth itself" headline over 0.0403,
-    running −0.0170 to +0.0232 and positive at only 9 of 12 seeds. The
-    derived-vs-4/6 Δ at α 0.7/0.45 runs −0.0117 to +0.0108 and flips sign at 5
-    of 12 — so both halves of the lead reproduce under a committed run, by a
-    seed sweep rather than the lead's own perturbed generator. Only the α
-    0.4/0.3 cell is stable (+0.0000 at every seed), and it is stable because the
-    truth 4.00/5.97 h IS declared 4/6 to two decimals. The gate stays **void,
-    not failed**, with a stronger reason: three of the four cells that argued it
-    would have argued the opposite on another seed. Two consequences. First,
-    [the-pool-the-drain-logs-might-know](docs/features/the-pool-the-drain-logs-might-know.md)
-    needs a correction independent of this item — it is a frozen dated record,
-    so its repair is its own change — and **no four-decimal cell from that table
-    may be re-quoted as a result until it has one**, only ever with the spread
-    that decides it beside it, as above. Second, arm D was not swept, so whether
-    its 1.757% / 0.970% is one draw is the obvious next measurement and was not
-    bought.
+18. ~~**Capacity pools from the fitted drain rates**~~ — SHIPPED 2026-09-08 as
+    a per-reservoir offer under each Day Setup pool field, declared with a
+    press and never a prefill —
+    [docs/features/the-pool-the-drain-logs-offer.md](docs/features/the-pool-the-drain-logs-offer.md).
+    The map and its gate:
+    [the-pool-the-drain-logs-might-know](docs/features/the-pool-the-drain-logs-might-know.md);
+    why the gate stayed void:
+    [the-pool-adherence-could-not-rank](docs/features/the-pool-adherence-could-not-rank.md),
+    [the-margins-that-were-one-draw](docs/features/the-margins-that-were-one-draw.md).
 
-Item 16 for the other two declared constraints, and the slot item 18 prefills
-into:
+Item 16 for the other two declared constraints, and the slot item 18's press
+writes into:
 
 32. ~~**Constraint carry-over for unseen days**~~ — SHIPPED 2026-08-24.
     [docs/features/constraint-carry-over-for-unseen-days.md](docs/features/constraint-carry-over-for-unseen-days.md)

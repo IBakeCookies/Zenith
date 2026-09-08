@@ -166,9 +166,13 @@ its allocation code, so the main page is unaffected by changes here.
   capacity pool in hours. Its domain is a `CAPACITY_MAP_POLE_MARGIN` multiple of
   the pole `r′·b·(1−C*)/C*` — which MOVES with the recovery params, so no fixed
   α floor bounds it — and below that, or when those params hold the equilibrium
-  at or above the floor, it returns **nothing**, never a clamped α's pool. It is an **instrument, not a planner input**: no allocation reads
-  it, the pools stay declared, and what would have promoted it is a gate that
-  `classicOverlap` cannot run (ROADMAP item 18). §8.13.
+  at or above the floor, it returns **nothing**, never a clamped α's pool. The map
+  reaches the day only through `offerFittedPools` — a per-reservoir offer under
+  each Day Setup pool field that the user declares with a press
+  ([the-pool-the-drain-logs-offer](../../../docs/features/the-pool-the-drain-logs-offer.md));
+  no allocation reads it directly, the pools stay declared, and only a fitted α
+  inside the domain and under the field's `CAPACITY_POOL_MAX_HOURS` is offered.
+  §8.13.
 - `rankDrainByTask` re-runs the §8.7 drain fit per **task title** over each day's
   EARLIEST 🪫 row only, anchored to the user's own fitted α — which is what makes
   the ridge protective, so a thin title cannot reach an end of the ranking. Both

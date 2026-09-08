@@ -264,6 +264,39 @@ describe('DailyPlanStore', () => {
 		expect(store.daily.burnoutRisk).toBe(onDefaults);
 	});
 
+	// The offer under each Day Setup pool field reads the same causal fit
+	// (docs/features/the-pool-the-drain-logs-offer.md): a rating logged today
+	// cannot move the offer under a plan the user is running.
+	it('offers the pools the viewed day’s own causal fit says, and none from today', () => {
+		const store = setup();
+
+		mockObservations.drainObservations = [
+			drainRecord(),
+			drainRecord({
+				hours: 2,
+				mindDrain: 8,
+			}),
+		];
+
+		flushSync();
+
+		expect(store.fittedPools.cognitiveHours).toEqual(expect.any(Number));
+		expect(store.fittedPools.physicalHours).toEqual(expect.any(Number));
+
+		mockObservations.drainObservations = [
+			drainRecord({
+				date: mockSession.selectedDate,
+			}),
+		];
+
+		flushSync();
+
+		expect(store.fittedPools).toEqual({
+			cognitiveHours: null,
+			physicalHours: null,
+		});
+	});
+
 	// Overnight carry-over: the viewed day's predecessor seeds
 	// the morning reservoirs. The same heavy log feeds the α fit identically from
 	// either date — only yesterday's carries into this morning.
