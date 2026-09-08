@@ -106,7 +106,8 @@
 	   down: 0.14 put `blueprint`'s row label at 3.95:1 on the well it sits in,
 	   under AA. One theme cannot take 0.1 — `ukiyo` measures 1.007, a near-white
 	   translucent card (L 0.98 at alpha 0.6) being the white-on-white case above
-	   taken to its limit — so it alone overrides this with 0.14 (themes.css).
+	   taken to its limit — so it overrides this with 0.14 (themes.css), and
+	   `blueprint` overrides the dark rule's sign.
 	   Shipped, over all 46: light min 1.081 and median 1.195, dark min 1.249 and
 	   median 1.405. The label ratios that stood beside them read the ink as
 	   opaque; composited, the row label runs min 3.19 and median 5.76 and five
@@ -148,8 +149,8 @@
 
 	/* The smallest alphas at which `--ty-secondary` and `--ty-silent` clear
 	   4.5:1 on every theme's card and inset with adjacent rungs still ≥ 1.03
-	   apart, per side, read by `scripts/inset-contrast.mjs`. `blueprint` is
-	   the one residue — its inset is too light for even opaque ink, 4.68:1. */
+	   apart, per side, read by `scripts/inset-contrast.mjs`. `blueprint` alone
+	   sets its own pair (themes.css). */
 	--ty-secondary: color-mix(in oklch, var(--ty-primary) 80%, transparent);
 	--ty-silent: color-mix(in oklch, var(--ty-primary) 75%, transparent);
 	--ty-ghost: color-mix(in oklch, var(--ty-primary) 40%, transparent);

@@ -197,7 +197,16 @@
 	   an oklch lerp lands ~0.03 L darker. */
 	--surface-page: oklch(0.4 0.09 256);
 	--surface-card: oklch(0.445 0.083 255);
+	/* The dark rule's well climbs, and under this near-white primary a lighter
+	   well is the wrong direction — the same flip `--secondary-hover` takes
+	   below. Receding by the light side's step reads 1.51 against the card and
+	   lets the row label clear where a climb held it at 3.19. The card is then
+	   the binding surface, and 70/65 reads 4.48 / 4.07 on it, so the ladder is
+	   the light side's pair: `node scripts/inset-contrast.mjs blueprint`. */
+	--surface-inset: oklch(from var(--surface-card) calc(l - 0.1) c h);
 	--ty-primary: oklch(0.98 0.008 240);
+	--ty-secondary: color-mix(in oklch, var(--ty-primary) 80%, transparent);
+	--ty-silent: color-mix(in oklch, var(--ty-primary) 75%, transparent);
 
 	/* Half a step darker than the composite it replaces, which the white label
 	   is what pays for: at the literal composite (0.517, hovering to 0.589) it
@@ -823,14 +832,16 @@
 	   The window itself is theme scenery (SVG tracery + god rays + jewel light
 	   pooling on the floor) — see scenery/cathedral.css.
 
-	   The window's top edge and its diameter, and so — half a diameter below
-	   that edge — the centre of both the window and the halo blooming around
-	   it. Same reason as `eclipse`: the window is drawn in the scenery layer
-	   and its halo in this gradient, and a halo that does not follow the window
-	   is a bloom around nothing. Declared here because custom properties
-	   inherit downward only, so the shared ones have to sit above every reader
-	   — the god rays in scenery/cathedral.css fall from that centre too.
-	   Move the window with the first, resize it with the second. */
+	   The window's centre x, its top edge and its diameter, and so — half a
+	   diameter below that edge — the centre of both the window and the halo
+	   blooming around it. Same reason as `eclipse`: the window is drawn in the
+	   scenery layer and its halo in this gradient, and a halo that does not
+	   follow the window is a bloom around nothing. Declared here because custom
+	   properties inherit downward only, so the shared ones have to sit above
+	   every reader — the god rays in scenery/cathedral.css fall from that
+	   centre too. Below the gutter gate (end of this block) the window itself
+	   is not drawn and these place the light source above the bar. */
+	--cathedral-window-x: 50%;
 	--cathedral-window-y: -5rem;
 	--cathedral-window-size: 20rem;
 	--cathedral-window-mid: calc(var(--cathedral-window-y) + var(--cathedral-window-size) / 2);
@@ -840,7 +851,7 @@
 		radial-gradient(ellipse 90% 35% at 50% 112%, oklch(0.7 0.12 65 / 0.22), transparent 70%),
 		/* halo blooming over the stone around the window */
 		radial-gradient(
-				ellipse 55% 30% at 50% var(--cathedral-window-mid),
+				ellipse 55% 30% at var(--cathedral-window-x) var(--cathedral-window-mid),
 				oklch(0.85 0.09 85 / 0.16),
 				transparent 70%
 			),
@@ -875,6 +886,19 @@
 	--mind-strong: oklch(0.8 0.1 265);
 	--body: oklch(0.78 0.13 160);
 	--mixed: oklch(0.74 0.14 310);
+}
+
+/* The window goes beside the column where the gutter fits it (STYLE.md, the
+   scenery gutter): 50vw − 44rem ≥ 14rem is 116rem. Drawn at top-centre it sat
+   behind the day-setup card and put ten labels under 4.5:1 through the card
+   glass; not drawing it clears all ten (the feature file). The scenery file
+   carries the matching `display` gate. */
+@media (min-width: 116rem) {
+	.cathedral {
+		--cathedral-window-x: calc(var(--spacer-gutter) + var(--cathedral-window-size) / 2);
+		--cathedral-window-y: 10rem;
+		--cathedral-window-size: 14rem;
+	}
 }
 
 .orbit {

@@ -98,7 +98,7 @@ STYLE.md's ink note; the budget is measured by `scripts/ink-contrast.mjs`).
 Contrast stays enforced on every real component **in one theme**: the toolbar
 default is `DEFAULT_THEME` (`fallow`), so axe never sees the other 45; the text
 ladder's contrast in every theme is `scripts/inset-contrast.mjs`'s job (STYLE.md's
-ink note), and `blueprint` ships a sub-AA log-row label only its well can fix.
+ink note).
 Storybook is also what
 `scripts/hover-contrast.mjs` drives (on :6006, unlike the ink script): axe only
 ever sees a story's REST state, so every hover fill's step and label contrast
