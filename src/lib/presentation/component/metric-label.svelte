@@ -22,7 +22,7 @@
 				</span>
 			{/snippet}
 		</Tooltip.Trigger>
-		<Tooltip.Content>
+		<Tooltip.Content side="right">
 			<p>{description}</p>
 		</Tooltip.Content>
 	</Tooltip.Root>
