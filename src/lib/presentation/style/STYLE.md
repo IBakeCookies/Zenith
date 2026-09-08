@@ -156,10 +156,12 @@ Read this before touching markup, classes, or anything under
   content rungs on page, card and inset: light 80/75, dark 70/65 — the smallest
   alphas at which every card and inset clears 4.5:1 with adjacent rungs still
   ≥ 1.03 apart (the step bound, asked of two inks on one fill). As the script
-  prints them: secondary min 4.48 / median 7.86 on the card, 3.19 / 6.28 on the
-  inset; silent 4.07 / 6.92 and 2.97 / 5.61; faintest rung step 1.074. Every
-  minimum is `blueprint`, whose lightened inset holds even opaque primary at
-  4.68:1 — no alpha carries a rung below it; the lead is its well. These dark figures do NOT reproduce
+  prints them: secondary min 5.27 / median 7.86 on the card, 5.13 / 6.32 on the
+  inset; silent 4.86 / 6.92 and 4.65 / 5.65; faintest rung step 1.085.
+  `blueprint` was every minimum of the sizing run and neither rule carries it —
+  near-white ink on a mid-luminance opaque card — so it is the second
+  `themes.css` exception: a receding well and the light pair (its block says
+  why). These dark figures do NOT reproduce
   337aad1's (min 1.381, median 1.521): that run is ~0.10 higher on both and its
   sample area is not recoverable, so this script's numbers replace them rather
   than reconcile with them. `.solid-light` is
@@ -309,8 +311,8 @@ Read this before touching markup, classes, or anything under
   — `field-input`'s shape, at the border's own rung so the ring reads as the
   border it traces. `outline-none` does not leave such a field unringed: the
   plugin ring above is painted regardless, and the token ring **displaces** it.
-  Three of the four recipes are `measurement-prompt.ts`; the ☕ length field is
-  inline, being the one `info` tint.
+  All four recipes are `measurement-prompt.ts`, the length field a record by
+  tint like the rating pair.
 - **An overflowing panel scrolls with `nice-scrollbar` (`base.css`), never the
   native bar** — the theme dropdown, the analytics log history and the dialog and
   calendar bodies are all it. No palette reaches a UA scrollbar, so it renders as
@@ -452,8 +454,8 @@ Read this before touching markup, classes, or anything under
   is the tempting answer and the wrong one: an object small enough for a narrow
   gutter no longer carries what it was drawn to carry, and bleeding it off the
   right edge leaves a sliver. No gutter means nowhere unoccluded on screen, so
-  none is the honest output — `moonphase` degrades to sky and starfield, which
-  is still a coherent theme. Two exemptions, both deliberate: an object that is
+  none is the honest output — `moonphase` degrades to sky and starfield,
+  `cathedral` to its rays. Two exemptions, both deliberate: an object that is
   a soft low-alpha wash with no edge to cut (`hourglass`, `sundial`) overlaps
   the column on purpose, and a light theme's ink survives a bright backdrop that
   a dark theme's does not. `scripts/ink-contrast.mjs` cannot police any of this
