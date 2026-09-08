@@ -214,63 +214,65 @@
 			? ''
 			: 'rounded-md border border-line-soft bg-surface-card p-box-lg backdrop-blur'}"
 	>
-		<!-- The list sits outside the label: inside it, a click on an option would also be a
-	     click on the label. -->
-		<div class="relative">
-			<label class="block text-xs font-medium text-ty-secondary">
-				{m.task_title_label()}
-				<input
-					id="{id}-title"
-					type="text"
-					bind:this={titleField}
-					role="combobox"
-					aria-expanded={listOpen}
-					aria-controls={listId}
-					aria-autocomplete="list"
-					aria-activedescendant={active >= 0 ? optionId(active) : undefined}
-					bind:value={draft.title}
-					oninput={handleTitleInput}
-					onkeydown={handleTitleKeydown}
-					onblur={() => {
-						// The list unmounts with the blur, so a highlight left behind would
-						// point aria-activedescendant at an id that is no longer there.
-						closeSuggestions();
-					}}
-					placeholder={m.form_task_placeholder()}
-					required
-					class="field-input"
-				/>
-			</label>
-			{#if listOpen}
-				<ul
-					id={listId}
-					role="listbox"
-					aria-label={m.form_title_suggestions()}
-					class="absolute z-30 mt-text-xs max-h-56 w-full overflow-y-auto rounded-lg border border-line-strong bg-popover py-box-xs text-sm text-popover-foreground shadow-card"
-				>
-					{#each suggestions as suggestion, index (suggestion.title)}
-						<!-- Keyboard reaches these through the input (ARIA combobox); mousedown
-				     is prevented so the click that picks one does not close the list. -->
-						<!-- svelte-ignore a11y_click_events_have_key_events -->
-						<li
-							bind:this={options[index]}
-							id={optionId(index)}
-							role="option"
-							aria-selected={index === active}
-							onmousedown={(e) => e.preventDefault()}
-							onclick={() => pick(suggestion)}
-							class="cursor-pointer wrap-break-word px-box-md py-box-xs {index === active
-								? 'bg-surface-hover'
-								: ''} hover:bg-surface-hover"
+		<TaskFormFields bind:draft {tagVocabulary}>
+			{#snippet title()}
+				<!-- The list sits outside the label: inside it, a click on an option would also be a
+			     click on the label. -->
+				<div class="relative">
+					<label class="block text-xs font-medium text-ty-secondary">
+						{m.task_title_label()}
+						<input
+							id="{id}-title"
+							type="text"
+							bind:this={titleField}
+							role="combobox"
+							aria-expanded={listOpen}
+							aria-controls={listId}
+							aria-autocomplete="list"
+							aria-activedescendant={active >= 0 ? optionId(active) : undefined}
+							bind:value={draft.title}
+							oninput={handleTitleInput}
+							onkeydown={handleTitleKeydown}
+							onblur={() => {
+								// The list unmounts with the blur, so a highlight left behind would
+								// point aria-activedescendant at an id that is no longer there.
+								closeSuggestions();
+							}}
+							placeholder={m.form_task_placeholder()}
+							required
+							class="field-input"
+						/>
+					</label>
+					{#if listOpen}
+						<ul
+							id={listId}
+							role="listbox"
+							aria-label={m.form_title_suggestions()}
+							class="absolute z-30 mt-text-xs max-h-56 w-full overflow-y-auto rounded-lg border border-line-strong bg-popover py-box-xs text-sm text-popover-foreground shadow-card"
 						>
-							{suggestion.title}
-						</li>
-					{/each}
-				</ul>
-			{/if}
-		</div>
-
-		<TaskFormFields bind:draft {tagVocabulary} />
+							{#each suggestions as suggestion, index (suggestion.title)}
+								<!-- Keyboard reaches these through the input (ARIA combobox); mousedown
+						     is prevented so the click that picks one does not close the list. -->
+								<!-- svelte-ignore a11y_click_events_have_key_events -->
+								<li
+									bind:this={options[index]}
+									id={optionId(index)}
+									role="option"
+									aria-selected={index === active}
+									onmousedown={(e) => e.preventDefault()}
+									onclick={() => pick(suggestion)}
+									class="cursor-pointer wrap-break-word px-box-md py-box-xs {index === active
+										? 'bg-surface-hover'
+										: ''} hover:bg-surface-hover"
+								>
+									{suggestion.title}
+								</li>
+							{/each}
+						</ul>
+					{/if}
+				</div>
+			{/snippet}
+		</TaskFormFields>
 
 		<!-- One footer, the row editor's, and ONE left slot in it however much a
 		     screen puts there — presentation/AGENTS.md has the whole row. -->
