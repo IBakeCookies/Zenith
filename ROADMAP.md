@@ -709,7 +709,9 @@ place.
 
 - ~~**`cathedral`'s rose window still needs a redraw, and until it gets one it is
   the worst-lit thing on `/`.**~~ — CLOSED 2026-09-08 without the redraw,
-  [the-window-that-lit-the-labels-under-it](docs/features/the-window-that-lit-the-labels-under-it.md).
+  [the-window-that-lit-the-labels-under-it](docs/features/the-window-that-lit-the-labels-under-it.md),
+  then the window itself replaced by its light on 2026-09-09,
+  [the-light-the-window-left-on-the-sill](docs/features/the-light-the-window-left-on-the-sill.md).
   The 2026-09-04 re-read's three-arm run decided it; the 1.00:1 readings this
   finding was priced on did not reproduce.
 

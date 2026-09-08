@@ -454,8 +454,8 @@ Read this before touching markup, classes, or anything under
   is the tempting answer and the wrong one: an object small enough for a narrow
   gutter no longer carries what it was drawn to carry, and bleeding it off the
   right edge leaves a sliver. No gutter means nowhere unoccluded on screen, so
-  none is the honest output — `moonphase` degrades to sky and starfield,
-  `cathedral` to its rays. Two exemptions, both deliberate: an object that is
+  none is the honest output — `moonphase` degrades to sky and starfield, which
+  is still a coherent theme. Two exemptions, both deliberate: an object that is
   a soft low-alpha wash with no edge to cut (`hourglass`, `sundial`) overlaps
   the column on purpose, and a light theme's ink survives a bright backdrop that
   a dark theme's does not. `scripts/ink-contrast.mjs` cannot police any of this

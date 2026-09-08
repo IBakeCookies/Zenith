@@ -784,14 +784,21 @@
 	   seen from up here. Move the disc by editing this and nothing else. */
 	--eclipse-disc-y: 12rem;
 
+	/* How big, as a multiple of the size drawn here. It reaches both files the
+	   same way --eclipse-disc-y does: this gradient multiplies its stops by it,
+	   and scenery/eclipse.css scales both helpers by it about the same centre,
+	   so moon, corona and streamers keep their proportions. Resize the eclipse
+	   by editing this and nothing else. */
+	--eclipse-scale: 5;
+
 	--background-image:
 		radial-gradient(
 			circle at 50% var(--eclipse-disc-y),
-			oklch(0.08 0.015 285) 0 6.55rem,
-			oklch(0.99 0.04 90) 6.85rem 7.1rem,
-			oklch(0.92 0.08 85 / 0.55) 7.5rem,
-			oklch(0.85 0.06 70 / 0.18) 10rem,
-			transparent 17rem
+			oklch(0.08 0.015 285) 0 calc(6.55rem * var(--eclipse-scale)),
+			oklch(0.99 0.04 90) calc(6.85rem * var(--eclipse-scale)) calc(7.1rem * var(--eclipse-scale)),
+			oklch(0.92 0.08 85 / 0.55) calc(7.5rem * var(--eclipse-scale)),
+			oklch(0.85 0.06 70 / 0.18) calc(10rem * var(--eclipse-scale)),
+			transparent calc(17rem * var(--eclipse-scale))
 		),
 		radial-gradient(ellipse 60% 34% at 50% -6%, oklch(0.85 0.05 80 / 0.22), transparent 70%),
 		radial-gradient(ellipse 34% 22% at 30% 4%, oklch(0.6 0.16 330 / 0.14), transparent 60%),
@@ -828,30 +835,36 @@
 }
 
 .cathedral {
-	/* gothic nave at vespers: a stained-glass rose window burning above the door.
-	   The window itself is theme scenery (SVG tracery + god rays + jewel light
-	   pooling on the floor) — see scenery/cathedral.css.
+	/* gothic nave at vespers: a stained-glass rose window burning above the
+	   frame. Drawn at top-centre it sat behind the day-setup card and put ten
+	   labels under 4.5:1 through the card glass, and in the gutter it was one
+	   theme with two light sources; what is drawn is its light — a band of the
+	   four floor-pool colours along the underside of the bar, god rays, and the
+	   jewels pooling on the floor (scenery/cathedral.css).
 
-	   The window's centre x, its top edge and its diameter, and so — half a
-	   diameter below that edge — the centre of both the window and the halo
-	   blooming around it. Same reason as `eclipse`: the window is drawn in the
-	   scenery layer and its halo in this gradient, and a halo that does not
-	   follow the window is a bloom around nothing. Declared here because custom
-	   properties inherit downward only, so the shared ones have to sit above
-	   every reader — the god rays in scenery/cathedral.css fall from that
-	   centre too. Below the gutter gate (end of this block) the window itself
-	   is not drawn and these place the light source above the bar. */
-	--cathedral-window-x: 50%;
-	--cathedral-window-y: -5rem;
-	--cathedral-window-size: 20rem;
+	   The band's top edge and height, and so — half a height below that edge —
+	   the centre the halo in this gradient and the god rays fall from. Same
+	   reason as `eclipse` for declaring them here: custom properties inherit
+	   downward only, so shared ones sit above every reader. The bar renders
+	   4rem tall plus its 1px border (`py-box-md` around its controls); the e2e
+	   scenario holds the two together. */
+	--cathedral-window-y: calc(4rem + 1px);
+	--cathedral-window-size: 3px;
 	--cathedral-window-mid: calc(var(--cathedral-window-y) + var(--cathedral-window-size) / 2);
+
+	/* the window's jewels as they land: the band above and the pools below
+	   read these, in this order across the nave */
+	--cathedral-pool-1: oklch(0.6 0.19 20);
+	--cathedral-pool-2: oklch(0.62 0.15 265);
+	--cathedral-pool-3: oklch(0.7 0.14 85);
+	--cathedral-pool-4: oklch(0.65 0.15 160);
 
 	--background-image:
 		/* candle glow rising from the nave floor */
 		radial-gradient(ellipse 90% 35% at 50% 112%, oklch(0.7 0.12 65 / 0.22), transparent 70%),
 		/* halo blooming over the stone around the window */
 		radial-gradient(
-				ellipse 55% 30% at var(--cathedral-window-x) var(--cathedral-window-mid),
+				ellipse 55% 30% at 50% var(--cathedral-window-mid),
 				oklch(0.85 0.09 85 / 0.16),
 				transparent 70%
 			),
@@ -886,19 +899,6 @@
 	--mind-strong: oklch(0.8 0.1 265);
 	--body: oklch(0.78 0.13 160);
 	--mixed: oklch(0.74 0.14 310);
-}
-
-/* The window goes beside the column where the gutter fits it (STYLE.md, the
-   scenery gutter): 50vw − 44rem ≥ 14rem is 116rem. Drawn at top-centre it sat
-   behind the day-setup card and put ten labels under 4.5:1 through the card
-   glass; not drawing it clears all ten (the feature file). The scenery file
-   carries the matching `display` gate. */
-@media (min-width: 116rem) {
-	.cathedral {
-		--cathedral-window-x: calc(var(--spacer-gutter) + var(--cathedral-window-size) / 2);
-		--cathedral-window-y: 10rem;
-		--cathedral-window-size: 14rem;
-	}
 }
 
 .orbit {
