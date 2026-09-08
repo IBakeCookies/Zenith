@@ -446,16 +446,8 @@ instrument that would establish or kill its own number before any build.
     `--muted-foreground` and ~43 files, so the choice between a per-side
     derivation and named per-theme exceptions is the run's to make.
 
-36. **The 12-task wall clock is one seeded day** — `plan-advice.probe.ts` times
-    exactly one generated day per n at a hardcoded 8 h budget, and six live sites
-    quote that single draw, one of them (`plan-advice.ts`) calling it "its worst
-    case". Reported: 60 fresh seeds at n = 12 put the whole advice run at median
-    ~465–514 ms and max ~1.08–1.16 s, and the budget axis — the one the range
-    input drags — was never measured at all. Nothing settled moves; "never in a
-    `$derived`" gets stronger. **This item's own numbers are now stale**: the
-    prune in [the-subsets-that-could-not-win](docs/features/the-subsets-that-could-not-win.md)
-    landed 2026-09-04 and re-based the whole ladder, so the sweep must be re-run
-    before any of the six sites is re-quoted.
+36. ~~**The 12-task wall clock is one seeded day**~~ — FIXED 2026-09-08
+    ([the-wall-clock-that-was-one-day](docs/features/the-wall-clock-that-was-one-day.md)).
 
 37. ~~**Two blind spots in the verification chain**~~ — FIXED 2026-09-06
     ([the-rename-that-turned-off-every-check](docs/features/the-rename-that-turned-off-every-check.md)).

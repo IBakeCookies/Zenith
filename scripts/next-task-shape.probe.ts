@@ -101,8 +101,9 @@
  *   [D cost] 12 tasks, 8 candidates: 0.9-1.0 / 0.9-1.0 / 0.9-1.0 ms per candidate
  *
  * So roughly 0.2-9 ms per candidate is the result and no cell is. The whole band
- * sits an order of magnitude or more below the 109-124 ms per candidate
- * `business/AGENTS.md` measures for `suggestPlanAdjustments`, and that is
+ * sits an order of magnitude or more below the ~75–80 ms median
+ * `plan-advice.probe.ts` sweeps for a 12-task `suggestPlanAdjustments` run at
+ * 8 h, and that is
  * structural rather than lucky: this solves the day ONCE per candidate where the
  * advisor enumerates funded subsets per candidate. So the ranking stays out of a
  * `$derived` for the reason that section gives — it is N solves — and not
@@ -110,8 +111,8 @@
  *
  * The 8-task day costing several times the 12-task one is not noise; it holds
  * across all three runs. Cost tracks how hard the pooled allocator has to search
- * a particular day, not the task count — the same reason `business/AGENTS.md`
- * calls 12 tasks the WORST case and not a floor.
+ * a particular day, not the task count — the same reason the advisor's sweep in
+ * `plan-advice.probe.ts` reads the budget axis, not n, as the cost's driver.
  *
  * Usage: npm run probe
  */

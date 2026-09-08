@@ -407,17 +407,21 @@ The cost rule, and it decides the shape of every reading that solves the day.
 **A reading costing one solve per candidate goes behind a method; a reading
 costing one solve may stay a `$derived`.**
 
-| Reading                             | Shape                      | Cost                                                               |
-| ----------------------------------- | -------------------------- | ------------------------------------------------------------------ |
-| `suggestPlanAdjustments`            | `computeAdvice()` + a flag | one solve per candidate — 65 ms at n = 12, a frozen main thread    |
-| `DailyPlanStore.draftImpact`        | `$derived`                 | one solve, what `#daily` already costs per keystroke               |
-| `EnergyLabStore.computeDraftImpact` | method behind a button     | the energy optimizer, 35-195 ms at an 8 h window (n = 3 to n = 20) |
-| `computeNextTasks`                  | method, withdraws          | one solve per capped candidate                                     |
-| `#remainingDay`                     | `$derived`, gated          | 12.4 ms at n = 12, 0.001 ms until something is logged              |
+| Reading                             | Shape                      | Cost                                                                                                     |
+| ----------------------------------- | -------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `suggestPlanAdjustments`            | `computeAdvice()` + a flag | one solve per candidate — ~75–80 ms median on a 12-task day at 8 h, ~1.4 s at 24 h; a frozen main thread |
+| `DailyPlanStore.draftImpact`        | `$derived`                 | one solve, what `#daily` already costs per keystroke                                                     |
+| `EnergyLabStore.computeDraftImpact` | method behind a button     | the energy optimizer, 35-195 ms at an 8 h window (n = 3 to n = 20)                                       |
+| `computeNextTasks`                  | method, withdraws          | one solve per capped candidate                                                                           |
+| `#remainingDay`                     | `$derived`, gated          | 12.4 ms at n = 12, 0.001 ms until something is logged                                                    |
 
-The frozen thread is the budget field, which re-derives on every keystroke. A
-12-task advice run is the **worst** case, not a floor: past
-`EXACT_SUBSET_LIMIT` the solve takes the fallback and gets cheaper.
+The frozen thread is the budget field, which re-derives on every keystroke. The
+cost tracks the budget the range input drags more than n: over 40 seeded
+12-task days the advice run reads ~75–80 ms median at 8 h and ~1.4 s median
+(2.2–2.4 s max) at the slider's 24 h. Past `EXACT_SUBSET_LIMIT` one solve takes
+the fallback and gets cheaper; the advice run does not at n = 13, because that
+day's defer levers are 12-task exact solves (~100 ms median at 8 h).
+Bands: `plan-advice.probe.ts`, the `[sweep]` arm.
 `#remainingDay` survives as a `$derived` only because of its gate — the viewed
 day being today **and** any hours existing, so it costs nothing every morning,
 which is exactly when the day is being typed into. A `$derived` nobody reads

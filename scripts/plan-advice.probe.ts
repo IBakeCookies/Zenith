@@ -112,9 +112,9 @@ function randomDays(count: number, seed: number): DailyMetricsInput[] {
 	);
 }
 
-/** One seeded n-task day at the configuration the Cost paragraph quotes. */
-const timingDay = (n: number): DailyMetricsInput => {
-	const random = mulberry32(n * 104729);
+/** One seeded n-task day; the sliders' whole 0–10 domain, as `randomDays` draws. */
+const timingDay = (n: number, seed: number, budget: number): DailyMetricsInput => {
+	const random = mulberry32(seed);
 	const pick = () => Math.round(random() * 10);
 
 	return day(
@@ -124,7 +124,7 @@ const timingDay = (n: number): DailyMetricsInput => {
 			},
 			(_, index) => task(index + 1, pick(), pick(), pick()),
 		),
-		8,
+		budget,
 		DEFAULT_SWITCH_COST,
 		DEFAULT_CAPACITY_POOLS.cognitiveHours,
 		DEFAULT_CAPACITY_POOLS.physicalHours,
@@ -168,6 +168,45 @@ function timeMs(run: () => void): Timing {
 
 const showMs = (timing: Timing) =>
 	`${timing.median.toFixed(2)} ms (min ${timing.min.toFixed(2)}, max ${timing.max.toFixed(2)})`;
+
+/** Quantile of one timed run per seeded day: the spread ACROSS days, not across reps. */
+const quantile = (sorted: number[], p: number) =>
+	sorted[Math.min(sorted.length - 1, Math.floor(p * sorted.length))];
+
+const showBand = (samples: number[]) => {
+	const sorted = [...samples].sort((a, b) => a - b);
+
+	return `median ${quantile(sorted, 0.5).toFixed(1)}, p90 ${quantile(sorted, 0.9).toFixed(1)}, max ${sorted[sorted.length - 1].toFixed(1)} ms`;
+};
+
+const SWEEP_SEEDS = 40;
+
+/**
+ * One advice run and one solve per seeded n-task day at `budget`, `SWEEP_SEEDS`
+ * days deep. One timed call each: the single-draw arm above already shows the
+ * rep-to-rep spread is a few percent, and the quantity here is the population.
+ */
+function sweepCell(n: number, budget: number): { advice: number[]; solve: number[] } {
+	const advice: number[] = [];
+	const solve: number[] = [];
+
+	for (let seed = 1; seed <= SWEEP_SEEDS; seed++) {
+		const input = timingDay(n, seed * 7919, budget);
+		let started = performance.now();
+
+		calculateDailyMetrics(input);
+		solve.push(performance.now() - started);
+
+		started = performance.now();
+		suggestPlanAdjustments(input);
+		advice.push(performance.now() - started);
+	}
+
+	return {
+		advice,
+		solve,
+	};
+}
 
 const percentOf = (value: number, base: number) =>
 	base > 0 ? Math.round(((value - base) / base) * 1000) / 10 : null;
@@ -437,7 +476,7 @@ describe('plan advice', () => {
 		console.log(`[cost] ${cpus()[0].model}, ${cpus().length} cores, node ${process.version}`);
 
 		for (const n of [3, 6, 9, 12, 15]) {
-			const input = timingDay(n);
+			const input = timingDay(n, n * 104729, 8);
 			const evaluated = suggestPlanAdjustments(input).candidatesEvaluated;
 
 			const solve = timeMs(() => {
@@ -460,7 +499,7 @@ describe('plan advice', () => {
 		}
 
 		for (const n of [8, 12]) {
-			const input = timingDay(n);
+			const input = timingDay(n, n * 104729, 8);
 			const { tasks, switchCost, pools, constants, posterior } = input;
 			const budget = calculateDailyMetrics(input).budgetHours;
 
@@ -488,6 +527,34 @@ describe('plan advice', () => {
 
 			console.log(
 				`[cost] n = ${n}: s = 0 arm ${showMs(free)}, s = 2s arm ${showMs(doubled)}, declared solve ${showMs(declared)}; the pair is ${((100 * pair) / advice.median).toFixed(1)}% of the advice run (${pair.toFixed(2)} of ${advice.median.toFixed(2)} ms), s = 2s is ${(doubled.median / declared.median).toFixed(2)}× the declared solve`,
+			);
+		}
+	});
+
+	/**
+	 * The arm above is one generated day per n at 8 h, and six sites quoted that
+	 * draw as the advisor's worst case. Two axes the draw never moved: the budget
+	 * the range input drags (`BUDGET_BOUNDS`, 0–24 h), and which day of a given n
+	 * was drawn. Same box rule as above: idle, box printed.
+	 */
+	it('sweeps the advice run over seeded days, the budget axis and n', () => {
+		console.log(`[sweep] ${cpus()[0].model}, ${cpus().length} cores, node ${process.version}`);
+
+		suggestPlanAdjustments(timingDay(12, 1, 8));
+
+		for (const budget of [2, 4, 8, 12, 16, 24]) {
+			const cell = sweepCell(12, budget);
+
+			console.log(
+				`[sweep] n = 12, budget ${budget} h, ${SWEEP_SEEDS} days: advice run ${showBand(cell.advice)}; one solve ${showBand(cell.solve)}`,
+			);
+		}
+
+		for (const n of [9, 10, 11, 12, 13, 15]) {
+			const cell = sweepCell(n, 8);
+
+			console.log(
+				`[sweep] n = ${n}, budget 8 h, ${SWEEP_SEEDS} days: advice run ${showBand(cell.advice)}; one solve ${showBand(cell.solve)}`,
 			);
 		}
 	});

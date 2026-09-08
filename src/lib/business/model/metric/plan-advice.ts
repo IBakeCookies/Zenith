@@ -670,8 +670,9 @@ function attributeUnfunded(
 /**
  * Re-solve the day under each lever and report, per axis, the efficient menu
  * of adjustments. Costs one full solve per candidate — `activeTasks + 3` of
- * them, measured at 109-124 ms for a 12-task day, its worst case —
- * so call it on demand, never from a `$derived`.
+ * them; over 40 seeded 12-task days the whole run reads ~75–80 ms median at 8 h
+ * and ~1.4 s at the slider's 24 h (`plan-advice.probe.ts`) — so call it on
+ * demand, never from a `$derived`.
  *
  * Pass `baseline` when the caller already has the current plan; it is only
  * recomputed here so the function stays usable on its own.
