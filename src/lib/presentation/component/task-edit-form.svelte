@@ -57,19 +57,21 @@
 	)}
 	onsubmit={(e) => (e.preventDefault(), save())}
 >
-	<label class="block text-xs font-medium text-ty-secondary">
-		{m.task_title_label()}
-		<input
-			id="{id}-title"
-			type="text"
-			bind:value={draft.title}
-			placeholder={m.form_task_placeholder()}
-			required
-			class="field-input"
-		/>
-	</label>
-
-	<TaskFormFields bind:draft {tagVocabulary} />
+	<TaskFormFields bind:draft {tagVocabulary}>
+		{#snippet title()}
+			<label class="block text-xs font-medium text-ty-secondary">
+				{m.task_title_label()}
+				<input
+					id="{id}-title"
+					type="text"
+					bind:value={draft.title}
+					placeholder={m.form_task_placeholder()}
+					required
+					class="field-input"
+				/>
+			</label>
+		{/snippet}
+	</TaskFormFields>
 
 	<!-- One line: the flag pushed out by its own margin, the verbs in the corner —
 	     so the buttons keep that corner in the mode with no flag to show. -->

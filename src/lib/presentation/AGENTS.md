@@ -258,9 +258,9 @@ Six components hold what the two screens say the same way:
   tracks and the tag chips inside it are made of. Both were tried; both read as
   one flat plane.
 - **`task-form-fields.svelte`** — what both task forms set about the task
-  itself: the three model input sliders, one loop over one table so their
-  labels, minimums and accents are defined once, `task-importance-select`
-  under them, and the tag field — one text input over a native `<datalist>`,
+  itself, two columns past `--container-task-fields`: the caller's title (a
+  `title` snippet) over the three sliders — one loop over one table — then
+  `task-importance-select` and the tag field — one text input over a native `<datalist>`,
   committing a chip on Enter or a typed comma, whose vocabulary is a prop
   BOTH forms pass. It is threaded to the ✎ editor through `task-list` /
   `energy-task-row` → `task-row-shell`, because a row may not read the session
@@ -288,8 +288,8 @@ Six components hold what the two screens say the same way:
   three ratings, and renaming a task the user has already rated must not; only
   the add form reads title memory. Its tag list is not that (above).
   Do not push the title or the frame in here to make them look like one
-  component; the callers keep both, so each frame and each field is defined
-  once, whole, and the caller's own spacing is what sets the form's density.
+  component; the callers keep both (the title is only placed here), so each is
+  defined once, whole, and the caller's own spacing sets the form's density.
 
 What is left in `task-item.svelte` and `energy-task-row.svelte` is one screen's
 reading of the task and nothing else: priority, allocation, run order and T* on

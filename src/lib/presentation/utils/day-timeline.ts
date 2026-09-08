@@ -45,10 +45,11 @@ export interface DayTimelineInput {
 export const RAIL_SEGMENT_CLASS = {
 	warmup: 'hatch',
 	inFlow: BAND_BAR_CLASS.success,
-	ghost: 'border-2 border-dashed border-current',
+	ghost: 'border border-dashed border-current',
 	switch: 'bg-ty-ghost',
 } as const;
 
+//
 export function buildDayTimeline(input: DayTimelineInput): DayTimeline {
 	const { runOrder } = input;
 
