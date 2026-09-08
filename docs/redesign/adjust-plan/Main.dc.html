@@ -1,123 +1,366 @@
 <!doctype html>
 <html>
-<head>
-  <meta charset="utf-8">
-  <script src="./support.js"></script>
-</head>
-<body>
-<x-dc>
-<helmet>
-  <title>A — Facts and a lever table</title>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;display=swap">
-  <style>
-:root{
- --page:oklch(0.15 0.008 155);--card:oklch(0.185 0.008 155);--input:oklch(0.24 0.008 155);
- --ink:oklch(0.97 0.006 155);--ink-2:oklch(0.97 0.006 155/.7);--ink-3:oklch(0.97 0.006 155/.55);--ink-4:oklch(0.97 0.006 155/.4);
- --border:oklch(1 0 0/.13);--line:oklch(1 0 0/.07);
- --success:oklch(0.765 0.177 163.223);--warning:oklch(0.82 0.13 78);--danger:oklch(0.71 0.18 24);
- --warning-wash:oklch(0.82 0.13 78/.05);--warning-tint:oklch(0.82 0.13 78/.2);--warning-strong:oklch(0.89 0.11 80);
- --r-md:3.84px;--r-lg:4.8px;--r-xl:6.72px;--r-2xl:8.64px;
-}
-*{box-sizing:border-box}
-body{margin:0;padding:24px;background:var(--page);color:var(--ink);font:400 14px/20px Inter,'Inter Variable',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
-a{color:oklch(0.82 0.105 168)}a:hover{color:oklch(0.89 0.085 170)}
-p,h3,ul{margin:0;padding:0}ul{list-style:none}
-.card{background:var(--card);border:1px solid var(--border);border-radius:var(--r-2xl);padding:24px}
-.kick{font-size:12px;line-height:16px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-2)}
-.xs{font-size:12px;line-height:16px}.xxs{font-size:11px;line-height:16px}
-.tn{font-variant-numeric:tabular-nums}
-.c1{color:var(--ink)}.c2{color:var(--ink-2)}.c3{color:var(--ink-3)}.c4{color:var(--ink-4)}
-.ok{color:var(--success)}.warn{color:var(--warning)}
-.btn{display:inline-flex;align-items:center;justify-content:center;height:32px;padding:0 10px;border:1px solid var(--border);border-radius:var(--r-md);background:var(--input);font-size:14px;font-weight:500;color:var(--ink);white-space:nowrap}
-.hint{cursor:help;text-decoration:underline dotted;text-underline-offset:3px;text-decoration-color:var(--ink-4)}
-.hdr{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
-.axis{border:1px solid var(--line);border-radius:var(--r-xl);padding:12px}
-.axis+.axis{margin-top:12px}
-.axis-hd{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
-/* the lever table shared by A and B: action | reading | plan value | button */
-.tbl{display:grid;grid-template-columns:minmax(0,1fr) 220px 200px 124px;align-items:center}
-.tbl>*{padding-right:16px}.tbl>*:nth-child(4n){padding-right:0}
-.tbl>*{min-height:40px;display:flex;align-items:center;border-top:1px solid var(--line)}
-.tbl>.th{min-height:24px;border-top:0;align-items:flex-end;padding-bottom:4px}
-.tbl>.r{justify-content:flex-end;text-align:right}
-.tbl>.dash{border-top:1px dashed var(--border)}
-.tbl .btn{width:100%}
-.stack{display:flex;flex-direction:column;gap:2px;justify-content:center}
-.arrow{width:12px;height:12px;flex-shrink:0;margin:0 6px;color:var(--ink-4)}
-/* A: the readings strip */
-.facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:12px}
-.fact{display:flex;flex-direction:column;gap:4px;border-radius:var(--r-lg);background:var(--input);padding:10px 12px}
-.fact .k{font-size:11px;line-height:16px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-4)}
-</style>
-</helmet>
-<div class="card">
-  <div class="hdr">
-    <div style="min-width: 0">
-      <h3 class="kick">Adjust the plan</h3>
-      <p class="xs c3" style="margin-top: 8px">Each option is re-solved by the same optimizer that built your plan, so these are the numbers you would actually get.</p>
-    </div>
-    <span class="btn">Recheck</span>
-  </div>
-  <div class="facts">
-    <div class="fact">
-      <span class="k">Next 15 minutes</span>
-      <span class="c1">“roblox planning”</span>
-      <span class="xs c3 tn">+3.1% plan value</span>
-    </div>
-    <div class="fact">
-      <span class="k">Switching</span>
-      <span class="c1 tn">30m of today reserved · 17% of the budget</span>
-      <span class="xs c3 tn">at 15m a switch · no switch cost +5.8% · at 30m −7.2%</span>
-    </div>
-    <div class="fact">
-      <span class="k">Tomorrow</span>
-      <span class="c1 tn">2 tasks · 2h to spend</span>
-      <span class="xs c3">2 of them funded</span>
-    </div>
-  </div>
-  <div style="margin-top: 12px">
-    <div class="axis">
-    <div class="axis-hd">
-      <span class="xs c2" style="font-weight: 500">Energy Balance</span>
-      <span class="warn" style="font-weight: 600">Cognitive Heavy 88%</span>
-    </div>
-    <div class="tbl" style="margin-top: 8px">
-      <div class="th xxs c4">Lever</div>
-      <div class="th xxs c4">Reading</div>
-      <div class="th r xxs c4"><span class="hint">Plan value</span></div>
-      <div class="th"></div>
-      <div class=""><div class="stack"><span class="xs c1">Move “roblox planning” off today</span></div></div>
-      <div class=" xs tn"><span class="c3">88%</span><svg class="arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="m13 6 6 6-6 6"></path></svg><span class="warn" style="font-weight: 600">Cognitive Heavy 81%</span></div>
-      <div class=" r xs tn c2">−23.2%</div>
-      <div class=""><span class="btn">To tomorrow</span></div>
-      <div class=""><div class="stack"><span class="xs c1">Set the budget to 2h</span></div></div>
-      <div class=" xs tn"><span class="c3">88%</span><svg class="arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="m13 6 6 6-6 6"></path></svg><span class="warn" style="font-weight: 600">Cognitive Heavy 85%</span></div>
-      <div class=" r xs tn c2">−16.9%</div>
-      <div class=""><span class="btn">Set 2h</span></div>
-    </div>
-  </div>
-    <div class="axis">
-    <div class="axis-hd">
-      <span class="xs c2" style="font-weight: 500">Flow Coverage</span>
-      <span class="warn" style="font-weight: 600">33%</span>
-    </div>
-    <div class="tbl" style="margin-top: 8px">
-      <div class="th xxs c4">Lever</div>
-      <div class="th xxs c4">Reading</div>
-      <div class="th r xxs c4"><span class="hint">Plan value</span></div>
-      <div class="th"></div>
-      <div class=""><div class="stack"><span class="xs c1">Move “reading” off today</span><span class="xxs c3">Day Profile → Flow Zone</span></div></div>
-      <div class=" xs tn"><span class="c3">33%</span><svg class="arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="m13 6 6 6-6 6"></path></svg><span class="ok" style="font-weight: 600">100%</span></div>
-      <div class=" r xs tn c2">−20%</div>
-      <div class=""><span class="btn">To tomorrow</span></div>
-      <div class="dash"><div class="stack"><span class="xs c1">Set the budget to 4h</span></div></div>
-      <div class="dash xs tn"><span class="c3">33%</span><svg class="arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="m13 6 6 6-6 6"></path></svg><span class="warn" style="font-weight: 600">67%</span></div>
-      <div class="dash r xs tn c3">costs an extra hour of your day</div>
-      <div class="dash"><span class="btn">Add the hour</span></div>
-    </div>
-  </div>
-  </div>
-</div>
-</x-dc>
-</body>
+	<head>
+		<meta charset="utf-8" />
+		<script src="./support.js"></script>
+	</head>
+	<body>
+		<x-dc>
+			<helmet>
+				<title>A — Facts and a lever table</title>
+				<link
+					rel="stylesheet"
+					href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;display=swap"
+				/>
+				<style>
+					:root {
+						--page: oklch(0.15 0.008 155);
+						--card: oklch(0.185 0.008 155);
+						--input: oklch(0.24 0.008 155);
+						--ink: oklch(0.97 0.006 155);
+						--ink-2: oklch(0.97 0.006 155/0.7);
+						--ink-3: oklch(0.97 0.006 155/0.55);
+						--ink-4: oklch(0.97 0.006 155/0.4);
+						--border: oklch(1 0 0/0.13);
+						--line: oklch(1 0 0/0.07);
+						--success: oklch(0.765 0.177 163.223);
+						--warning: oklch(0.82 0.13 78);
+						--danger: oklch(0.71 0.18 24);
+						--warning-wash: oklch(0.82 0.13 78/0.05);
+						--warning-tint: oklch(0.82 0.13 78/0.2);
+						--warning-strong: oklch(0.89 0.11 80);
+						--r-md: 3.84px;
+						--r-lg: 4.8px;
+						--r-xl: 6.72px;
+						--r-2xl: 8.64px;
+					}
+					* {
+						box-sizing: border-box;
+					}
+					body {
+						margin: 0;
+						padding: 24px;
+						background: var(--page);
+						color: var(--ink);
+						font:
+							400 14px/20px Inter,
+							'Inter Variable',
+							system-ui,
+							sans-serif;
+						-webkit-font-smoothing: antialiased;
+					}
+					a {
+						color: oklch(0.82 0.105 168);
+					}
+					a:hover {
+						color: oklch(0.89 0.085 170);
+					}
+					p,
+					h3,
+					ul {
+						margin: 0;
+						padding: 0;
+					}
+					ul {
+						list-style: none;
+					}
+					.card {
+						background: var(--card);
+						border: 1px solid var(--border);
+						border-radius: var(--r-2xl);
+						padding: 24px;
+					}
+					.kick {
+						font-size: 12px;
+						line-height: 16px;
+						font-weight: 600;
+						letter-spacing: 0.05em;
+						text-transform: uppercase;
+						color: var(--ink-2);
+					}
+					.xs {
+						font-size: 12px;
+						line-height: 16px;
+					}
+					.xxs {
+						font-size: 11px;
+						line-height: 16px;
+					}
+					.tn {
+						font-variant-numeric: tabular-nums;
+					}
+					.c1 {
+						color: var(--ink);
+					}
+					.c2 {
+						color: var(--ink-2);
+					}
+					.c3 {
+						color: var(--ink-3);
+					}
+					.c4 {
+						color: var(--ink-4);
+					}
+					.ok {
+						color: var(--success);
+					}
+					.warn {
+						color: var(--warning);
+					}
+					.btn {
+						display: inline-flex;
+						align-items: center;
+						justify-content: center;
+						height: 32px;
+						padding: 0 10px;
+						border: 1px solid var(--border);
+						border-radius: var(--r-md);
+						background: var(--input);
+						font-size: 14px;
+						font-weight: 500;
+						color: var(--ink);
+						white-space: nowrap;
+					}
+					.hint {
+						cursor: help;
+						text-decoration: underline dotted;
+						text-underline-offset: 3px;
+						text-decoration-color: var(--ink-4);
+					}
+					.hdr {
+						display: flex;
+						align-items: flex-start;
+						justify-content: space-between;
+						gap: 10px;
+					}
+					.axis {
+						border: 1px solid var(--line);
+						border-radius: var(--r-xl);
+						padding: 12px;
+					}
+					.axis + .axis {
+						margin-top: 12px;
+					}
+					.axis-hd {
+						display: flex;
+						align-items: baseline;
+						justify-content: space-between;
+						gap: 10px;
+					}
+					/* the lever table shared by A and B: action | reading | plan value | button */
+					.tbl {
+						display: grid;
+						grid-template-columns: minmax(0, 1fr) 220px 200px 124px;
+						align-items: center;
+					}
+					.tbl > * {
+						padding-right: 16px;
+					}
+					.tbl > *:nth-child(4n) {
+						padding-right: 0;
+					}
+					.tbl > * {
+						min-height: 40px;
+						display: flex;
+						align-items: center;
+						border-top: 1px solid var(--line);
+					}
+					.tbl > .th {
+						min-height: 24px;
+						border-top: 0;
+						align-items: flex-end;
+						padding-bottom: 4px;
+					}
+					.tbl > .r {
+						justify-content: flex-end;
+						text-align: right;
+					}
+					.tbl > .dash {
+						border-top: 1px dashed var(--border);
+					}
+					.tbl .btn {
+						width: 100%;
+					}
+					.stack {
+						display: flex;
+						flex-direction: column;
+						gap: 2px;
+						justify-content: center;
+					}
+					.arrow {
+						width: 12px;
+						height: 12px;
+						flex-shrink: 0;
+						margin: 0 6px;
+						color: var(--ink-4);
+					}
+					/* A: the readings strip */
+					.facts {
+						display: grid;
+						grid-template-columns: repeat(3, minmax(0, 1fr));
+						gap: 12px;
+						margin-top: 12px;
+					}
+					.fact {
+						display: flex;
+						flex-direction: column;
+						gap: 4px;
+						border-radius: var(--r-lg);
+						background: var(--input);
+						padding: 10px 12px;
+					}
+					.fact .k {
+						font-size: 11px;
+						line-height: 16px;
+						font-weight: 600;
+						letter-spacing: 0.05em;
+						text-transform: uppercase;
+						color: var(--ink-4);
+					}
+				</style>
+			</helmet>
+			<div class="card">
+				<div class="hdr">
+					<div style="min-width: 0">
+						<h3 class="kick">Adjust the plan</h3>
+						<p class="xs c3" style="margin-top: 8px">
+							Each option is re-solved by the same optimizer that built your plan, so these are the
+							numbers you would actually get.
+						</p>
+					</div>
+					<span class="btn">Recheck</span>
+				</div>
+				<div class="facts">
+					<div class="fact">
+						<span class="k">Next 15 minutes</span>
+						<span class="c1">“roblox planning”</span>
+						<span class="xs c3 tn">+3.1% plan value</span>
+					</div>
+					<div class="fact">
+						<span class="k">Switching</span>
+						<span class="c1 tn">30m of today reserved · 17% of the budget</span>
+						<span class="xs c3 tn">at 15m a switch · no switch cost +5.8% · at 30m −7.2%</span>
+					</div>
+					<div class="fact">
+						<span class="k">Tomorrow</span>
+						<span class="c1 tn">2 tasks · 2h to spend</span>
+						<span class="xs c3">2 of them funded</span>
+					</div>
+				</div>
+				<div style="margin-top: 12px">
+					<div class="axis">
+						<div class="axis-hd">
+							<span class="xs c2" style="font-weight: 500">Energy Balance</span>
+							<span class="warn" style="font-weight: 600">Cognitive Heavy 88%</span>
+						</div>
+						<div class="tbl" style="margin-top: 8px">
+							<div class="th xxs c4">Lever</div>
+							<div class="th xxs c4">Reading</div>
+							<div class="th r xxs c4"><span class="hint">Plan value</span></div>
+							<div class="th"></div>
+							<div class="">
+								<div class="stack"><span class="xs c1">Move “roblox planning” off today</span></div>
+							</div>
+							<div class="xs tn">
+								<span class="c3">88%</span
+								><svg
+									class="arrow"
+									viewBox="0 0 24 24"
+									fill="none"
+									stroke="currentColor"
+									stroke-width="2"
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									aria-hidden="true"
+								>
+									<path d="M5 12h14"></path>
+									<path d="m13 6 6 6-6 6"></path></svg
+								><span class="warn" style="font-weight: 600">Cognitive Heavy 81%</span>
+							</div>
+							<div class="r xs tn c2">−23.2%</div>
+							<div class=""><span class="btn">To tomorrow</span></div>
+							<div class="">
+								<div class="stack"><span class="xs c1">Set the budget to 2h</span></div>
+							</div>
+							<div class="xs tn">
+								<span class="c3">88%</span
+								><svg
+									class="arrow"
+									viewBox="0 0 24 24"
+									fill="none"
+									stroke="currentColor"
+									stroke-width="2"
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									aria-hidden="true"
+								>
+									<path d="M5 12h14"></path>
+									<path d="m13 6 6 6-6 6"></path></svg
+								><span class="warn" style="font-weight: 600">Cognitive Heavy 85%</span>
+							</div>
+							<div class="r xs tn c2">−16.9%</div>
+							<div class=""><span class="btn">Set 2h</span></div>
+						</div>
+					</div>
+					<div class="axis">
+						<div class="axis-hd">
+							<span class="xs c2" style="font-weight: 500">Flow Coverage</span>
+							<span class="warn" style="font-weight: 600">33%</span>
+						</div>
+						<div class="tbl" style="margin-top: 8px">
+							<div class="th xxs c4">Lever</div>
+							<div class="th xxs c4">Reading</div>
+							<div class="th r xxs c4"><span class="hint">Plan value</span></div>
+							<div class="th"></div>
+							<div class="">
+								<div class="stack">
+									<span class="xs c1">Move “reading” off today</span
+									><span class="xxs c3">Day Profile → Flow Zone</span>
+								</div>
+							</div>
+							<div class="xs tn">
+								<span class="c3">33%</span
+								><svg
+									class="arrow"
+									viewBox="0 0 24 24"
+									fill="none"
+									stroke="currentColor"
+									stroke-width="2"
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									aria-hidden="true"
+								>
+									<path d="M5 12h14"></path>
+									<path d="m13 6 6 6-6 6"></path></svg
+								><span class="ok" style="font-weight: 600">100%</span>
+							</div>
+							<div class="r xs tn c2">−20%</div>
+							<div class=""><span class="btn">To tomorrow</span></div>
+							<div class="dash">
+								<div class="stack"><span class="xs c1">Set the budget to 4h</span></div>
+							</div>
+							<div class="dash xs tn">
+								<span class="c3">33%</span
+								><svg
+									class="arrow"
+									viewBox="0 0 24 24"
+									fill="none"
+									stroke="currentColor"
+									stroke-width="2"
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									aria-hidden="true"
+								>
+									<path d="M5 12h14"></path>
+									<path d="m13 6 6 6-6 6"></path></svg
+								><span class="warn" style="font-weight: 600">67%</span>
+							</div>
+							<div class="dash r xs tn c3">costs an extra hour of your day</div>
+							<div class="dash"><span class="btn">Add the hour</span></div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</x-dc>
+	</body>
 </html>
