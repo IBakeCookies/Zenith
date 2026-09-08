@@ -1,33 +1,36 @@
-/* Cathedral: SVG rose window with real tracery — twelve lancet petals,
-   a roundel ring and a gold hub — plus god rays and jewel light pools. */
+/* Cathedral: the light of a rose window above the frame — a band of its
+   jewels under the bar, god rays, and the jewels pooling on the floor. */
 .cathedral .theme-scenery {
 	display: block;
 
+	/* the window's light on the sill: its four jewels, each over the pool it
+	   feeds below. Not the window — see themes.css .cathedral — and not behind
+	   the bar, whose backdrop blur erases anything this thin. */
 	.theme-helper-1 {
-		/* only the gutter gate at the end draws it — themes.css .cathedral */
-		display: none;
 		position: absolute;
-		/* themes.css .cathedral owns these — the halo in its gradient and the
-		   rays below read the same properties, so the three cannot drift apart */
 		top: var(--cathedral-window-y);
-		left: var(--cathedral-window-x);
-		width: var(--cathedral-window-size);
-		aspect-ratio: 1;
-		translate: -50% 0;
-		filter: drop-shadow(0 0 2.5rem oklch(0.85 0.1 85 / 0.4));
-		background: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 400'><defs><radialGradient id='g' cx='50%25' cy='50%25' r='50%25'><stop offset='0' stop-color='%23fff6dd' stop-opacity='.75'/><stop offset='.4' stop-color='%23ffd98a' stop-opacity='.2'/><stop offset='1' stop-color='%23ffffff' stop-opacity='0'/></radialGradient><path id='p' d='M200 22C232 52 238 92 200 116C162 92 168 52 200 22Z'/></defs><circle cx='200' cy='200' r='190' fill='%2317121f'/><circle cx='200' cy='200' r='84' fill='none' stroke='%23c9a256' stroke-width='4'/><g stroke='%23c9a256' stroke-width='5'><use href='%23p' fill='%23b32441'/><use href='%23p' fill='%23d9992e' transform='rotate(30 200 200)'/><use href='%23p' fill='%231f8f5f' transform='rotate(60 200 200)'/><use href='%23p' fill='%233a58c9' transform='rotate(90 200 200)'/><use href='%23p' fill='%238446b8' transform='rotate(120 200 200)'/><use href='%23p' fill='%232794a6' transform='rotate(150 200 200)'/><use href='%23p' fill='%23b32441' transform='rotate(180 200 200)'/><use href='%23p' fill='%23d9992e' transform='rotate(210 200 200)'/><use href='%23p' fill='%231f8f5f' transform='rotate(240 200 200)'/><use href='%23p' fill='%233a58c9' transform='rotate(270 200 200)'/><use href='%23p' fill='%238446b8' transform='rotate(300 200 200)'/><use href='%23p' fill='%232794a6' transform='rotate(330 200 200)'/></g><g stroke='%23c9a256' stroke-width='4'><circle cx='262' cy='200' r='15' fill='%23b32441'/><circle cx='244' cy='244' r='15' fill='%233a58c9'/><circle cx='200' cy='262' r='15' fill='%23d9992e'/><circle cx='156' cy='244' r='15' fill='%231f8f5f'/><circle cx='138' cy='200' r='15' fill='%238446b8'/><circle cx='156' cy='156' r='15' fill='%232794a6'/><circle cx='200' cy='138' r='15' fill='%23b32441'/><circle cx='244' cy='156' r='15' fill='%233a58c9'/></g><circle cx='200' cy='200' r='30' fill='%23e8b64a' stroke='%23c9a256' stroke-width='5'/><circle cx='200' cy='200' r='12' fill='%23fff1cf'/><circle cx='200' cy='200' r='186' fill='none' stroke='%23c9a256' stroke-width='9'/><circle cx='200' cy='200' r='186' fill='url(%23g)'/></svg>")
-			center / contain no-repeat;
+		inset-inline: 0;
+		height: var(--cathedral-window-size);
+		filter: drop-shadow(0 0 1rem oklch(0.85 0.1 85 / 0.5));
+		background: linear-gradient(
+			90deg,
+			transparent,
+			var(--cathedral-pool-1) 22%,
+			var(--cathedral-pool-2) 42%,
+			var(--cathedral-pool-3) 62%,
+			var(--cathedral-pool-4) 81%,
+			transparent
+		);
 	}
 
-	/* god rays falling from the window into the nave — out of the hub, two rem
-	   past it so the fan clears the tracery, and fading in at the hub's own
-	   height. Both follow --cathedral-window-mid: rays that stay put when the
-	   window moves fall out of nothing. */
+	/* god rays falling from the window into the nave — from two rem under the
+	   band, fading in at its height. Both follow --cathedral-window-mid: rays
+	   that stay put when the light moves fall out of nothing. */
 	.theme-helper-2 {
 		position: absolute;
 		inset: 0;
 		background: conic-gradient(
-			from 143deg at var(--cathedral-window-x) calc(var(--cathedral-window-mid) + 2rem),
+			from 143deg at 50% calc(var(--cathedral-window-mid) + 2rem),
 			transparent 0deg,
 			oklch(0.92 0.08 85 / 0.09) 6deg,
 			transparent 12deg,
@@ -55,16 +58,26 @@
 		inset: 0;
 		filter: blur(28px);
 		background:
-			radial-gradient(ellipse 30% 18% at 22% 97%, oklch(0.6 0.19 20 / 0.16), transparent 70%),
-			radial-gradient(ellipse 26% 16% at 42% 100%, oklch(0.62 0.15 265 / 0.14), transparent 70%),
-			radial-gradient(ellipse 30% 18% at 62% 97%, oklch(0.7 0.14 85 / 0.15), transparent 70%),
-			radial-gradient(ellipse 26% 16% at 81% 100%, oklch(0.65 0.15 160 / 0.13), transparent 70%);
-	}
-
-	@media (min-width: 116rem) {
-		.theme-helper-1 {
-			display: block;
-		}
+			radial-gradient(
+				ellipse 30% 18% at 22% 97%,
+				oklch(from var(--cathedral-pool-1) l c h / 0.16),
+				transparent 70%
+			),
+			radial-gradient(
+				ellipse 26% 16% at 42% 100%,
+				oklch(from var(--cathedral-pool-2) l c h / 0.14),
+				transparent 70%
+			),
+			radial-gradient(
+				ellipse 30% 18% at 62% 97%,
+				oklch(from var(--cathedral-pool-3) l c h / 0.15),
+				transparent 70%
+			),
+			radial-gradient(
+				ellipse 26% 16% at 81% 100%,
+				oklch(from var(--cathedral-pool-4) l c h / 0.13),
+				transparent 70%
+			);
 	}
 }
 
