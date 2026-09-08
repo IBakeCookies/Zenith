@@ -59,7 +59,7 @@ retype a row, regenerate:
   §5.1      620-729  Posterior-aware allocation
 §6          731-743  Summary of v1 → v2 changes
 §7          745-769  Known approximations and deliberate non-changes
-§8         771-1852  Energy model (zenith-energy.ts) — fatigue-recovery exten…
+§8         771-1855  Energy model (zenith-energy.ts) — fatigue-recovery exten…
   §8.1      783-805  Intermittent-rest recovery correction
   §8.2      807-826  Warm-up carryover instead of binary reset
   §8.3      828-846  Verified consequences and a calibration question, closed
@@ -69,13 +69,13 @@ retype a row, regenerate:
   §8.7    1010-1105  Drain-rate calibration from end-of-session ratings
   §8.8    1107-1142  45-minute plan granularity
   §8.9    1144-1191  Recovery-rate calibration from pre/post-rest pairs
-  §8.10   1193-1441  Stopping-value calibration from observed stop times
-  §8.11   1443-1574  Live stop advisor — §8.10 run forward mid-day
-  §8.12   1576-1730  The budget curve — what the day's LENGTH is worth
-  §8.13   1732-1796  Capacity from the fitted drain rate
-  §8.14   1798-1852  Per-title drain rate — which task costs more than its sl…
-§9        1854-1916  Plan-adherence reading and its verdict band
-§10       1918-1965  References
+  §8.10   1193-1444  Stopping-value calibration from observed stop times
+  §8.11   1446-1577  Live stop advisor — §8.10 run forward mid-day
+  §8.12   1579-1733  The budget curve — what the day's LENGTH is worth
+  §8.13   1735-1799  Capacity from the fitted drain rate
+  §8.14   1801-1855  Per-title drain rate — which task costs more than its sl…
+§9        1857-1919  Plan-adherence reading and its verdict band
+§10       1921-1968  References
 ```
 
 <!-- section-index:end -->
@@ -1320,10 +1320,13 @@ machinery collapses to an exact closed form — no numeric minimizer:
   §8.7; posterior std = √(σ̂²/(n + λ)).
 - **That posterior std is WITHIN-MODEL, and cannot see the conditioning it was
   read under.** It prices how the day points scatter around the fit — and every
-  point was read under the same (α, r, ϕ-plane, V_T), so a mis-set slider is
-  COMMON-MODE: it slides the whole history one way and the i.i.d.-days
-  arithmetic never widens for it. The ± is not wrong; it is answering a
-  narrower question than it looks like it is answering.
+  point was read under the same (α, r, ϕ-plane, satietyScale, V_T), so a
+  mis-set slider is COMMON-MODE: it slides the whole history one way and the
+  i.i.d.-days arithmetic never widens for it. Both user-owned sliders are
+  priced in λ₀ against that ± by `stp-stopping-identifiability.probe.ts`, and
+  satiety is the larger of the two: it reshapes every task's marginal rather
+  than adding a constant at the day's end. The ± is not wrong; it is answering
+  a narrower question than it looks like it is answering.
 - **Bounds** = the Energy Lab's freeTimeValue input range [0, 3], same
   representability/absurdity-guard role as the α and r bounds.
 
