@@ -183,10 +183,10 @@ test('a rollover drops a timer left running overnight', async ({ page }) => {
 	).toHaveValue('');
 });
 
-/* The day strip is not a today-only reading — a past day draws the plan it was
-   made under. Seeded through the clock, since the only way onto a read-only day
-   is to plan it while it is today. */
-test('a past day draws the strip it was planned under', async ({ page }) => {
+/* The rails are not a today-only reading — a past day draws the plan it was made
+   under. Seeded through the clock, since the only way onto a read-only day is to
+   plan it while it is today. */
+test('a past day draws the rails it was planned under', async ({ page }) => {
 	await page.clock.install();
 	await page.goto('/');
 	await addTask(page, 'Deep work');
@@ -200,29 +200,23 @@ test('a past day draws the strip it was planned under', async ({ page }) => {
 	await page.goto(`/?date=${isoDate(0)}`);
 	await expect(page.getByText('Viewing a past day:')).toBeVisible();
 
-	// The strip is what has to redraw, so assert the block inside it — the ledger
-	// row would read the same on a day that funded nothing.
-	const timeline = page.locator('section').filter({
-		has: page.getByRole('heading', {
-			name: 'The day',
-			exact: true,
-		}),
-	});
+	// The rail is what has to redraw — the row's title would read the same on a day
+	// that funded nothing.
+	const rail = taskRow(page, 'Deep work').getByText('warming up');
 
-	await expect(timeline.getByText('#1 Deep work')).toBeVisible();
+	await expect(rail).toBeAttached();
 
-	// The strip carries no time of day, on a past day as on today.
-	await expect(timeline.getByText(/\d{2}:\d{2}/)).toHaveCount(0);
+	// No time of day, on a past day as on today.
+	await expect(page.getByText(/\d{2}:\d{2}/)).toHaveCount(0);
 
 	// A past day saves its completions as a WHOLE record, so every field that
-	// write does not carry is a field it erases — the budget the strip is drawn
+	// write does not carry is a field it erases — the budget the rail is drawn
 	// against included.
 	await taskRow(page, 'Deep work').getByRole('checkbox').check();
 	await page.waitForTimeout(AUTOSAVE_MS);
 	await page.reload();
 
-	// The title alone: a finished block prints no `#N` (presentation/AGENTS.md).
-	await expect(timeline.getByText('Deep work')).toBeVisible();
+	await expect(rail).toBeAttached();
 });
 
 /* The ± beside ϕ is the fit's own spread, so it can only appear once a fit has read a

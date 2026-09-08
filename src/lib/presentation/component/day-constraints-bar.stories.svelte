@@ -14,6 +14,7 @@
 			physicalPool: 4,
 			remainingSuggestedHours: '5.25',
 			planSlackHours: 0,
+			planSwitchHours: 0.5,
 			isOpen: true,
 		},
 	});
@@ -27,7 +28,10 @@
 		await expect(canvas.getByLabelText('Switch Cost (per task change)')).toHaveValue(15);
 		await expect(canvas.getByLabelText('Cognitive Capacity')).toHaveValue(8);
 		await expect(canvas.getByLabelText('Physical Capacity')).toHaveValue(4);
-		await expect(canvas.getByText('Allocated: 5.25h')).toBeVisible();
+
+		await expect(
+			canvas.getByText(/5\.25 h planned \+ 0\.50 h switching · fully committed/),
+		).toBeVisible();
 
 		// The slider and the field are two views of one budget, so dragging the
 		// slider is what the field then shows. Dragging re-solves the plan live —
@@ -53,7 +57,7 @@
 		await userEvent.click(
 			canvas.getAllByRole('button', {
 				name: 'Increase',
-			})[1],
+			})[3],
 		);
 
 		await expect(canvas.getByLabelText('Switch Cost (per task change)')).toHaveValue(20);
@@ -103,10 +107,15 @@
 		planSlackHours: 2,
 	}}
 	play={async ({ canvas }) => {
-		// Collapsed it is one line: budget · planned · slack · pools · switch
-		await expect(
-			canvas.getByText('6h budget · 4.00h planned · 2.00h free · 8h mind · 4h body · 15m switch'),
-		).toBeVisible();
+		// The header is four figure cells in both states; budget carries planned and
+		// slack beside it, and mind/body carry their domain dot.
+		const header = canvas.getByText('Day Setup').closest('summary')!;
+		await expect(header).toHaveTextContent(/6h\s*budget\s*4\.00 h planned\s*2\.00 h free/);
+		await expect(header).toHaveTextContent(/8h\s*mind/);
+		await expect(header).toHaveTextContent(/4h\s*body/);
+		await expect(header).toHaveTextContent(/15min\s*per switch/);
+		expect(header.querySelector('.bg-mind')).not.toBeNull();
+		expect(header.querySelector('.bg-body')).not.toBeNull();
 
 		// Closed by the `<details>` itself, not by an `{#if}`: the fields below stay in
 		// the DOM, and the element's own attribute is the state nothing else can move.

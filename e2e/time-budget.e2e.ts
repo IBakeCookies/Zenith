@@ -54,14 +54,14 @@ test('the budget slider re-solves the plan live', async ({ page }) => {
 	await addTask(page, 'Deep work');
 	await setBudget(page, 8);
 
-	const allocated = page.getByText(/^Allocated: /);
-	await expect(allocated).not.toHaveText('Allocated: 0.00h');
+	const allocated = page.getByText(/h planned \+/);
+	await expect(allocated).not.toContainText('0.00 h planned');
 
 	// No blur: the plan follows the drag itself, and the field is the same value.
 	await page.getByLabel('Budget hours').fill('0');
 
 	await expect(budgetField(page)).toHaveValue('0');
-	await expect(allocated).toHaveText('Allocated: 0.00h');
+	await expect(allocated).toContainText('0.00 h planned');
 });
 
 /* The session lives in client-side IndexedDB, so the server cannot know whether
@@ -149,7 +149,10 @@ test('an unseen day opens on the last declared switch cost and pools', async ({ 
 	// collapsed — 8h is the overall median, tomorrow's own weekday having none.
 	await page.goto(`/?date=${isoDate(1)}`);
 
-	await expect(page.getByText(/3h mind · 7h body · 45m switch/)).toBeVisible();
+	const header = page.locator('summary');
+	await expect(header).toContainText(/3h\s*mind/);
+	await expect(header).toContainText(/7h\s*body/);
+	await expect(header).toContainText(/45min\s*per switch/);
 });
 
 /* Fallow allocates durations, not appointments: the model has no notion of when
@@ -157,8 +160,8 @@ test('an unseen day opens on the last declared switch cost and pools', async ({ 
    per-day start time that anchored one label and nothing else
    (docs/features/the-plan-that-had-no-clock.md); the field and the label are
    both gone. `availableHours` is intended work, not a span of the clock, so any
-   clock read off the strip is one nobody computed (presentation/AGENTS.md). */
-test('the day strip prints no clock', async ({ page }) => {
+   clock read off the axis is one nobody computed (presentation/AGENTS.md). */
+test('the day axis prints no clock', async ({ page }) => {
 	await page.goto('/');
 	await addTask(page, 'Deep work');
 	await setBudget(page, 8);
@@ -170,7 +173,7 @@ test('the day strip prints no clock', async ({ page }) => {
 		}),
 	});
 
-	await expect(timeline.getByText('#1 Deep work')).toBeVisible();
+	await expect(timeline.getByText('0h')).toBeVisible();
 	await expect(timeline.getByText(/\d{2}:\d{2}/)).toHaveCount(0);
 });
 

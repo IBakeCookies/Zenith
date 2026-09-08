@@ -75,38 +75,64 @@ test('completing a task persists across reload', async ({ page }) => {
 	).toBeChecked();
 });
 
-/* The strip sits inches above the ledger, so a box ticked in one has to read in the
-   other — otherwise the strip is a picture of the work ahead that includes work
-   already done. */
-test("ticking a task off marks its block in the day's strip", async ({ page }) => {
+/* The day is drawn once: the ledger's rows carry their own rails, and nothing above
+   the ledger repeats a row's title, position, hours or verdict. `#1 Deep work` is the
+   row's own title line and nothing else's. */
+test('the Plan card lists no strip above the ledger', async ({ page }) => {
 	await page.goto('/');
-	await addTask(page, 'Write report');
-	await setBudget(page, 8);
+	await addTask(page, 'Deep work');
+	await setBudget(page, 3);
 
-	const timeline = page.locator('section').filter({
-		has: page.getByRole('heading', {
-			name: 'The day',
-			exact: true,
-		}),
+	await expect(page.getByText('#1 Deep work')).toHaveCount(1);
+});
+
+/* The rail and the axis stay on a phone: a thin line costs no height and is the one
+   reading a phone can afford after the readings hide. What has to hold with them is
+   that the document still does not scroll sideways on a day long enough to crowd the
+   axis, since the strip's own scroll region is what these replaced. */
+test('the document never scrolls sideways, on a long day on a phone', async ({ page }) => {
+	await page.setViewportSize({
+		width: 390,
+		height: 900,
 	});
 
-	const title = timeline.getByText('Write report');
+	await page.goto('/');
+	await setBudget(page, 12);
 
-	await expect(title).toBeVisible();
+	for (const title of ['Deep work', 'Write the PDF solution', 'Review 1 PR API', 'Boxing']) {
+		await addTask(page, title);
+	}
 
-	const checkbox = page.getByRole('checkbox', {
-		name: 'Mark Write report complete',
-	});
+	await expect(taskRow(page, 'Deep work').getByText('warming up')).toBeAttached();
 
-	await checkbox.check();
-	await expect(title).toHaveClass(/line-through/);
+	const document = await page.evaluate(() => ({
+		content: window.document.documentElement.scrollWidth,
+		box: window.document.documentElement.clientWidth,
+	}));
 
-	// A day with everything ticked still draws its plan: the strip reads what the day
-	// was for, struck through, rather than emptying as it is worked.
-	await expect(title).toBeVisible();
+	expect(document.content).toBe(document.box);
+});
 
-	await checkbox.uncheck();
-	await expect(title).not.toHaveClass(/line-through/);
+/* The rail is the plan and the checkbox is the day: a box ticked on the row dims the
+   rail on the same row, and the plan under it does not move. */
+test('ticking a task off dims its rail', async ({ page }) => {
+	await page.goto('/');
+	await addTask(page, 'Deep work');
+	await setBudget(page, 3);
+
+	// The segment's `sr-only` name, up to the track that holds it.
+	const rail = taskRow(page, 'Deep work').getByText('warming up').locator('../..');
+
+	await expect(rail).toBeVisible();
+	await expect(rail).not.toHaveClass(/opacity-60/);
+
+	await page
+		.getByRole('checkbox', {
+			name: 'Mark Deep work complete',
+		})
+		.check();
+
+	await expect(rail).toHaveClass(/opacity-60/);
 });
 
 test('removing a task restores the empty state', async ({ page }) => {

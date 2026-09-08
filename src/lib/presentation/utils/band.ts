@@ -40,6 +40,19 @@ export const BAND_BORDER_CLASS: Record<Band, string> = {
 	critical: 'border-danger',
 };
 
+/**
+ * Ink for the diagonal stripes of the `hatch` utility, which paints in
+ * `currentColor` — the day's rails warm up in their block's band. `neutral` is
+ * `ty-ghost` rather than `BAND_TEXT_CLASS`'s primary ink: a hatch is a texture
+ * behind nothing, so the bandless one goes quiet instead of loud.
+ */
+export const BAND_HATCH_CLASS: Record<Band, string> = {
+	success: 'text-success-line',
+	neutral: 'text-ty-ghost',
+	warning: 'text-warning-line',
+	critical: 'text-danger-line',
+};
+
 /** Fill per band, for completion bars — the same bands, so the same thresholds. */
 export const BAND_BAR_CLASS: Record<Band, string> = {
 	success: 'bg-success',

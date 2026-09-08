@@ -4,8 +4,11 @@
 	import { Badge } from '$lib/presentation/component/ui/badge';
 	import * as Tooltip from '$lib/presentation/component/ui/tooltip';
 	import type { TaskEdit } from '$lib/presentation/component/task-form-fields.svelte';
+	import DayRail from '$lib/presentation/component/day-rail.svelte';
 	import TaskRowShell from '$lib/presentation/component/task-row-shell.svelte';
 	import { cn } from '$lib/presentation/utils';
+	import { BAND_TEXT_CLASS } from '$lib/presentation/utils/band';
+	import type { DayBlock } from '$lib/presentation/utils/day-timeline';
 	import { natureBadge, type TaskNature } from '$lib/presentation/utils/task-nature';
 	import { formatDuration, formatDurationBand } from '$lib/presentation/utils/duration-format';
 	import type {
@@ -42,6 +45,10 @@
 		 *  today, so it is routinely not the row `#1`: that badge is the whole-day plan's
 		 *  order and stays the morning's answer. */
 		isNext?: boolean;
+		/** The row's block in the day's plan; absent on an unfunded row. */
+		block?: DayBlock;
+		/** The day the block is a share of — arrives with `block`. */
+		totalHours?: number;
 		flowMinutes?: number;
 		mustDoToday?: boolean;
 		importance?: TaskImportance;
@@ -86,6 +93,8 @@
 		remaining,
 		runOrder,
 		isNext = false,
+		block,
+		totalHours,
 		flowMinutes,
 		mustDoToday = false,
 		importance = 'normal',
@@ -244,6 +253,22 @@
 				<p>{m.task_allocation_tooltip()}</p>
 			</Tooltip.Content>
 		</Tooltip.Root>
+		<!-- A block that reaches flow prints no sentence: `readings` already prints ϕ, and
+		     the solid segment is the reading. -->
+		{#if block && block.ghostHours > 0}
+			<span class="text-ty-ghost">·</span>
+			<span class={BAND_TEXT_CLASS[block.band]}>
+				{m.flow_short({
+					duration: formatDuration(block.ghostHours),
+				})}
+			</span>
+		{/if}
+	{/if}
+{/snippet}
+
+{#snippet rail()}
+	{#if block && totalHours !== undefined}
+		<DayRail {block} {totalHours} class="mt-text-2xs" />
 	{/if}
 {/snippet}
 
@@ -323,6 +348,7 @@
 		{readings}
 		{meta}
 		{planned}
+		{rail}
 		class={className}
 	/>
 </Tooltip.Provider>

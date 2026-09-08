@@ -75,6 +75,8 @@
 		/** The hours the optimizer planned, at the right edge of the title's line — the one
 		 *  reading both screens put in the same place. */
 		planned?: Snippet;
+		/** The row's third line, under both columns — `/`'s rail on the day's hour scale. */
+		rail?: Snippet;
 		class?: string;
 	}
 
@@ -111,6 +113,7 @@
 		readings,
 		meta,
 		planned,
+		rail,
 		class: className,
 	}: Props = $props();
 
@@ -365,6 +368,8 @@
 			{/if}
 		</div>
 	</div>
+
+	{@render rail?.()}
 
 	<!-- Both keyed on the draft: `seed`/`focusMinutes` are read at MOUNT and the page can
 	     swap a draft while its editor is open — unkeyed, ✓ overwrote a stored rating. -->

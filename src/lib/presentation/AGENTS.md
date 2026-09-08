@@ -227,7 +227,8 @@ the Lab buys that by stacking them in one column, not by ordering the page.
 Six components hold what the two screens say the same way:
 
 - **`task-list-card.svelte`** — the card, the heading, `strip` between the heading
-  and the list (`/` puts its day strip there, the Lab the ☕ editor), the ADD-TASK
+  and the list (`/` puts its day axis there, the Lab the ☕ editor), `foot` after
+  it (`/`'s rail legend; the Lab passes none), the ADD-TASK
   DIALOG the `form` snippet is mounted in and both ways into it, the empty state, and
   the `<ul>` the rows are `<li>`s of (so neither screen decides how its own rows are
   separated: the rule is the list's `divide-y`). `split` is
@@ -344,6 +345,10 @@ the page.
 column to keep aligned, an empty box in their place would be a gap the reader has
 to interpret — so the `{#if !completed}` wraps the whole snippet body.
 
+**The row's third line is its rail** — `task-row-shell`'s `rail` snippet, under
+both columns, on the axis's hour scale (below); `/` passes it on a funded row, the
+Lab never. The verdict is `meta`'s last reading and hides on a phone; the rail does not.
+
 **A day with every task ticked renders its plan, struck through, on BOTH
 screens.** The plan is a reading of what the day was for, not a queue that
 empties as it is worked, so nothing replaces it
@@ -373,7 +378,8 @@ them** — one over `P · M · E`, because three bare letters say nothing for
 themselves; ONE over everything the screen derived, because that is one sentence
 and three triggers on one line read as three separate claims; and `meta`'s own,
 since the priority is the run order's justification rather than another derived
-figure. The Lab's `readings` is the exception and says so in place: it derives
+figure. The flow verdict after it carries none: its words are the reading. The
+Lab's `readings` is the exception and says so in place: it derives
 `effort` alone, which `task_inputs_tooltip` beside it already covers.
 They are `text-left`: a `Tooltip.Trigger` is a `<button>`, whose UA `text-align`
 centres a wrapped last line. The one trigger that carries `text-right` is
@@ -407,10 +413,8 @@ Both properties (the sequence counting down the page, and a row that never moves
 under the cursor) hold only if the order is completion-invariant, which is
 the 2026-08-18 rescope: the map covers the funded PLAN, a completed task keeps
 its slot, and `task-item` renders no badge on it — so the visible numbers can
-carry gaps, and a gap means "done", not "moved". The strip's block prints its
-position under the same rule and drops it the same way: it sits inches above the
-ledger, so a `#2` beside a title the rows had already stopped numbering
-contradicted the reading
+carry gaps, and a gap means "done", not "moved". The row's rail prints no
+position at all, so nothing beside the ledger can contradict its numbering
 ([the-strip-that-read-as-all-ahead.md](../../../docs/features/the-strip-that-read-as-all-ahead.md)).
 
 **"Next" badges the row in its `lead`, beside `#N`** — both mark a plan position,
@@ -440,48 +444,44 @@ computed from. The two sit on different bases: the re-plan is time to spend ON
 TOP of the hours already worked, so neither line may be phrased as a comparison
 ("15m more"); each is labelled by the question it answers.
 
-### The day's strip reads inside the Plan card, and carries no clock
+### The day's axis and rails read inside the Plan card, and carry no clock
 
-`utils/day-timeline.ts` builds
-`{ totalHours, minimumBlockWidths, blocks }` from the funded plan,
-`runOrder` and the switch cost; `component/day-timeline.svelte` draws it — no card
-and no visible title of its own, since it renders through `task-list-card`'s `strip`
-between the "Plan" heading and the ledger it is a reading of. The name stays
-`sr-only`: the strip's scroll region is focusable and nothing else says what the
-blocks are.
-The geometry is a tested util rather than `$derived` in the markup (R2), a block
-carries a `Band`, and the gap between two blocks IS the switch cost — no number
-restates it. Every width is a share of the TRACK, and so is the floor:
-`minimumBlockWidths` is the day over its shortest allocation, so scaling the
-track to that many minimum block widths lifts the narrowest block to legible
-without moving any width off scale. The floor is the width of the one line
-that decides legibility — the run position, the title and the hours, which share
-it — and the flow sentence below truncates in a block that narrow rather than
-being dropped, so a screen and a screen reader read the same strip. The flow bar
-is pinned with `mt-auto`, or it would sit at a different height in a block whose
-sentence wrapped. A day that then overflows scrolls sideways
-inside the strip's own container and the DOCUMENT does not, `tabindex` included —
-the one place on either screen that still scrolls sideways. The strip is its own scroll handle as well
-(`utils/drag-scroll.ts`), because `nice-scrollbar` keeps the bar invisible until
-hover: a mouse drag moves it, and touch and trackpad are left to the platform,
-which already scrolls the container with momentum the drag would cost them. It
-is `/`'s alone: the Lab's `plan-timeline-bar.svelte` renders the energy
-optimizer's own blocks and shares only `formatDuration`.
+`utils/day-timeline.ts` builds `{ totalHours, blocks }` from the funded plan,
+`runOrder` and the switch cost; each `DayBlock` carries `startOffset`, `hours`,
+and those hours split into `warmupHours` (below ϕ), `inFlowHours` (past it),
+`ghostHours` (the flow time the plan left unfunded) and `switchHours` (the cost
+after it, 0 on the last block). Three components draw it, all through slots:
+`component/day-timeline.svelte` is the AXIS in `task-list-card`'s `strip` — one
+`0h…Nh` tick per hour, an `sr-only` "The day" heading, `day_timeline_empty` when
+nothing is funded; `component/day-rail.svelte` is one row's block on that scale,
+in `task-row-shell`'s `rail`; `component/day-legend.svelte` is four swatches in
+the card's `foot`, printing the day's real switch cost. The geometry is a tested
+util, not `$derived` in markup (R2). Axis and rails share the `<li>`'s
+horizontal padding, so `0h` sits over offset zero of every row.
 
-**The strip's finished block dims**, and adds an `sr-only` `day_timeline_done`
-and no `#N`. An open block's `#N` is `text-flow` — the hue `order-badge` gives
-the same number on the row below it, so one reading has one colour in both
-places it appears. `isCompleted` is a field on `DayBlock` and not a prop — the
-opposite of `/energy`'s `completedTaskIds` below, and for a reason that does not
-generalise: `DayBlock` is a view model whose input `SuggestedTask` already
-carries the flag, so a prop would move the policy back into the markup
-([the-strip-that-read-as-all-ahead.md](../../../docs/features/the-strip-that-read-as-all-ahead.md)).
+**Pattern separates the segments** (WCAG 1.4.1) and the BAND inks them: `hatch`
+(tokens.css) stripes in `currentColor`, so warm-up and the dashed ghost take
+`BAND_HATCH_CLASS[band]` — amber short of flow, green once reached — beside the
+success fill in flow and a grey switch (`ty-ghost`, not the task's time). One hue
+per rail, or it contradicts its own verdict; the legend's warm-up key is grey,
+since both bands warm up. The PATTERNS live in ONE record, `RAIL_SEGMENT_CLASS`,
+so rail and legend cannot drift (R3), each naming itself `sr-only` with the
+legend's message. `flow_short` says the verdict in words after the priority, on a
+block short of flow alone — `readings` already prints ϕ. A block past the day's end is clipped by
+the track's `overflow-hidden`, never scaled to: the axis is the budget. Nothing
+on either screen scrolls sideways
+([the-strip-that-moved-onto-its-rows.md](../../../docs/features/the-strip-that-moved-onto-its-rows.md)).
 
-The strip carries **no time of day at all**, and may not grow one:
+**A finished block's rail dims** (`opacity-60`) and nothing else marks it: the
+checkbox announces the state, and the verdict goes with `planned` and `meta`.
+`isCompleted` stays a field on `DayBlock`, not a prop (unlike `completedTaskIds`
+below): [the-strip-that-read-as-all-ahead.md](../../../docs/features/the-strip-that-read-as-all-ahead.md).
+Rail and axis stay on a phone: the one reading left once the readings hide.
+
+The axis carries **no time of day at all**, and may not grow one:
 `availableHours` is intended work, not a span of the clock, so start-plus-budget
-is a finish time nobody computed. Every duration is an offset from the day's own
-zero (`formatOffset`), which is the only reading the model has
-([the-anchor-that-held-only-itself.md](../../../docs/features/the-anchor-that-held-only-itself.md)).
+is a finish time nobody computed. Every tick is an offset from the day's own zero
+(`formatOffset`) ([the-anchor-that-held-only-itself.md](../../../docs/features/the-anchor-that-held-only-itself.md)).
 
 ### A finished task's blocks read as finished, and the plan does not move
 

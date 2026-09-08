@@ -33,6 +33,7 @@ function dailyMetrics(overrides: Partial<DailyMetrics> = {}): DailyMetrics {
 		activeTasks: [],
 		runOrder: new Map(),
 		planSlackHours: 0,
+		planSwitchHours: 0,
 		remainingSuggestedHours: 0,
 		totalTasks: 0,
 		completedTasks: 0,

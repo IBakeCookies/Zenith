@@ -11,6 +11,7 @@
 	} from '$lib/presentation/utils/measurement-prompt';
 	import type { SuggestedTask } from '$lib/business/model/metric/calculation';
 	import type { Persisted, DrainObservationRecord } from '$lib/business/type';
+	import type { DayTimeline } from '$lib/presentation/utils/day-timeline';
 	import { getSlideDay } from '$lib/presentation/utils/slide-age';
 
 	interface Props {
@@ -32,13 +33,18 @@
 		/** Position 1 of that re-plan's run order, badged on its own row. Undefined when
 		 *  there is nothing to pick up, which is every morning. */
 		nextTaskId?: number;
+		/** The day's geometry; each funded row draws its block as a rail on
+		 *  `timeline.totalHours`. */
+		timeline?: DayTimeline;
 		// The add-task form, rendered by the card below the list: adding and reading
 		// the plan are the same place, and it costs no second card. Takes the card's
 		// closer, so the form's own Cancel can shut the dialog it is mounted in.
 		form?: Snippet<[() => void]>;
-		/** The day's strip, rendered by the card between the heading and the ledger — a
+		/** The day's axis, rendered by the card between the heading and the ledger — a
 		 *  reading OF this list, so it sits in its card rather than in one of its own. */
 		strip?: Snippet;
+		/** Under the list — `/`'s legend; threaded to the card like `strip`. */
+		foot?: Snippet;
 		/** The day's Load and Save, rendered on the card's header row — the page owns the
 		 *  callbacks behind them. Passed on every day, unlike `form`:
 		 *  what a past day withholds is inside `day-actions.svelte`, since both menus
@@ -86,8 +92,10 @@
 		constantsFitted,
 		remainingDay = null,
 		nextTaskId,
+		timeline,
 		form,
 		strip,
+		foot,
 		actions,
 		exampleDayHref,
 		tagVocabulary,
@@ -123,6 +131,7 @@
 	const isSplit = $derived(funded.length > 0 && unfunded.length > 0);
 	// One group when the other is empty — every row is then in the same state.
 	const listed = $derived(isSplit ? funded : [...funded, ...unfunded]);
+	const blocks = $derived(new Map(timeline?.blocks.map((block) => [block.id, block]) ?? []));
 </script>
 
 {#snippet rows()}
@@ -157,6 +166,8 @@
 				: undefined}
 			runOrder={runOrder.get(task.id)}
 			isNext={task.id === nextTaskId}
+			block={blocks.get(task.id)}
+			totalHours={timeline?.totalHours}
 			slideDay={getSlideDay(task.createdAt, viewedDate)}
 			flowMinutes={flowLogs?.get(task.id)}
 			mustDoToday={task.mustDoToday}
@@ -186,6 +197,7 @@
 <TaskListCard
 	{form}
 	{strip}
+	{foot}
 	heading={actions}
 	{exampleDayHref}
 	rows={suggestedTasks.length ? rows : null}

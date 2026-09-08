@@ -82,9 +82,6 @@
 	/* vertical padding of empty-state placeholder blocks */
 	--spacing-empty-state: var(--spacer-empty-state);
 
-	/* the day strip's narrowest block — the floor its track is scaled against */
-	--spacing-day-block: var(--spacer-day-block);
-
 	/* The width at which the task form's three sliders sit side by side instead of
 	   one per line. A literal, for the same reason as above. Measured on the
 	   fields' own content box: the ledger's inline editor is past it on any
@@ -297,6 +294,14 @@
 	@apply cursor-help rounded-sm bg-flow-tint px-box-3xs py-text-3xs text-xs font-semibold text-flow;
 }
 
+/* The rail's warm-up segment and the legend's swatch for it. The hatch separates
+   warm-up from in-flow without colour (WCAG 1.4.1), and no Tailwind class expresses a
+   repeating gradient. It stripes in `currentColor`, so the ink is a `text-*` class at
+   the call site (`BAND_HATCH_CLASS`) and one utility serves every band. */
+@utility hatch {
+	background-image: repeating-linear-gradient(-45deg, currentColor 0 2px, transparent 2px 5px);
+}
+
 /* The app's horizontal frame: centred, capped at the layout width, and inset by
    the responsive page gutter. Three sites spell it — the nav bar's row, the
    content column in `(app)/+layout.svelte`, and the footer's row — and they have
@@ -432,6 +437,22 @@
    `text-ty-primary`. */
 @utility stat-line {
 	@apply flex items-baseline justify-between gap-grid-xs text-xs;
+}
+
+/* One figure with its unit and label — the Day Setup header's four cells. The
+   figure is the loud half, the rest is silent; a `figure-dot` before mind/body
+   carries the domain hue, filled at the call site (`bg-mind`, `bg-body`). */
+@utility figure-cell {
+	@apply flex items-baseline gap-text-xs text-xs whitespace-nowrap text-ty-silent;
+}
+@utility figure {
+	@apply text-sm font-medium text-ty-primary tabular-nums;
+}
+@utility figure-unit {
+	@apply ml-px text-xs font-normal text-ty-silent;
+}
+@utility figure-dot {
+	@apply inline-block size-2 shrink-0 self-center rounded-full;
 }
 
 /* One bar standing in for a reading that has not been read yet, so a page whose
