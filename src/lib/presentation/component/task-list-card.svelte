@@ -55,7 +55,7 @@
 <!-- `pt-text-sm` on the ruled group only — wider than the card's rhythm, so the two
      groups read as two lists rather than one with a line through it. -->
 {#snippet group(label: string, items: Snippet, ruled: boolean)}
-	<div class={cn('space-y-text-2xs', ruled && 'pt-text-sm border-t border-line-strong')}>
+	<div class={cn('space-y-text-2xs pt-text-sm', ruled && ' border-t border-line-strong')}>
 		<p class="text-2xs font-semibold tracking-wider text-ty-silent uppercase">{label}</p>
 		<ul aria-label={label} class="divide-y divide-line-soft">{@render items()}</ul>
 	</div>

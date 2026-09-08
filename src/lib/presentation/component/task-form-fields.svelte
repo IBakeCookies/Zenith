@@ -11,6 +11,7 @@
 </script>
 
 <script lang="ts">
+	import type { Snippet } from 'svelte';
 	import X from '@lucide/svelte/icons/x';
 	import * as m from '$lib/paraglide/messages.js';
 	import { normalizeTitle } from '$lib/business/utils/title';
@@ -23,10 +24,13 @@
 		 *  pass it — unlike the title suggestions, which only the add form reads,
 		 *  because a picked TAG rewrites nothing. */
 		tagVocabulary?: string[];
+		/** The caller's own title field, placed over the sliders so the two columns
+		 *  start level. Defined by the caller, not here: the add form's is a combobox. */
+		title?: Snippet;
 		class?: string;
 	}
 
-	let { draft = $bindable(), tagVocabulary = [], class: className }: Props = $props();
+	let { draft = $bindable(), tagVocabulary = [], title, class: className }: Props = $props();
 
 	let entry = $state('');
 
@@ -100,78 +104,87 @@
 	] as const;
 </script>
 
-<div class={cn('@container space-y-grid-lg', className)}>
-	<!-- Three across where the fields have the room — the ledger's inline editor,
-	     which is as wide as the table — and one per line in the dialog's field
-	     column, where three short tracks are harder to drag than three long ones.
-	     A container query rather than a breakpoint: the same component is in both,
-	     and neither width is the viewport's (`--container-task-fields`). -->
-	<div class="grid gap-grid-lg @task-fields:grid-cols-3">
-		{#each sliders as slider (slider.key)}
-			<!-- The wrapping label is what names the range input -->
-			<label class="grid grid-cols-[auto_1fr_2ch] items-center gap-x-grid-xs">
-				<span class="text-xs font-medium text-ty-secondary">{slider.label}</span>
-				<input
-					id="{id}-{slider.key}"
-					type="range"
-					min={slider.min}
-					max="10"
-					bind:value={draft[slider.key]}
-					class="range-track {slider.accent}"
-				/>
-				<span class="text-right text-xs font-medium text-ty-primary tabular-nums"
-					>{draft[slider.key]}</span
-				>
-			</label>
-		{/each}
-	</div>
+<!-- Two columns where the fields have the room — the ledger's inline editor, as
+     wide as the table: the title and three long slider tracks, a rule, then the
+     task's place in the day. One stack in the dialog's field column, which never
+     reaches the width. A container query rather than a breakpoint: the same
+     component is in both, and neither width is the viewport's
+     (`--container-task-fields`). -->
+<div class={cn('@container', className)}>
+	<div class="grid gap-grid-lg @task-fields:grid-cols-2 @task-fields:gap-grid-xl">
+		<div class="min-w-0 space-y-grid-lg">
+			{#if title}{@render title()}{/if}
 
-	<div class="space-y-grid-lg border-t border-line-soft pt-grid-lg">
-		<!-- A rule under the sliders: the three ratings describe the WORK, and what
-	     follows describes the task's place in the day. -->
-		<TaskImportanceSelect bind:importance={draft.importance} />
-
-		<div class="space-y-text-xs">
-			<label class="block text-xs font-medium text-ty-secondary">
-				{m.form_tags()}
-				<input
-					id="{id}-tags"
-					type="text"
-					list={listId}
-					value={entry}
-					oninput={handleTagInput}
-					onkeydown={handleTagKeydown}
-					onblur={handleTagBlur}
-					placeholder={m.form_tags_placeholder()}
-					class="field-input"
-				/>
-			</label>
-			<datalist id={listId}>
-				{#each tagVocabulary as tag (tag)}
-					<option value={tag}></option>
-				{/each}
-			</datalist>
-			{#if draft.tags.length > 0}
-				<div class="flex flex-wrap gap-grid-2xs">
-					{#each draft.tags as tag (tag)}
-						<span
-							class="flex items-center gap-text-2xs rounded-lg bg-surface-inset px-box-2xs py-text-3xs text-xs text-ty-secondary"
+			<!-- One grid over subgrid rows, so the three labels share a column and the
+			     tracks start level. -->
+			<div class="grid grid-cols-[auto_1fr_2ch] items-center gap-x-grid-xs gap-y-grid-sm">
+				{#each sliders as slider (slider.key)}
+					<!-- The wrapping label is what names the range input -->
+					<label class="col-span-3 grid grid-cols-subgrid items-center">
+						<span class="text-xs font-medium text-ty-secondary">{slider.label}</span>
+						<input
+							id="{id}-{slider.key}"
+							type="range"
+							min={slider.min}
+							max="10"
+							bind:value={draft[slider.key]}
+							class="range-track {slider.accent}"
+						/>
+						<span class="text-right text-xs font-medium text-ty-primary tabular-nums"
+							>{draft[slider.key]}</span
 						>
-							{tag}
-							<button
-								type="button"
-								aria-label={m.form_tag_remove({
-									tag,
-								})}
-								onclick={() => (draft.tags = draft.tags.filter((t) => t !== tag))}
-								class="row-action text-ty-silent hover:text-ty-primary"
-							>
-								<X />
-							</button>
-						</span>
+					</label>
+				{/each}
+			</div>
+		</div>
+
+		<div
+			class="min-w-0 space-y-grid-lg border-t border-line-soft pt-grid-lg @task-fields:border-t-0 @task-fields:border-l @task-fields:pt-0 @task-fields:pl-grid-xl"
+		>
+			<TaskImportanceSelect bind:importance={draft.importance} />
+
+			<div class="space-y-text-xs">
+				<label class="block text-xs font-medium text-ty-secondary">
+					{m.form_tags()}
+					<input
+						id="{id}-tags"
+						type="text"
+						list={listId}
+						value={entry}
+						oninput={handleTagInput}
+						onkeydown={handleTagKeydown}
+						onblur={handleTagBlur}
+						placeholder={m.form_tags_placeholder()}
+						class="field-input"
+					/>
+				</label>
+				<datalist id={listId}>
+					{#each tagVocabulary as tag (tag)}
+						<option value={tag}></option>
 					{/each}
-				</div>
-			{/if}
+				</datalist>
+				{#if draft.tags.length > 0}
+					<div class="flex flex-wrap gap-grid-2xs">
+						{#each draft.tags as tag (tag)}
+							<span
+								class="flex items-center gap-text-2xs rounded-lg bg-surface-inset px-box-2xs py-text-3xs text-xs text-ty-secondary"
+							>
+								{tag}
+								<button
+									type="button"
+									aria-label={m.form_tag_remove({
+										tag,
+									})}
+									onclick={() => (draft.tags = draft.tags.filter((t) => t !== tag))}
+									class="row-action text-ty-silent hover:text-ty-primary"
+								>
+									<X />
+								</button>
+							</span>
+						{/each}
+					</div>
+				{/if}
+			</div>
 		</div>
 	</div>
 </div>
