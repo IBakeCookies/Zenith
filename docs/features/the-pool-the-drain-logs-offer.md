@@ -1,6 +1,6 @@
 # The pool the drain logs offer
 
-**Kind:** feature · **Status:** planning · **Roadmap:** item 18 (its payload)
+**Kind:** feature · **Status:** landed 2026-09-08 · **Roadmap:** item 18 (its payload)
 
 Frozen at land: this file says what was decided on the date it carries, never
 how the code works today — that is MATH.md and the area `AGENTS.md`. When later
@@ -225,6 +225,12 @@ existing `Open` story
   with no state: pressing makes the two equal, and a value typed by hand that
   happens to match has nothing to adopt either. Rejected: the Lab's disabled
   "Fits applied" button.
+- **Nothing above the field's ceiling** — the review found the fit box's corner
+  (recovery at its floor, α at `ALPHA_FIT_MIN`) maps to 30.6 h, over the field's
+  16 h; pressing would store it and the next blur would declare 16, a number the
+  user never gave. The offer is `null` there, on §8.13's null-over-clamp
+  argument, and the ceiling is one constant (`CAPACITY_POOL_MAX_HOURS`) the
+  field and the offer both read.
 - **The composition is a model function** — `EnergyCalibration → { cognitiveHours, physicalHours }`
   with `null`s, in `energy-calibration.ts`: pure, testable at the `*.test.ts`
   level, and the store only maps. Rejected: composing in the store, where the

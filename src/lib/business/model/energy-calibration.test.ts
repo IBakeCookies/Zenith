@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
 	calibrateEnergyParams,
+	offerFittedPools,
 	rankDrainByTask,
 	RESERVOIR_CYCLE_HOURS,
 	seedMorningReservoirs,
@@ -9,11 +10,15 @@ import {
 	toRestObservations,
 } from '$lib/business/model/energy-calibration';
 import {
+	ALPHA_FIT_MIN,
+	capacityFromDrainRate,
 	DEFAULT_ENERGY_PARAMS,
 	fitDrainRate,
 	fitRecoveryRate,
 	simulateReservoirs,
 } from '$lib/business/model/zenith-energy';
+import { RECOVERY_FIT_MIN } from '$lib/business/model/zenith-energy';
+import { CAPACITY_POOL_MAX_HOURS } from '$lib/business/utils/capacity-pool-bounds';
 import type { DrainObservationRecord, RestObservationRecord } from '$lib/data/type';
 
 const drainRecord = (over: Partial<DrainObservationRecord> = {}): DrainObservationRecord => ({
@@ -137,6 +142,78 @@ describe('calibrateEnergyParams', () => {
 		// No logs → no fit succeeds → the seed comes back whole.
 		expect(params).toEqual(seed);
 		expect(params).not.toBe(seed);
+	});
+
+	// The offer under each Day Setup pool field (MATH.md §8.13's map, read per
+	// reservoir): only a FITTED α is offered — at default α the map returns the
+	// constants in different clothes — and out of the map's domain there is nothing.
+	describe('offerFittedPools', () => {
+		const unfitted = calibrateEnergyParams([], []);
+
+		const fitted = (alphaCog: number, alphaPhys: number) => ({
+			...unfitted,
+			params: {
+				...unfitted.params,
+				alphaCog,
+				alphaPhys,
+			},
+			cognitiveDrain: {
+				...unfitted.cognitiveDrain,
+				alpha: alphaCog,
+				fitted: true,
+			},
+			physicalDrain: {
+				...unfitted.physicalDrain,
+				alpha: alphaPhys,
+				fitted: true,
+			},
+		});
+
+		it('offers nothing for an unfitted α, whatever it reads', () => {
+			for (const alphaCog of [0.35, 0.9])
+				expect(
+					offerFittedPools({
+						...unfitted,
+						params: {
+							...unfitted.params,
+							alphaCog,
+						},
+					}).cognitiveHours,
+				).toBeNull();
+		});
+
+		it('offers nothing for a fitted α under the pole margin, per reservoir', () => {
+			// Pole at defaults 1.05·0.05·0.72/0.28 = 0.135; the margin puts the gate at 0.2025.
+			const pools = offerFittedPools(fitted(0.2, 0.3));
+
+			expect(pools.cognitiveHours).toBeNull();
+			expect(pools.physicalHours).toBe(5.3);
+		});
+
+		it('offers nothing above the pool field’s own ceiling', () => {
+			// The fit box's corner: recovery at its floor pulls the gate under
+			// ALPHA_FIT_MIN, and the map answers 30.6 h — more than the field can hold,
+			// and a blur would then declare the ceiling, a number the user never gave.
+			const corner = fitted(ALPHA_FIT_MIN, 0.3);
+
+			corner.params.recoveryRate = RECOVERY_FIT_MIN;
+
+			expect(capacityFromDrainRate(ALPHA_FIT_MIN, corner.params)).toBeGreaterThan(
+				CAPACITY_POOL_MAX_HOURS,
+			);
+
+			expect(offerFittedPools(corner).cognitiveHours).toBeNull();
+		});
+
+		it('rounds the map to one decimal', () => {
+			expect(capacityFromDrainRate(0.35, DEFAULT_ENERGY_PARAMS)).toBeCloseTo(4.373, 3);
+			expect(capacityFromDrainRate(0.3, DEFAULT_ENERGY_PARAMS)).toBeCloseTo(5.307, 3);
+
+			expect(offerFittedPools(fitted(0.35, 0.3))).toEqual({
+				cognitiveHours: 4.4,
+				physicalHours: 5.3,
+			});
+		});
 	});
 });
 

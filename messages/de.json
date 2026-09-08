@@ -143,6 +143,7 @@
 	"budget_cognitive_hint": "Intensive mentale Arbeit, die du pro Tag durchhältst (~4h)",
 	"budget_physical_capacity": "Körperliche Kapazität",
 	"budget_physical_hint": "Intensive körperliche Arbeit, die du pro Tag durchhältst (~6h)",
+	"budget_use_fitted_pool": "Gefittete {hours} h übernehmen",
 	"budget_model_tooltip": "Die Flow-Konstanten des Modells (c₁, c₂, c₃) sind ein Ridge-Kleinste-Quadrate-Fit deiner gemessenen Flow-Zeiten, verankert an den Standardwerten des Artikels.",
 	"budget_delete_log_aria": "Diesen Flow-Eintrag löschen",
 	"budget_delete_log_title": "Diesen Datenpunkt entfernen — das Modell wird ohne ihn neu angepasst",

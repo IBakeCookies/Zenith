@@ -5,6 +5,7 @@
  */
 
 import {
+	capacityFromDrainRate,
 	DEFAULT_ENERGY_PARAMS,
 	fitDrainRate,
 	fitRecoveryRate,
@@ -16,6 +17,7 @@ import {
 	type RestObservation,
 	type ScheduleBlock,
 } from '$lib/business/model/zenith-energy';
+import { CAPACITY_POOL_MAX_HOURS } from '$lib/business/utils/capacity-pool-bounds';
 import type { DrainObservationRecord, RestObservationRecord } from '$lib/data/type';
 
 // The stored 0–10 ratings → the fits' [0,1] fractions. Exported because the
@@ -176,13 +178,31 @@ export function seedMorningReservoirs(
 	};
 }
 
-/** The composed params alone — see calibrateEnergyParams for the fit details. */
-export function fitEnergyParams(
-	rest: RestObservationRecord[],
-	drain: DrainObservationRecord[],
-	seed: EnergyParams = DEFAULT_ENERGY_PARAMS,
-): EnergyParams {
-	return calibrateEnergyParams(rest, drain, seed).params;
+/** Per reservoir: the pool a fitted α maps to, or `null` when unfitted, out of the map's domain, or above the field's ceiling. */
+export interface FittedPools {
+	cognitiveHours: number | null;
+	physicalHours: number | null;
+}
+
+/** Only a fitted α is offered — at the defaults the map returns the constants in other clothes. */
+export function offerFittedPools(calibration: EnergyCalibration): FittedPools {
+	const offer = (fit: DrainRateFit): number | null => {
+		if (!fit.fitted) return null;
+
+		const hours = capacityFromDrainRate(fit.alpha, calibration.params); // MATH.md §8.13
+
+		if (hours === null) return null;
+
+		const rounded = Math.round(hours * 10) / 10;
+
+		// Above the field's range the blur would declare the ceiling, a number the user never gave.
+		return rounded > CAPACITY_POOL_MAX_HOURS ? null : rounded;
+	};
+
+	return {
+		cognitiveHours: offer(calibration.cognitiveDrain),
+		physicalHours: offer(calibration.physicalDrain),
+	};
 }
 
 /** Fewest informative rows a title needs before it can be ranked (MATH.md §8.14). */

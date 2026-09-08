@@ -15,6 +15,8 @@ describe('day-constraints-bar.svelte', () => {
 			switchCost: 0.25,
 			cognitivePool: 4,
 			physicalPool: 3,
+			fittedCognitivePool: null,
+			fittedPhysicalPool: null,
 			remainingSuggestedHours: '3.50',
 			planSlackHours: 0,
 			planSwitchHours: 0,
