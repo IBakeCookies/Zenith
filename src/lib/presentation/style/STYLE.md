@@ -357,6 +357,11 @@ Read this before touching markup, classes, or anything under
   inlines the value at build time — so both need re-declaring in `tokens.css`
   (they are), or they bake in Tailwind's v3-compat literals (`0.25rem`, `8px`)
   and no theme can reach them.
+- `rounded-full` is **circles only** — it is the one radius no theme can reach.
+  Tailwind compiles it to a literal `calc(infinity * 1px)` and not a `--radius-*`
+  lookup, so the four square themes drew pill-shaped bars inside hard-cornered
+  cards. Bars, tracks, chart legend swatches and chips take `rounded-lg`; the
+  argument sits above `--radius-*` in `tokens.css`, which owns the token.
 - `--series-1…8` + `--series-rest` (`base.css`) are the categorical scale for
   per-task chart series, and the one token family with **exactly two values and
   no per-theme swap**: the `:root` half (the hues at 300, dark ink) and the

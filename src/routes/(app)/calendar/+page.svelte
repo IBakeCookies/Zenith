@@ -275,13 +275,13 @@
 					<!-- Future days are plans: nothing is completable yet, so no bar -->
 					{#if !isFuture}
 						<div
-							class="mt-grid-2xs h-1 overflow-hidden rounded-full bg-surface-inset"
+							class="mt-grid-2xs h-1 overflow-hidden rounded-lg bg-surface-inset"
 							title={m.cal_completion_title({
 								rate: s.completionRate,
 							})}
 						>
 							<div
-								class="h-full rounded-full {BAND_BAR_CLASS[getBandBiggerBetter(s.completionRate)]}"
+								class="h-full rounded-lg {BAND_BAR_CLASS[getBandBiggerBetter(s.completionRate)]}"
 								style="width: {s.completionRate}%"
 							></div>
 						</div>

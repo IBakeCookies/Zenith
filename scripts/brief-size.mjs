@@ -27,7 +27,7 @@ const BUDGETS = {
 	'src/lib/business/AGENTS.md': 620,
 	'src/lib/business/model/AGENTS.md': 660,
 	'src/lib/presentation/AGENTS.md': 881,
-	'src/lib/presentation/style/STYLE.md': 490,
+	'src/lib/presentation/style/STYLE.md': 500,
 	'docs/testing.md': 460,
 	'docs/design.md': 175,
 	'docs/deployment.md': 125,

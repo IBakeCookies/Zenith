@@ -142,7 +142,7 @@
 						<span class="h-0.5 w-1.5 {line.swatchClass}"></span>
 					</span>
 				{:else}
-					<span class="h-0.5 w-4 rounded-full {line.swatchClass}"></span>
+					<span class="h-0.5 w-4 rounded-lg {line.swatchClass}"></span>
 				{/if}
 				{line.label}
 			</span>

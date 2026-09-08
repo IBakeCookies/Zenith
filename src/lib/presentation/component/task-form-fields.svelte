@@ -155,7 +155,7 @@
 				<div class="flex flex-wrap gap-grid-2xs">
 					{#each draft.tags as tag (tag)}
 						<span
-							class="flex items-center gap-text-2xs rounded-full bg-surface-inset px-box-2xs py-text-3xs text-xs text-ty-secondary"
+							class="flex items-center gap-text-2xs rounded-lg bg-surface-inset px-box-2xs py-text-3xs text-xs text-ty-secondary"
 						>
 							{tag}
 							<button

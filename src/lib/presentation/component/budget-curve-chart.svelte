@@ -153,7 +153,7 @@
 </div>
 <div class="mt-text-2xs flex flex-wrap gap-grid-md text-xs text-ty-silent">
 	<span class="flex items-center gap-grid-2xs">
-		<span class="h-0.5 w-4 rounded-full bg-brand"></span>
+		<span class="h-0.5 w-4 rounded-lg bg-brand"></span>
 		{m.energy_curve_legend_value()}
 	</span>
 	<span class="flex items-center gap-grid-2xs">

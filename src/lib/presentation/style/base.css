@@ -526,7 +526,7 @@
 	.nice-scrollbar::-webkit-scrollbar-thumb {
 		border: 2px solid transparent;
 		background-clip: padding-box;
-		border-radius: 9999px;
+		border-radius: var(--radius);
 		background-color: transparent;
 	}
 	.nice-scrollbar:hover::-webkit-scrollbar-thumb {
