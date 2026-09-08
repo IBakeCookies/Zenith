@@ -251,8 +251,9 @@ export class DailyPlanStore {
 	}
 
 	/**
-	 * One full solve per candidate — measured 109-124 ms on a 12-task day, which
-	 * is why this is a method and not a `$derived`. The yield before
+	 * One full solve per candidate — ~75–80 ms median on a 12-task day at 8 h,
+	 * ~1.4 s at 24 h (`plan-advice.probe.ts`) — which is why this is a method
+	 * and not a `$derived`. The yield before
 	 * the search lets the caller's busy state paint; the search itself blocks.
 	 */
 	async computeAdvice(): Promise<void> {

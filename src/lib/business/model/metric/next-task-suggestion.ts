@@ -25,7 +25,7 @@ export interface NextTaskSuggestion {
 
 /**
  * Candidates scored, most recently used first. One solve each, against the
- * 109-124 ms per-candidate worst case `business/AGENTS.md` measures.
+ * one-solve-per-candidate cost `business/AGENTS.md` prices.
  */
 export const NEXT_TASK_CANDIDATE_LIMIT = 8;
 
