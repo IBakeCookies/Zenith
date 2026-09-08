@@ -329,7 +329,9 @@ instrument that would establish or kill its own number before any build.
 35. ~~**The light side's text ladder, sized from the corrected instrument**~~ —
     SHIPPED 2026-09-08
     ([the-ladder-the-instrument-never-sized](docs/features/the-ladder-the-instrument-never-sized.md)).
-    Four of the five were light; `blueprint` is dark, and is the one residue.
+    Four of the five were light; `blueprint` is dark, and was the one residue —
+    closed 2026-09-08,
+    [the-well-that-climbed-under-white-ink](docs/features/the-well-that-climbed-under-white-ink.md).
 
 36. ~~**The 12-task wall clock is one seeded day**~~ — FIXED 2026-09-08
     ([the-wall-clock-that-was-one-day](docs/features/the-wall-clock-that-was-one-day.md)).
@@ -705,39 +707,11 @@ place.
 
 ## Findings from the 2026-08-26 scenery gutter
 
-- **`cathedral`'s rose window still needs a redraw, and until it gets one it is
-  the worst-lit thing on `/`.** The gutter that fixed `moonphase` cannot take
-  it: the window is 20rem _of detail_ — twelve lancet petals, a roundel ring,
-  eight jewel circles, a hub — and at the ~11rem a gutter allows, the petals are
-  ~30px and the jewels ~13px. It also cannot take the `hourglass` treatment of
-  becoming a low-alpha wash, because it is a hard-edged SVG over an opaque
-  `#17121f` backing circle. Measured on `/` at both 1440px and 1888px, seven
-  labels sit over it and all seven fail WCAG AA; five of them read **1.00:1** —
-  the label's own colour, exactly, against the jewel behind it. That is the
-  highest-severity contrast failure the app currently ships, and it is invisible
-  to `scripts/ink-contrast.mjs`, which samples token fills rather than scenery.
-  The price is design work — fewer, larger elements and thicker strokes at a
-  size that fits — not a relocation, which is why
-  [the-moon-that-lost-its-sky](docs/features/the-moon-that-lost-its-sky.md) left
-  it out. Moving the window vertically mitigates without closing: the brightest
-  ring hides behind the app bar and the two mid-range labels recover to ~1.9:1,
-  while the five at 1.00:1 do not move.
-
-  **Re-read 2026-09-04: the expensive half may not be the half that closes it.**
-  The redraw is taste with no instrument behind it, while the COMPLIANCE half is
-  reported to be ~6 lines — STYLE.md already says not to draw a focal object
-  below the width the gutter fits it, and at 1440px, one of the two viewports
-  this finding measured, that alone is claimed to clear every failing label with
-  no drawing work. Unverified, from an uncommitted run. Settle it before
-  choosing: one scratchpad Playwright pass sampling the COMPOSITED pixel under
-  each label's box (the shipped contrast scripts cannot, which is why this
-  finding exists), three arms — (A) HEAD, which must reproduce 5 × 1.00:1 or the
-  instrument is wrong, (B) `.theme-helper-1` deleted, (C) helper-1 at the gutter
-  width behind a media gate — with the kill criterion fixed BEFORE the run: if B
-  clears all seven, build B and drop the redraw. Either way the halo moves in the
-  same change; `themes.css` positions it at one half-width of the 20rem object.
-  Not a committed instrument: the moon spec already refused a second permanent
-  mechanism for this one fact.
+- ~~**`cathedral`'s rose window still needs a redraw, and until it gets one it is
+  the worst-lit thing on `/`.**~~ — CLOSED 2026-09-08 without the redraw,
+  [the-window-that-lit-the-labels-under-it](docs/features/the-window-that-lit-the-labels-under-it.md).
+  The 2026-09-04 re-read's three-arm run decided it; the 1.00:1 readings this
+  finding was priced on did not reproduce.
 
 ## Findings from the 2026-08-27 branch review
 
@@ -911,8 +885,8 @@ against the objective and measured over the fixture year.
 Eight lenses over the repo, each candidate screened against this file's refused
 list and the per-area settled decisions before it was priced. Four candidates
 were dropped as contradicting a settled decision. Two closed the same day; the
-rest of the shortlist is not written up as items here, because an item number is
-cited once it exists and none of these has been chosen yet.
+four that needed choosing are items 35–38, and two more amended entries already
+here (item 18, and the 2026-08-26 `cathedral` finding).
 
 - **The one instrument for the pair axe cannot see read the ink as opaque —
   fixed 2026-09-04,
@@ -940,9 +914,9 @@ cited once it exists and none of these has been chosen yet.
   measured focused state
   carries `@tailwindcss/forms`' hardcoded blue-600 ring, which `outline-none`
   does not touch. The repair displaces that ring rather than adding a first one.
-  Reported and not fixed: the ☕ length field's inline class is a second
-  definition of `MEASUREMENT_MINUTES_CLASS` modulo its tint, with no drift
-  test.
+  Reported here, the ☕ length field's inline second definition of
+  `MEASUREMENT_MINUTES_CLASS` — fixed 2026-09-08,
+  [the-recipe-spelled-twice](docs/features/the-recipe-spelled-twice.md).
 - **M103 — the `.mjs` half of `scripts/` was in no type-check program — fixed
   2026-09-06,
   [`the-scripts-nothing-type-checked`](docs/features/the-scripts-nothing-type-checked.md).**

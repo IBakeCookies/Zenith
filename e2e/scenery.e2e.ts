@@ -304,3 +304,60 @@ test.describe('the moon below the gutter breakpoint', () => {
 		await expect(moon(page)).not.toBeVisible();
 	});
 });
+
+/* `cathedral`'s rose window takes the same treatment as the moon, from a
+   different failure: drawn at top-centre it sat behind the day-setup card, and
+   ten of the eleven labels over it read under 4.5:1 through the card glass. */
+const roseWindow = (page: Page) => page.locator('.theme-scenery .theme-helper-1');
+
+test.describe('the rose window in the gutter', () => {
+	// 1888px leaves 16rem beside the column — room for the 14rem window.
+	test.use({
+		viewport: {
+			width: 1888,
+			height: 900,
+		},
+	});
+
+	test('is drawn whole, clear of the app bar, the column, and the viewport edge', async ({
+		page,
+		context,
+	}) => {
+		await seedCookie(context, 'theme', 'cathedral');
+		await page.goto('/');
+
+		const box = await roseWindow(page).boundingBox();
+		const header = await page.locator('header').boundingBox();
+		const viewport = page.viewportSize();
+
+		if (!box || !header || !viewport) throw new Error('no layout to measure');
+
+		expect(box.y).toBeGreaterThanOrEqual(header.y + header.height);
+
+		const cardRights = await page
+			.locator('main .card-shell')
+			.evaluateAll((cards) => cards.map((card) => card.getBoundingClientRect().right));
+
+		expect(cardRights.length).toBeGreaterThan(0);
+		expect(box.x).toBeGreaterThanOrEqual(Math.max(...cardRights));
+		expect(box.x + box.width).toBeLessThanOrEqual(viewport.width);
+		expect(box.y + box.height).toBeLessThanOrEqual(viewport.height);
+	});
+});
+
+test.describe('the rose window below the gutter breakpoint', () => {
+	test.use({
+		viewport: {
+			width: 1440,
+			height: 900,
+		},
+	});
+
+	test('is not drawn at all', async ({ page, context }) => {
+		await seedCookie(context, 'theme', 'cathedral');
+		await page.goto('/');
+
+		await expect(page.locator('.theme-scenery')).toBeAttached();
+		await expect(roseWindow(page)).not.toBeVisible();
+	});
+});
