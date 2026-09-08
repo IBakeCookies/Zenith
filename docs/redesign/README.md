@@ -99,3 +99,9 @@ only task #1 is allocated past its flow arrival (2h30m vs 2h14m), which is what
 
 `Shipped.dc.html` draws the metrics accordion **open**; its real default is
 closed behind "20 more metrics".
+
+## Other cards' canvases
+
+| file                       | what it is                                                                                                                                                                                    |
+| -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `adjust-plan/Main.dc.html` | the Adjust-the-plan card, artboard **A — Facts and a lever table** of its 2026-09-08 canvas. **Shipped 2026-09-08** ([the-levers-that-lined-up.md](../features/the-levers-that-lined-up.md)). |

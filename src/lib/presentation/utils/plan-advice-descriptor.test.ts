@@ -191,7 +191,7 @@ describe('buildAdviceDisplay', () => {
 		expect(display.rows[0].label).toBe('Flow Coverage');
 		expect(display.rows[0].before).toBe('60%');
 		expect(display.rows[0].options[0].after).toBe('100%');
-		expect(display.rows[0].options[0].cost).toBe('−26.4% plan value');
+		expect(display.rows[0].options[0].cost).toBe('−26.4%');
 	});
 
 	// The frontier rises in plan value, so its last row is the
@@ -479,11 +479,11 @@ describe('buildAdviceDisplay', () => {
 			).switchCost;
 
 		it('reports the reservation and brackets it either way', () => {
-			expect(displayFor(switchCostPrice())).toBe(
-				'Switching reserves 30m of today, 6% of the budget, at 15m a switch. ' +
-					'Re-solved with no switch cost, your day comes out at +10.4% plan value; ' +
-					'at 30m a switch, −8.7% plan value.',
-			);
+			expect(displayFor(switchCostPrice())).toEqual({
+				label: 'Switching',
+				primary: '30m of today reserved · 6% of the budget',
+				secondary: 'at 15m a switch · no switch cost +10.4% · at 30m −8.7%',
+			});
 		});
 
 		// The share ROUNDS rather than truncating, which the two cases above cannot
@@ -497,7 +497,9 @@ describe('buildAdviceDisplay', () => {
 						reservedShare: 0.208,
 					}),
 				),
-			).toContain('reserves 1h 15m of today, 21% of the budget');
+			).toMatchObject({
+				primary: '1h 15m of today reserved · 21% of the budget',
+			});
 		});
 
 		// One task takes no switches, so `(m−1)·s` is 0 and both alternatives can
@@ -523,7 +525,11 @@ describe('buildAdviceDisplay', () => {
 						],
 					}),
 				),
-			).toBe('At 15m a switch, this plan pays for no switching.');
+			).toEqual({
+				label: 'Switching',
+				primary: 'Pays for no switching',
+				secondary: 'at 15m a switch',
+			});
 		});
 
 		// A declared 0 collapses both candidates onto the declaration itself, so
@@ -538,7 +544,11 @@ describe('buildAdviceDisplay', () => {
 						alternatives: [],
 					}),
 				),
-			).toBe('At 0m a switch, this plan pays for no switching.');
+			).toEqual({
+				label: 'Switching',
+				primary: 'Pays for no switching',
+				secondary: 'at 0m a switch',
+			});
 		});
 
 		// The defect the union condition shipped: a plan can reserve nothing BECAUSE
@@ -568,11 +578,11 @@ describe('buildAdviceDisplay', () => {
 						],
 					}),
 				),
-			).toBe(
-				'At 15m a switch, this plan pays for no switching. ' +
-					'Re-solved with no switch cost, your day comes out at +41.8% plan value; ' +
-					'at 30m a switch, 0% plan value.',
-			);
+			).toEqual({
+				label: 'Switching',
+				primary: 'Pays for no switching',
+				secondary: 'at 15m a switch · no switch cost +41.8% · at 30m 0%',
+			});
 		});
 
 		// The other half of the same defect: a sub-minute declaration reserves real
@@ -589,7 +599,11 @@ describe('buildAdviceDisplay', () => {
 						alternatives: [],
 					}),
 				),
-			).toBe('Switching reserves 1m of today, 0% of the budget, at 1m a switch.');
+			).toEqual({
+				label: 'Switching',
+				primary: '1m of today reserved · 0% of the budget',
+				secondary: 'at 1m a switch',
+			});
 		});
 
 		// A day with no hours entered yet. The two states arrive together and cannot
@@ -616,12 +630,17 @@ describe('buildAdviceDisplay', () => {
 						],
 					}),
 				),
-			).toBe('At 15m a switch, this plan pays for no switching.');
+			).toEqual({
+				label: 'Switching',
+				primary: 'Pays for no switching',
+				secondary: 'at 15m a switch',
+			});
 		});
 	});
 
-	// The budget's shadow price, in the same "% plan value" the
-	// cost column is spelled in — but signed +, because this one is a gain.
+	// The budget's shadow price, priced in plan value like the cost column — but
+	// signed +, because this one is a gain, and with the unit spelled out, since
+	// no column head names it here.
 	describe('the marginal of the budget', () => {
 		const displayFor = (budgetMarginal: BudgetMarginal) =>
 			buildAdviceDisplay(
@@ -633,9 +652,11 @@ describe('buildAdviceDisplay', () => {
 			).marginal;
 
 		it('names the task the next block goes to and prices it', () => {
-			expect(displayFor(marginal())).toBe(
-				'The next 15 minutes would go to “Tax return” · +2.4% plan value',
-			);
+			expect(displayFor(marginal())).toEqual({
+				label: 'Next 15 minutes',
+				primary: '“Tax return”',
+				secondary: '+2.4% plan value',
+			});
 		});
 
 		// Scoped to output, not to the whole worth of the time: on
@@ -651,11 +672,15 @@ describe('buildAdviceDisplay', () => {
 						recipient: null,
 					}),
 				),
-			).toBe('Another 15 minutes would get nothing more done.');
+			).toEqual({
+				label: 'Next 15 minutes',
+				primary: 'Nothing more would get done',
+				secondary: null,
+			});
 		});
 
 		// The pooled heuristic can hand a task the block while the day's value nets
-		// out flat. "Goes to X · +0% plan value" is the same
+		// out flat. "Goes to X · +0%" is the same
 		// non-advice as no recipient, so it reads as the same sentence.
 		it('says the same when a task takes the block but the value nets out flat', () => {
 			expect(
@@ -665,7 +690,11 @@ describe('buildAdviceDisplay', () => {
 						planValueGainPercent: 0,
 					}),
 				),
-			).toBe('Another 15 minutes would get nothing more done.');
+			).toEqual({
+				label: 'Next 15 minutes',
+				primary: 'Nothing more would get done',
+				secondary: null,
+			});
 		});
 
 		// A day with no hours entered yet: the block still goes somewhere, but
@@ -677,12 +706,16 @@ describe('buildAdviceDisplay', () => {
 						planValueGainPercent: null,
 					}),
 				),
-			).toBe('The next 15 minutes would go to “Tax return” · N/A');
+			).toEqual({
+				label: 'Next 15 minutes',
+				primary: '“Tax return”',
+				secondary: 'N/A',
+			});
 		});
 	});
 
 	// Every decimal the card prints follows the reader's locale, like the dates
-	// beside it: a German card reading "7.67h · −8.7% plan value" is the bug
+	// beside it: a German card reading "7.67h · −8.7%" is the bug
 	// `number-format.ts` exists for. Whole hours stay whole — `maximumFractionDigits`,
 	// not the padding `formatDecimals` does.
 	//
@@ -728,7 +761,11 @@ describe('describeDeferDestination', () => {
 				budgetHours: 6,
 				fundedCount: 3,
 			}),
-		).toBe('Tomorrow: 4 tasks, 6h to spend — 3 of them funded.');
+		).toEqual({
+			label: 'Tomorrow',
+			primary: '4 tasks · 6h to spend',
+			secondary: '3 of them funded',
+		});
 	});
 
 	// An empty tomorrow is what the user wants to know before deferring, not a dead
@@ -740,7 +777,11 @@ describe('describeDeferDestination', () => {
 				budgetHours: 6.5,
 				fundedCount: 0,
 			}),
-		).toBe('Tomorrow: nothing planned yet, 6h 30m to spend.');
+		).toEqual({
+			label: 'Tomorrow',
+			primary: 'Nothing planned yet · 6h 30m to spend',
+			secondary: null,
+		});
 	});
 
 	/* Nothing on it and no hours is the dead row item 21's own kill criterion names,
@@ -764,7 +805,11 @@ describe('describeDeferDestination', () => {
 				budgetHours: 0,
 				fundedCount: 0,
 			}),
-		).toBe('Tomorrow: 2 tasks, 0m to spend — 0 of them funded.');
+		).toEqual({
+			label: 'Tomorrow',
+			primary: '2 tasks · 0m to spend',
+			secondary: '0 of them funded',
+		});
 	});
 
 	it('does not pluralize a single task', () => {
@@ -774,7 +819,11 @@ describe('describeDeferDestination', () => {
 				budgetHours: 2,
 				fundedCount: 1,
 			}),
-		).toBe('Tomorrow: 1 task, 2h to spend — 1 funded.');
+		).toEqual({
+			label: 'Tomorrow',
+			primary: '1 task · 2h to spend',
+			secondary: '1 funded',
+		});
 	});
 
 	// The read is refused mid-navigation, on a past day, and when it fails; the

@@ -88,10 +88,9 @@ test('advice prices real adjustments and goes stale when the day changes', async
 		}),
 	).toBeVisible();
 
-	// The description names the unit from the first paint, so what must be absent
-	// is a priced READING — and only a priced one carries the percentage.
-	await expect(page.getByText(/Anything priced in plan value/)).toBeVisible();
-	await expect(page.getByText(/% plan value/)).toBeHidden();
+	// Nothing priced means no lever table: the column head that names the unit
+	// exists only over a priced reading.
+	await expect(page.getByText('Plan value')).toBeHidden();
 
 	await page
 		.getByRole('button', {
@@ -107,19 +106,16 @@ test('advice prices real adjustments and goes stale when the day changes', async
 		page.getByText(/Set the budget to [\d.]+h|Move “.+” off today/).first(),
 	).toBeVisible();
 
-	await expect(page.getByText(/% plan value/).first()).toBeVisible();
+	await expect(page.getByText('Plan value').first()).toBeVisible();
 
 	// The budget's shadow price, from a real solve: either the next block goes
 	// somewhere, or the budget is not what limits this day.
-	await expect(
-		page.getByText(/The next \d+ minutes would go to “.+”|would get nothing more done/),
-	).toBeVisible();
+	await expect(page.getByText(/^Next \d+ minutes$/)).toBeVisible();
+	await expect(page.getByText(/^“.+”$|Nothing more would get done/)).toBeVisible();
 
 	// The declared switch cost, priced by two more real solves: either this plan
 	// reserves hours for switching, or it pays for none.
-	await expect(
-		page.getByText(/Switching reserves .+ of today|pays for no switching/),
-	).toBeVisible();
+	await expect(page.getByText(/of today reserved|Pays for no switching/)).toBeVisible();
 
 	// Editing the day must not silently leave the last solve's numbers on screen.
 	await setBudget(page, 6);
@@ -158,7 +154,7 @@ test('a task that must happen today is never offered as a deferral', async ({ pa
 		})
 		.click();
 
-	await expect(page.getByText(/% plan value/).first()).toBeVisible();
+	await expect(page.getByText('Plan value').first()).toBeVisible();
 	await expect(page.getByText('Move “Tax return” off today')).toBeHidden();
 });
 
