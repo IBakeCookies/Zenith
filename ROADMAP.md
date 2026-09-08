@@ -326,20 +326,10 @@ say what it is believed to say. **Every figure quoted in them comes from an
 uncommitted run** — item 29's rule applies, and each item names the committed
 instrument that would establish or kill its own number before any build.
 
-35. **The light side's text ladder, sized from the corrected instrument** — the
-    repair
-    [the-ink-the-instrument-read-as-opaque](docs/features/the-ink-the-instrument-read-as-opaque.md)
-    deliberately shipped without it. Five light themes now read under 4.5:1 on
-    the log-row label (`blueprint` 3.19, `parchment` 4.15, `solarized-light`
-    4.26, `bubblegum` 4.34, `ukiyo` 4.44) and `fallow`, the one theme the a11y
-    gate runs, sits at 4.52. The reported shape of the problem, unverified: 19 of
-    19 light themes that declare their own `--ty-primary` read 3.17–4.25:1 for
-    `--ty-silent` across 167 sites, and alpha alone cannot carry the silent rung
-    — the lift `bubblegum` needs lands on `--ty-secondary`'s own value and
-    collapses the top two rungs. **First step is the corrected script over the
-    catalogue**, not a token edit: `--ty-secondary` is one derivation feeding
-    `--muted-foreground` and ~43 files, so the choice between a per-side
-    derivation and named per-theme exceptions is the run's to make.
+35. ~~**The light side's text ladder, sized from the corrected instrument**~~ —
+    SHIPPED 2026-09-08
+    ([the-ladder-the-instrument-never-sized](docs/features/the-ladder-the-instrument-never-sized.md)).
+    Four of the five were light; `blueprint` is dark, and is the one residue.
 
 36. ~~**The 12-task wall clock is one seeded day**~~ — FIXED 2026-09-08
     ([the-wall-clock-that-was-one-day](docs/features/the-wall-clock-that-was-one-day.md)).

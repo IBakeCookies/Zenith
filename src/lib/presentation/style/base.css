@@ -146,9 +146,12 @@
 	--primary: oklch(0.52 0.17 150);
 	--primary-foreground: var(--color-white);
 
-	/* derived from seeds */
-	--ty-secondary: color-mix(in oklch, var(--ty-primary) 70%, transparent);
-	--ty-silent: color-mix(in oklch, var(--ty-primary) 55%, transparent);
+	/* The smallest alphas at which `--ty-secondary` and `--ty-silent` clear
+	   4.5:1 on every theme's card and inset with adjacent rungs still ≥ 1.03
+	   apart, per side, read by `scripts/inset-contrast.mjs`. `blueprint` is
+	   the one residue — its inset is too light for even opaque ink, 4.68:1. */
+	--ty-secondary: color-mix(in oklch, var(--ty-primary) 80%, transparent);
+	--ty-silent: color-mix(in oklch, var(--ty-primary) 75%, transparent);
 	--ty-ghost: color-mix(in oklch, var(--ty-primary) 40%, transparent);
 
 	--surface-hover: color-mix(in oklch, var(--ty-primary) 6%, transparent);
@@ -562,6 +565,10 @@
 		from var(--surface-card) calc(l + 0.1) c h / calc(alpha + (1 - alpha) * 0.06)
 	);
 	--ty-primary: oklch(1 0 0);
+	/* The dark side needs less alpha for the same ratio — white over
+	   near-black gains more per point — so it re-derives both content rungs. */
+	--ty-secondary: color-mix(in oklch, var(--ty-primary) 70%, transparent);
+	--ty-silent: color-mix(in oklch, var(--ty-primary) 65%, transparent);
 	--primary: oklch(0.55 0.2 285);
 	--primary-foreground: var(--color-white);
 

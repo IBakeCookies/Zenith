@@ -96,9 +96,10 @@ on every story with `test: 'error'` — an a11y violation **fails CI**.
 fill/ink pair on purpose, including the handful that cannot reach 4.5:1 (see
 STYLE.md's ink note; the budget is measured by `scripts/ink-contrast.mjs`).
 Contrast stays enforced on every real component **in one theme**: the toolbar
-default is `DEFAULT_THEME` (`fallow`), so axe never sees the other 45, and five
-light themes ship a log-row label under 4.5:1 (STYLE.md's ink note) — `fallow`
-itself reads 4.52. Storybook is also what
+default is `DEFAULT_THEME` (`fallow`), so axe never sees the other 45; the text
+ladder's contrast in every theme is `scripts/inset-contrast.mjs`'s job (STYLE.md's
+ink note), and `blueprint` ships a sub-AA log-row label only its well can fix.
+Storybook is also what
 `scripts/hover-contrast.mjs` drives (on :6006, unlike the ink script): axe only
 ever sees a story's REST state, so every hover fill's step and label contrast
 is measured there instead, over every theme × the 5 button variants that carry
@@ -108,8 +109,8 @@ see either: `--surface-inset` is derived from the card it sits in, so the only
 reading that means anything is the well against ITS OWN CARD, and the Theme >
 Swatches story composites every surface over the page instead. It has a story of
 its own (Theme > Inset on card, the real `log-row` inside a `card-shell`) and
-checks two ratios per theme — the well against the card, and the row's label
-against the well.
+checks, per theme, the well against the card and both content rungs of the text
+ladder over the page, the card and the well.
 
 A note in a story file never goes in an HTML comment. `addon-svelte-csf` takes the
 last markup comment it walked past and writes it into the next story's
