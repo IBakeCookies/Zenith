@@ -22,7 +22,7 @@
 		buttonVariants({
 			variant: mustDoToday ? 'secondary' : 'outline',
 		}),
-		'has-focus-visible:border-ring has-focus-visible:ring-ring/50 relative has-focus-visible:ring-3',
+		'has-focus-visible:border-ring has-focus-visible:ring-ring relative has-focus-visible:ring-3',
 		className,
 	)}
 >

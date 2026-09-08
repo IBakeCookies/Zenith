@@ -163,7 +163,7 @@
 				max={16}
 				step={0.5}
 				unit={m.unit_hours()}
-				accent="focus-within:border-mind/50"
+				accent="focus-within:border-mind-line"
 			/>
 			<p class="mt-text-xs text-xs text-ty-silent">{m.budget_cognitive_hint()}</p>
 		</div>
@@ -180,7 +180,7 @@
 				max={16}
 				step={0.5}
 				unit={m.unit_hours()}
-				accent="focus-within:border-body/50"
+				accent="focus-within:border-body-line"
 			/>
 			<p class="mt-text-xs text-xs text-ty-silent">{m.budget_physical_hint()}</p>
 		</div>

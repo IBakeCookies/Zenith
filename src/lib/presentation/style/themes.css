@@ -601,7 +601,6 @@
 	/* leaf green */
 	--primary: oklch(0.52 0.13 150);
 	--primary-foreground: var(--color-white);
-	--ring: oklch(0.52 0.13 150 / 0.5);
 
 	--brand: oklch(0.5 0.12 148);
 	--brand-strong: oklch(0.42 0.12 150);
@@ -683,7 +682,6 @@
 	/* terracotta */
 	--primary: oklch(0.58 0.16 42);
 	--primary-foreground: var(--color-white);
-	--ring: oklch(0.58 0.16 42 / 0.5);
 
 	--brand: oklch(0.56 0.15 42);
 	--brand-strong: oklch(0.46 0.15 40);

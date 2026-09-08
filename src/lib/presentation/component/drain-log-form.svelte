@@ -112,7 +112,7 @@
 			<Tooltip.Trigger>
 				{#snippet child({ props })}
 					<label class="flex items-center gap-grid-2xs">
-						<span class="font-medium text-mind/80">{m.energy_drain_mind_label()}</span>
+						<span class="font-medium text-mind">{m.energy_drain_mind_label()}</span>
 						<input
 							{...props}
 							id="{id}-mind"
@@ -138,7 +138,7 @@
 			<Tooltip.Trigger>
 				{#snippet child({ props })}
 					<label class="flex items-center gap-grid-2xs">
-						<span class="font-medium text-body/80">{m.energy_drain_body_label()}</span>
+						<span class="font-medium text-body">{m.energy_drain_body_label()}</span>
 						<input
 							{...props}
 							id="{id}-body"

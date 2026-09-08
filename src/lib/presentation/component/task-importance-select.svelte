@@ -52,7 +52,7 @@
 					buttonVariants({
 						variant: importance === level.value ? 'secondary' : 'outline',
 					}),
-					'has-focus-visible:border-ring has-focus-visible:ring-ring/50 relative -ms-px flex-1 rounded-none first:ms-0 first:rounded-s-md last:rounded-e-md has-focus-visible:z-10 has-focus-visible:ring-3',
+					'has-focus-visible:border-ring has-focus-visible:ring-ring relative -ms-px flex-1 rounded-none first:ms-0 first:rounded-s-md last:rounded-e-md has-focus-visible:z-10 has-focus-visible:ring-3',
 				)}
 			>
 				<input

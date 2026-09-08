@@ -159,7 +159,7 @@
 	{#if mustDoToday}
 		<Tooltip.Root>
 			<Tooltip.Trigger class="cursor-help">
-				<Badge class="bg-warning/20 uppercase tracking-wide text-warning-strong">
+				<Badge class="bg-warning-tint uppercase tracking-wide text-warning-strong">
 					{m.task_must_do_badge()}
 				</Badge>
 			</Tooltip.Trigger>
@@ -176,7 +176,7 @@
 					class={cn(
 						'uppercase tracking-wide',
 						importance === 'high'
-							? 'bg-danger/20 text-danger-strong'
+							? 'bg-danger-tint text-danger-strong'
 							: 'bg-surface-inset text-ty-silent',
 					)}
 				>
@@ -191,7 +191,7 @@
 	{#if slideDay}
 		<Tooltip.Root>
 			<Tooltip.Trigger class="cursor-help">
-				<Badge class="bg-info/20 uppercase tracking-wide text-info-strong">
+				<Badge class="bg-info-tint uppercase tracking-wide text-info-strong">
 					{m.task_slide_badge({
 						day: slideDay,
 					})}

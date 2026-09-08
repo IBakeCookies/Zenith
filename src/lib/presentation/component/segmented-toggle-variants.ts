@@ -44,7 +44,7 @@ export const segmentedToggleGroupVariants = tv({
 	variants: {
 		tone: {
 			segment: 'inline-flex items-center bg-surface-card backdrop-blur',
-			plan: 'flex bg-surface-page/40',
+			plan: 'flex bg-surface-wash',
 		},
 	},
 	defaultVariants: {

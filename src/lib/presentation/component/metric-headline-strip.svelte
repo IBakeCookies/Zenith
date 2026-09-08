@@ -42,9 +42,9 @@
 							{...props}
 							variant={trend ? 'default' : 'outline'}
 							class={trend === 1
-								? 'bg-success/20 text-success-strong'
+								? 'bg-success-tint text-success-strong'
 								: trend === -1
-									? 'bg-warning/20 text-warning-strong'
+									? 'bg-warning-tint text-warning-strong'
 									: ''}
 						>
 							{m.momentum_badge({

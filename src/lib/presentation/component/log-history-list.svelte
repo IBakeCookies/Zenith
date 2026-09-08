@@ -124,12 +124,12 @@
 						<span class="sr-only">{KIND[row.kind].name()}</span>
 						<span class="text-ty-silent">{formatDuration(row.hours)}</span>
 						{#if row.mind !== null}
-							<span class="font-medium text-mind/90">
+							<span class="font-medium text-mind">
 								M{row.mind}{#if row.mindAfter !== null}→{row.mindAfter}{/if}
 							</span>
 						{/if}
 						{#if row.body !== null}
-							<span class="font-medium text-body/90">
+							<span class="font-medium text-body">
 								B{row.body}{#if row.bodyAfter !== null}→{row.bodyAfter}{/if}
 							</span>
 						{/if}

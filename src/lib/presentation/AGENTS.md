@@ -250,7 +250,7 @@ Six components hold what the two screens say the same way:
   caller's copy and absent unless it passes one, because what is dropped differs
   per editor and a first measurement has nothing to drop.
 - **`task-edit-form.svelte`** — the editor, on both screens. Its frame is the
-  `bg-surface-page/40` wash the two measurement forms in the same spanning row
+  `bg-surface-wash` wash the two measurement forms in the same spanning row
   use, under a plain `border-line-soft` — this form logs no instrument, so it
   takes none of their hues. Neither of the other two rungs works: `surface-card`
   is the card it is already inside, and `surface-inset` is what the slider

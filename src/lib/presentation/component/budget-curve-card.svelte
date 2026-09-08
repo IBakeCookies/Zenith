@@ -69,7 +69,7 @@
 
 	{#if hasError}
 		<p
-			class="mt-grid-sm rounded-lg border border-danger/20 bg-danger/5 p-box-sm text-xs text-danger-strong"
+			class="mt-grid-sm rounded-lg border border-danger-tint bg-danger-wash p-box-sm text-xs text-danger-strong"
 		>
 			{m.energy_curve_error()}
 		</p>
@@ -79,7 +79,7 @@
 	     disabled button is not focusable, so it cannot carry that reason itself. -->
 	{#if isStale}
 		<p
-			class="mt-grid-sm rounded-lg border border-warning/20 bg-warning/5 p-box-sm text-xs text-warning-strong"
+			class="mt-grid-sm rounded-lg border border-warning-tint bg-warning-wash p-box-sm text-xs text-warning-strong"
 		>
 			{m.energy_curve_stale()}
 		</p>

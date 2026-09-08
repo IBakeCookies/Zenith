@@ -214,6 +214,6 @@
 
 		await expect(track).toHaveClass('bg-brand');
 		await expect(track?.style.width).toBe('0%');
-		await expect(canvasElement.querySelector('.border-flow\\/55')).toBeNull();
+		await expect(canvasElement.querySelector('.border-flow-line')).toBeNull();
 	}}
 />

@@ -45,8 +45,8 @@
 
 <Story name="Momentum tones" asChild>
 	<div class="flex flex-wrap items-center gap-grid-sm">
-		<Badge class="bg-success/20 text-success-strong">Upward</Badge>
-		<Badge variant="destructive" class="bg-warning/20 text-warning-strong">Reset Reqd</Badge>
+		<Badge class="bg-success-tint text-success-strong">Upward</Badge>
+		<Badge variant="destructive" class="bg-warning-tint text-warning-strong">Reset Reqd</Badge>
 		<Badge variant="secondary">Stable</Badge>
 	</div>
 </Story>
