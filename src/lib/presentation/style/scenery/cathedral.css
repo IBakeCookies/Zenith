@@ -4,11 +4,13 @@
 	display: block;
 
 	.theme-helper-1 {
+		/* only the gutter gate at the end draws it — themes.css .cathedral */
+		display: none;
 		position: absolute;
 		/* themes.css .cathedral owns these — the halo in its gradient and the
 		   rays below read the same properties, so the three cannot drift apart */
 		top: var(--cathedral-window-y);
-		left: 50%;
+		left: var(--cathedral-window-x);
 		width: var(--cathedral-window-size);
 		aspect-ratio: 1;
 		translate: -50% 0;
@@ -25,7 +27,7 @@
 		position: absolute;
 		inset: 0;
 		background: conic-gradient(
-			from 143deg at 50% calc(var(--cathedral-window-mid) + 2rem),
+			from 143deg at var(--cathedral-window-x) calc(var(--cathedral-window-mid) + 2rem),
 			transparent 0deg,
 			oklch(0.92 0.08 85 / 0.09) 6deg,
 			transparent 12deg,
@@ -57,6 +59,12 @@
 			radial-gradient(ellipse 26% 16% at 42% 100%, oklch(0.62 0.15 265 / 0.14), transparent 70%),
 			radial-gradient(ellipse 30% 18% at 62% 97%, oklch(0.7 0.14 85 / 0.15), transparent 70%),
 			radial-gradient(ellipse 26% 16% at 81% 100%, oklch(0.65 0.15 160 / 0.13), transparent 70%);
+	}
+
+	@media (min-width: 116rem) {
+		.theme-helper-1 {
+			display: block;
+		}
 	}
 }
 
