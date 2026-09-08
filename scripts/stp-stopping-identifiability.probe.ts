@@ -26,6 +26,16 @@
  * point of it is the RATIO: every day of a history shares the slider, so the
  * error is common-mode and the i.i.d.-days posterior std cannot see it.
  *
+ * Added 2026-09-08: the same pricing for `satietyScale`, the OTHER user-owned
+ * slider the fit conditions on, over the same twelve days per λ₀ (ROADMAP item
+ * 38). κ = 0 is the documented disabled mode and 5 the Energy Lab input's max.
+ * Read against the honest fit it is the larger error by far: at true λ₀ 0.9,
+ * honest 0.876 ± 0.044 (n 11), κ 0 → 1.594 ± 0.077 and κ 5 → 1.351 ± 0.057,
+ * a worst shift of 16.3× the printed std against V_T's 3.3× on the same days;
+ * 5.5×/12.0×/11.2× at λ₀ 0.5/0.7/1.1. The sign is the same at BOTH ends: a
+ * mis-set κ in either direction reads leisure dearer and plans less work, and
+ * `usedCount` never moves, so the censors cannot tell either.
+ *
  * Added 2026-08-21: the V_T sweep over SEEDED DAYS, not one. Aligning this
  * probe's day onto the sliders (ROADMAP M44) deleted both witnesses §8.10 cited
  * for "V_T is not free" — the 3-step move at 8 h / λ₀ 1.3 and the three-level
@@ -150,6 +160,68 @@ const workedOn = (
 const worked = (freeTimeValue: number, terminalEnergyValue: number, windowHours: number) =>
 	workedOn(DAY, freeTimeValue, terminalEnergyValue, windowHours);
 
+/**
+ * The user's truth is the default slider: their days are the plans at
+ * (true λ₀, default). Only the READER's slider moves, which is the error §8.10
+ * calls "a real unfitted error source" — priced here in fit units. Seed 824 is
+ * shared, so every slider is priced on the same twelve days per λ₀.
+ */
+function priceMissetSlider(
+	label: string,
+	key: 'terminalEnergyValue' | 'satietyScale',
+	misset: number[],
+): void {
+	const TRUTH = DEFAULT_ENERGY_PARAMS[key];
+	const rnd = mulberry32(824);
+
+	for (const lambda of [0.5, 0.7, 0.9, 1.1]) {
+		const days: StopObservation[] = [];
+
+		for (let d = 0; d < 12; d++) {
+			const tasks = seededDay(rnd);
+			const windowHours = 4 + Math.floor(rnd() * 11);
+
+			const { blocks } = optimizeSchedule(tasks, windowHours, {
+				...DEFAULT_ENERGY_PARAMS,
+				freeTimeValue: lambda,
+			});
+
+			days.push({
+				tasks,
+				windowHours,
+				workedHours: sessionRows(blocks),
+			});
+		}
+
+		const at = (value: number) =>
+			fitStoppingValue(days, DEFAULT_ENERGY_PARAMS.freeTimeValue, {
+				...DEFAULT_ENERGY_PARAMS,
+				freeTimeValue: lambda,
+				[key]: value,
+			});
+
+		const honest = at(TRUTH);
+
+		if (!honest.fitted) {
+			console.log(`[§8.10 ${label} fit] true λ₀ ${lambda}: no day priced`);
+			continue;
+		}
+
+		const read = misset.map((value) => {
+			const fit = at(value);
+
+			return `${label} ${value} → λ̂₀ ${fit.value.toFixed(3)} ± ${fit.valueStd!.toFixed(3)} (n ${fit.usedCount}, shift ${Math.abs(fit.value - honest.value).toFixed(3)})`;
+		});
+
+		const worst = Math.max(...misset.map((value) => Math.abs(at(value).value - honest.value)));
+
+		console.log(
+			`[§8.10 ${label} fit] true λ₀ ${lambda}: honest λ̂₀ ${honest.value.toFixed(3)} ± ${honest.valueStd!.toFixed(3)} (n ${honest.usedCount}) — ` +
+				`${read.join(', ')}; worst shift ${(worst / honest.valueStd!).toFixed(1)}× the std it prints`,
+		);
+	}
+}
+
 describe('stopping-value identifiability', () => {
 	it('sweeps V_T against λ₀ for the optimal stop (MATH.md §8.10 feasibility 2)', () => {
 		const V_T = Array.from(
@@ -259,60 +331,13 @@ describe('stopping-value identifiability', () => {
 	});
 
 	it('prices a mis-set V_T in λ₀, against the std printed beside it (§8.10)', () => {
-		// The user's truth is the default V_T: their days are the plans at
-		// (true λ₀, 1.5). Only the READER's slider moves, which is the error the
-		// section calls "a real unfitted error source" — priced here in fit units.
-		const TRUTH = DEFAULT_ENERGY_PARAMS.terminalEnergyValue;
 		// The Energy Lab's own terminalEnergyValue range, so both ends are reachable.
-		const MISSET = [0, 5];
-		const rnd = mulberry32(824);
+		priceMissetSlider('V_T', 'terminalEnergyValue', [0, 5]);
+	});
 
-		for (const lambda of [0.5, 0.7, 0.9, 1.1]) {
-			const days: StopObservation[] = [];
-
-			for (let d = 0; d < 12; d++) {
-				const tasks = seededDay(rnd);
-				const windowHours = 4 + Math.floor(rnd() * 11);
-
-				const { blocks } = optimizeSchedule(tasks, windowHours, {
-					...DEFAULT_ENERGY_PARAMS,
-					freeTimeValue: lambda,
-					terminalEnergyValue: TRUTH,
-				});
-
-				days.push({
-					tasks,
-					windowHours,
-					workedHours: sessionRows(blocks),
-				});
-			}
-
-			const at = (terminalEnergyValue: number) =>
-				fitStoppingValue(days, DEFAULT_ENERGY_PARAMS.freeTimeValue, {
-					...DEFAULT_ENERGY_PARAMS,
-					freeTimeValue: lambda,
-					terminalEnergyValue,
-				});
-
-			const honest = at(TRUTH);
-
-			if (!honest.fitted) {
-				console.log(`[§8.10 V_T fit] true λ₀ ${lambda}: no day priced`);
-				continue;
-			}
-
-			const read = MISSET.map((vt) => {
-				const fit = at(vt);
-
-				return `V_T ${vt} → λ̂₀ ${fit.value.toFixed(3)} ± ${fit.valueStd!.toFixed(3)} (n ${fit.usedCount}, shift ${Math.abs(fit.value - honest.value).toFixed(3)})`;
-			});
-
-			const worst = Math.max(...MISSET.map((vt) => Math.abs(at(vt).value - honest.value)));
-
-			console.log(
-				`[§8.10 V_T fit] true λ₀ ${lambda}: honest λ̂₀ ${honest.value.toFixed(3)} ± ${honest.valueStd!.toFixed(3)} (n ${honest.usedCount}) — ` +
-					`${read.join(', ')}; worst shift ${(worst / honest.valueStd!).toFixed(1)}× the std it prints`,
-			);
-		}
+	it('prices a mis-set satietyScale in λ₀, against the std printed beside it (§8.10)', () => {
+		// The same population read under the OTHER user-owned slider the fit
+		// conditions on. 0 is the documented disabled mode, 5 the input's max.
+		priceMissetSlider('κ', 'satietyScale', [0, 5]);
 	});
 });

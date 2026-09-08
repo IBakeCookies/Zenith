@@ -356,15 +356,9 @@ instrument that would establish or kill its own number before any build.
     emptied the list, and a deleted module is what breaks `check`.
     `scripts/**/*.mjs` was left for M103, since closed.
 
-38. **`satietyScale`'s conditioning error on the λ₀ fit, priced beside V_T's** —
-    κ = `satietyScale`·O_ref is a bare 1 that the shipped λ₀ fit and the live
-    stop advisor condition on exactly as they condition on V_T, and a slider
-    position the store keeps reachable is reported to nearly double λ̂₀ (1.594 at
-    κ = 0 against an honest 0.876 ±0.044, i.e. ~16× the posterior std; ~5× worse
-    than V_T's documented 3.3×). It also names a contradiction inside MATH.md:
-    §8.10 lists λ₀'s conditioning set with `satietyScale` in it and its
-    common-mode bullet drops it. One arm beside the existing V_T arm settles
-    both. Nothing enters `src/`, and no clamp: κ ≤ 0 is a documented mode.
+38. ~~**`satietyScale`'s conditioning error on the λ₀ fit, priced beside V_T's**~~
+    — CLOSED 2026-09-08
+    ([the-second-slider-the-fit-conditions-on](docs/features/the-second-slider-the-fit-conditions-on.md)).
 
 ## Phase 4 — multi-day horizon
 
