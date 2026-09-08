@@ -157,6 +157,7 @@
 				<span>Break</span>
 				<span>45 min</span>
 			</div>
+			<span class="text-xs text-ty-silent" data-testid="silent-ink">Silent</span>
 		</div>
 	</div>
 </Story>

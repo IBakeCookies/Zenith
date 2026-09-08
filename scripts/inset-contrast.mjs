@@ -26,10 +26,11 @@
 // page can still vanish into the card it actually lives in. That was the exact
 // failure the derivation fixed.
 //
-// Two checks per theme, both CONTRAST RATIOS:
+// Reads per theme, all CONTRAST RATIOS:
 //   step — the well reads as distinct from the card around it
-//   cr   — the row's own `text-ty-secondary` label still clears 4.5:1 on it,
-//          which is what a LIGHTER inset on a dark theme puts at risk
+//   cr, and five more — `--ty-secondary` and `--ty-silent` composited over
+//   the inset, the card and the page, plus the primary/secondary and
+//   secondary/silent rung steps composited on each of those three surfaces
 //
 // step is a ratio and not a difference of luminances for the reason
 // hover-contrast.mjs gives at length: relative luminance is compressed near
@@ -144,7 +145,16 @@ const sample = async (clip) => {
 	}, png);
 };
 
+/** @param {number[]} values */
+const median = (values) => {
+	const sorted = [...values].sort((a, b) => a - b);
+	const mid = Math.floor(sorted.length / 2);
+
+	return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+};
+
 const fails = [];
+const results = [];
 
 for (const theme of THEMES) {
 	await page.goto(
@@ -184,32 +194,144 @@ for (const theme of THEMES) {
 		height: Math.round(wellBox.height) - 6,
 	};
 
+	// The bare page, left of the card: the third surface content sits on.
+	if (cardBox.x < 12) throw new Error(`${theme}: card too close to the page edge to sample`);
+
+	const pagePatch = {
+		x: Math.round(cardBox.x) - 12,
+		y: Math.round(wellBox.y) + 3,
+		width: 8,
+		height: Math.round(wellBox.height) - 6,
+	};
+
 	// Let scenery settle before sampling: hover-contrast is documented flaky for
 	// want of exactly this, and an animated theme is the case it misreads.
 	await page.waitForTimeout(400);
 
 	const insetPx = await sample(inset);
 	const cardPx = await sample(around);
+	const pagePx = await sample(pagePatch);
+	const primaryCss = await card.evaluate((n) => getComputedStyle(n).color);
 
-	const ink = await composite(
-		await well.evaluate(
-			(n) => getComputedStyle(/** @type {Element} */ (n.firstElementChild)).color,
-		),
-		insetPx,
+	const secondaryCss = await well.evaluate(
+		(n) => getComputedStyle(/** @type {Element} */ (n.firstElementChild)).color,
 	);
 
+	const silentCss = await page.getByTestId('silent-ink').evaluate((n) => getComputedStyle(n).color);
+	const primaryOnPage = await composite(primaryCss, pagePx);
+	const primaryOnCard = await composite(primaryCss, cardPx);
+	const primaryOnInset = await composite(primaryCss, insetPx);
+	const secondaryOnPage = await composite(secondaryCss, pagePx);
+	const secondaryOnCard = await composite(secondaryCss, cardPx);
+	const secondaryOnInset = await composite(secondaryCss, insetPx);
+	const silentOnPage = await composite(silentCss, pagePx);
+	const silentOnCard = await composite(silentCss, cardPx);
+	const silentOnInset = await composite(silentCss, insetPx);
 	const step = ratio(insetPx, cardPx);
-	const cr = ratio(ink, insetPx);
+	const cr = ratio(secondaryOnInset, insetPx);
+	const secPageCr = ratio(secondaryOnPage, pagePx);
+	const secCardCr = ratio(secondaryOnCard, cardPx);
+	const silPageCr = ratio(silentOnPage, pagePx);
+	const silCardCr = ratio(silentOnCard, cardPx);
+	const silInsetCr = ratio(silentOnInset, insetPx);
 
-	console.log(`${theme.padEnd(14)} step=${step.toFixed(3)} cr=${cr.toFixed(2)}`);
+	const rung = {
+		page: {
+			ps: ratio(primaryOnPage, secondaryOnPage),
+			ss: ratio(secondaryOnPage, silentOnPage),
+		},
+		card: {
+			ps: ratio(primaryOnCard, secondaryOnCard),
+			ss: ratio(secondaryOnCard, silentOnCard),
+		},
+		inset: {
+			ps: ratio(primaryOnInset, secondaryOnInset),
+			ss: ratio(secondaryOnInset, silentOnInset),
+		},
+	};
+
+	console.log(
+		`${theme.padEnd(14)} step=${step.toFixed(3)} cr=${cr.toFixed(2)} ` +
+			`sec(page=${secPageCr.toFixed(2)} card=${secCardCr.toFixed(2)}) ` +
+			`sil(page=${silPageCr.toFixed(2)} card=${silCardCr.toFixed(2)} inset=${silInsetCr.toFixed(2)}) ` +
+			`rung(page=${rung.page.ps.toFixed(2)}/${rung.page.ss.toFixed(2)} ` +
+			`card=${rung.card.ps.toFixed(2)}/${rung.card.ss.toFixed(2)} ` +
+			`inset=${rung.inset.ps.toFixed(2)}/${rung.inset.ss.toFixed(2)})`,
+	);
+
+	results.push({
+		theme,
+		step,
+		cr,
+		secPageCr,
+		secCardCr,
+		silPageCr,
+		silCardCr,
+		silInsetCr,
+		rung,
+	});
 
 	if (step < MIN_STEP)
 		fails.push(`${theme}: inset invisible against its card (step ${step.toFixed(3)})`);
 
 	if (cr < MIN_CR) fails.push(`${theme}: log-row label ${cr.toFixed(2)}:1 on the inset`);
+
+	if (secCardCr < MIN_CR) fails.push(`${theme}: secondary ${secCardCr.toFixed(2)}:1 on the card`);
+
+	if (silCardCr < MIN_CR) fails.push(`${theme}: silent ${silCardCr.toFixed(2)}:1 on the card`);
+
+	if (silInsetCr < MIN_CR) fails.push(`${theme}: silent ${silInsetCr.toFixed(2)}:1 on the inset`);
+
+	for (const [well, steps] of Object.entries(rung)) {
+		if (steps.ps < MIN_STEP)
+			fails.push(`${theme}: ${well} primary/secondary step ${steps.ps.toFixed(3)}`);
+
+		if (steps.ss < MIN_STEP)
+			fails.push(`${theme}: ${well} secondary/silent step ${steps.ss.toFixed(3)}`);
+	}
 }
 
 await browser.close();
+
+console.log('\nsummary:');
+
+for (const [label, key, checked] of /** @type {[string, string, boolean][]} */ ([
+	['secondary/page', 'secPageCr', false],
+	['secondary/card', 'secCardCr', true],
+	['secondary/inset (cr)', 'cr', true],
+	['silent/page', 'silPageCr', false],
+	['silent/card', 'silCardCr', true],
+	['silent/inset', 'silInsetCr', true],
+])) {
+	const values = results.map((r) => r[/** @type {keyof typeof r} */ (key)]);
+
+	const under = checked
+		? results.filter((r) => r[/** @type {keyof typeof r} */ (key)] < MIN_CR).map((r) => r.theme)
+		: [];
+
+	console.log(
+		`  ${label}: min=${Math.min(...values).toFixed(2)} median=${median(values).toFixed(2)}${
+			checked ? ` under ${MIN_CR}: ${under.length ? under.join(', ') : 'none'}` : ''
+		}`,
+	);
+}
+
+for (const well of /** @type {const} */ (['page', 'card', 'inset'])) {
+	for (const [key, label] of /** @type {[string, string][]} */ ([
+		['ps', 'primary/secondary'],
+		['ss', 'secondary/silent'],
+	])) {
+		const values = results.map((r) => r.rung[well][/** @type {'ps' | 'ss'} */ (key)]);
+
+		const under = results
+			.filter((r) => r.rung[well][/** @type {'ps' | 'ss'} */ (key)] < MIN_STEP)
+			.map((r) => r.theme);
+
+		console.log(
+			`  ${well} ${label} step: min=${Math.min(...values).toFixed(3)} under ${MIN_STEP}: ${under.length ? under.join(', ') : 'none'}`,
+		);
+	}
+}
 
 if (fails.length) {
 	console.log(`\n${fails.length} findings:`);
