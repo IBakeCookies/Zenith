@@ -92,9 +92,9 @@
 				{/if}
 			</span>
 		</p>
-		<div class="mt-text-2xs h-1 w-full rounded-full bg-surface-inset">
+		<div class="mt-text-2xs h-1 w-full rounded-lg bg-surface-inset">
 			<div
-				class="h-full rounded-full {BAND_BAR_CLASS[band]}"
+				class="h-full rounded-lg {BAND_BAR_CLASS[band]}"
 				style="width: {Math.min(100, Math.max(0, change.after))}%"
 			></div>
 		</div>
@@ -187,9 +187,9 @@
 					{/if}
 				</span>
 			</p>
-			<div class="mt-text-2xs h-1 w-full rounded-full bg-surface-inset">
+			<div class="mt-text-2xs h-1 w-full rounded-lg bg-surface-inset">
 				<div
-					class="h-full rounded-full {BAND_BAR_CLASS[flowBand]}"
+					class="h-full rounded-lg {BAND_BAR_CLASS[flowBand]}"
 					style="width: {Math.min(1, impact.suggestedHours / impact.flowStateTime) * 100}%"
 				></div>
 			</div>

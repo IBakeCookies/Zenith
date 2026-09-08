@@ -177,7 +177,7 @@
 		{m.metric_completion_rate()}
 	</span>
 	<span class="flex items-center gap-grid-2xs">
-		<span class="h-0.5 w-4 rounded-full bg-brand-counter"></span>
+		<span class="h-0.5 w-4 rounded-lg bg-brand-counter"></span>
 		{m.metric_yield_index()}
 	</span>
 </div>

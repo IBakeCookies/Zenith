@@ -256,6 +256,19 @@
 	--color-control-hover: var(--control-hover);
 	--color-ring: var(--ring);
 
+	/* `rounded-full` is CIRCLES ONLY. It is the one radius no theme can reach:
+	   Tailwind compiles it to a literal `calc(infinity * 1px)`, not a lookup in
+	   this `--radius-*` namespace, so the four square themes (`--radius: 0` —
+	   terminal, vectorframe, brutalist, riso) drew pill-shaped bars inside
+	   hard-cornered cards. Keep it where the box is already square and a circle
+	   is the intent (a status dot, `figure-dot`); anything meant to follow the
+	   theme — bars, tracks, chart legend swatches, tag chips — takes
+	   `rounded-lg`, which is `var(--radius)` itself and so can never round
+	   harder than the card holding it. No pill is lost: every bar here is `h-3`
+	   or shorter, so a theme whose radius clears half the bar height still
+	   renders a full capsule. A `--radius-max` token was weighed and dropped —
+	   `rounded-lg` already saturates at these heights, so it would only have
+	   been a second name for the same pixels. */
 	--radius-sm: calc(var(--radius) * 0.6);
 	--radius-md: calc(var(--radius) * 0.8);
 	--radius-lg: var(--radius);
@@ -384,7 +397,7 @@
    `accent-body`, `accent-brand`) and the budget slider carries `accent-brand`, so
    the accent is the one thing a call site decides. */
 @utility range-track {
-	@apply h-1 w-full cursor-pointer appearance-none rounded-full bg-surface-inset;
+	@apply h-1 w-full cursor-pointer appearance-none rounded-lg bg-surface-inset;
 }
 
 /* A real checkbox or radio stretched invisibly over the label that paints it —

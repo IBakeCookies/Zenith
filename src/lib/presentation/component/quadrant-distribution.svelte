@@ -68,7 +68,7 @@
 
 <div
 	aria-hidden="true"
-	class={cn('mt-text-md flex h-3 w-full gap-text-3xs overflow-hidden rounded-full', className)}
+	class={cn('mt-text-md flex h-3 w-full gap-text-3xs overflow-hidden rounded-lg', className)}
 >
 	{#each QUADRANTS as quadrant (quadrant.key)}
 		{#if counts[quadrant.key] > 0}

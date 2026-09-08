@@ -97,7 +97,7 @@
 </div>
 <div class="mt-text-2xs flex flex-wrap gap-grid-md text-xs text-ty-silent">
 	<span class="flex items-center gap-grid-2xs">
-		<span class="h-0.5 w-4 rounded-full bg-mind"></span>
+		<span class="h-0.5 w-4 rounded-lg bg-mind"></span>
 		{m.energy_legend_cognitive()}
 	</span>
 	<span class="flex items-center gap-grid-2xs">
@@ -105,7 +105,7 @@
 		{m.energy_legend_physical()}
 	</span>
 	<span class="flex items-center gap-grid-2xs">
-		<span class="h-2 w-4 rounded-full bg-current {OUTPUT_TINT}"></span>
+		<span class="h-2 w-4 rounded-lg bg-current {OUTPUT_TINT}"></span>
 		{m.energy_legend_output()}
 	</span>
 </div>
