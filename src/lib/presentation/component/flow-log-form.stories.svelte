@@ -99,9 +99,8 @@
 		oncancel: fn(),
 	}}
 	play={async ({ canvas }) => {
-		// `MEASUREMENT_MINUTES_CLASS`, the one recipe of the four the ☕ editor's own
-		// story cannot reach — its length field carries the `info` tint inline. The
-		// state axe never sees, so the ring is asserted here or nowhere.
+		// `MEASUREMENT_MINUTES_CLASS.flow`, the tint the ☕ editor's own story cannot
+		// reach. The state axe never sees, so the ring is asserted here or nowhere.
 		const minutes = canvas.getByPlaceholderText('min');
 
 		await expect(minutes).toHaveFocus();

@@ -5,6 +5,7 @@
 	import MeasurementFormActions from '$lib/presentation/component/measurement-form-actions.svelte';
 	import {
 		MEASUREMENT_FORM_CLASS,
+		MEASUREMENT_MINUTES_CLASS,
 		RATING_INPUT_CLASS,
 	} from '$lib/presentation/utils/measurement-prompt';
 
@@ -105,7 +106,7 @@
 				{@attach (node) => node.focus()}
 				bind:value={draft.minutes}
 				required
-				class="w-14 rounded-sm border border-info-tint bg-input px-box-3xs py-text-3xs text-xs text-ty-primary outline-none focus:border-info-line focus:ring-1 focus:ring-info-line"
+				class={MEASUREMENT_MINUTES_CLASS.info}
 			/>
 		</label>
 		<span class="flex items-center gap-grid-2xs">

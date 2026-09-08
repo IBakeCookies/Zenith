@@ -105,7 +105,7 @@
 				}}
 				bind:value={draft.minutes}
 				required
-				class={MEASUREMENT_MINUTES_CLASS}
+				class={MEASUREMENT_MINUTES_CLASS.flow}
 			/>
 		</label>
 		<Tooltip.Root>
