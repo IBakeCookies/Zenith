@@ -142,6 +142,7 @@
 	--color-surface-card: var(--surface-card);
 	--color-surface-inset: var(--surface-inset);
 	--color-surface-float: var(--surface-float);
+	--color-surface-wash: var(--surface-wash);
 	--color-surface-hover: var(--surface-hover);
 	--color-surface-card-hover: var(--surface-card-hover);
 	--color-scrim: var(--scrim);
@@ -153,36 +154,61 @@
 	/* elevation — one shadow for all top-level cards; flat themes zero it */
 	--shadow-card: var(--card-shadow);
 
-	/* states. Three roles, do not mix them up: bare = the fill or border,
-	   -strong = text on a *tinted* bg (bg-danger/5) or hover, -ink = text on the
-	   *solid* fill (bg-danger). -strong on a solid fill is the same hue twice
-	   over and reads as mush. */
+	/* states. Three roles and three rungs — bare, -strong, -ink; -wash, -tint,
+	   -line — never a `/N` on the class: STYLE.md, the colour-roles rule. */
 	--color-danger: var(--danger);
 	--color-danger-strong: var(--danger-strong);
 	--color-danger-ink: var(--danger-ink);
+	--color-danger-wash: var(--danger-wash);
+	--color-danger-tint: var(--danger-tint);
+	--color-danger-line: var(--danger-line);
 	--color-warning: var(--warning);
 	--color-warning-strong: var(--warning-strong);
 	--color-warning-ink: var(--warning-ink);
+	--color-warning-wash: var(--warning-wash);
+	--color-warning-tint: var(--warning-tint);
+	--color-warning-line: var(--warning-line);
 	--color-success: var(--success);
 	--color-success-strong: var(--success-strong);
 	--color-success-ink: var(--success-ink);
+	--color-success-wash: var(--success-wash);
+	--color-success-tint: var(--success-tint);
+	--color-success-line: var(--success-line);
 	--color-info: var(--info);
 	--color-info-strong: var(--info-strong);
 	--color-info-ink: var(--info-ink);
+	--color-info-wash: var(--info-wash);
+	--color-info-tint: var(--info-tint);
+	--color-info-line: var(--info-line);
 
 	/* domain: Zenith concepts */
 	--color-mind: var(--mind);
 	--color-mind-strong: var(--mind-strong);
 	--color-mind-ink: var(--mind-ink);
+	--color-mind-wash: var(--mind-wash);
+	--color-mind-tint: var(--mind-tint);
+	--color-mind-line: var(--mind-line);
 	--color-body: var(--body);
 	--color-body-ink: var(--body-ink);
+	--color-body-wash: var(--body-wash);
+	--color-body-tint: var(--body-tint);
+	--color-body-line: var(--body-line);
 	--color-flow: var(--flow);
 	--color-flow-ink: var(--flow-ink);
+	--color-flow-wash: var(--flow-wash);
+	--color-flow-tint: var(--flow-tint);
+	--color-flow-line: var(--flow-line);
 	--color-mixed: var(--mixed);
 	--color-mixed-ink: var(--mixed-ink);
+	--color-mixed-wash: var(--mixed-wash);
+	--color-mixed-tint: var(--mixed-tint);
+	--color-mixed-line: var(--mixed-line);
 	--color-brand: var(--brand);
 	--color-brand-strong: var(--brand-strong);
 	--color-brand-ink: var(--brand-ink);
+	--color-brand-wash: var(--brand-wash);
+	--color-brand-tint: var(--brand-tint);
+	--color-brand-line: var(--brand-line);
 	--color-brand-counter: var(--brand-counter);
 
 	/* categorical scale — one hue per task in the energy plan, where the series
@@ -199,6 +225,7 @@
 	--color-series-8: var(--series-8);
 	--color-series-rest: var(--series-rest);
 	--color-series-ink: var(--series-ink);
+	--color-series-divider: var(--series-divider);
 
 	/* shadcn start */
 	--color-background: var(--surface-page);
@@ -267,7 +294,7 @@
    under a pill reads as damage. The worded one adds its own
    `uppercase tracking-wide`; `#1` would be nothing but noise in caps. */
 @utility order-badge {
-	@apply cursor-help rounded-sm bg-flow/15 px-box-3xs py-text-3xs text-xs font-semibold text-flow;
+	@apply cursor-help rounded-sm bg-flow-tint px-box-3xs py-text-3xs text-xs font-semibold text-flow;
 }
 
 /* The app's horizontal frame: centred, capped at the layout width, and inset by
@@ -342,9 +369,9 @@
 
    The narrow instrument inputs (`utils/measurement-prompt.ts`) are NOT this: each
    carries the accent border of the quantity it reads and sits inline in a row of
-   text, so they share only `bg-input`. */
+   text, so they share only `bg-input` and the focus recipe (STYLE.md). */
 @utility field-input {
-	@apply mt-text-xs w-full rounded-lg border border-line-strong bg-input px-box-md py-box-xs text-sm text-ty-primary transition outline-none placeholder:text-ty-silent focus:border-brand/50 focus:ring-1 focus:ring-brand/50;
+	@apply mt-text-xs w-full rounded-lg border border-line-strong bg-input px-box-md py-box-xs text-sm text-ty-primary transition outline-none placeholder:text-ty-silent focus:border-brand-line focus:ring-1 focus:ring-brand-line;
 }
 
 /* The bare track every `type="range"` in the app is. The thumb's colour is NOT in
@@ -383,7 +410,7 @@
    nothing to become — the armed confirm's `hover:text-danger-strong` is the one
    exception, where deepening IS the warning. */
 @utility row-action {
-	@apply inline-flex h-6 min-w-6 shrink-0 items-center justify-center rounded-md transition-colors outline-none focus-visible:ring-3 focus-visible:ring-ring/50 [&_svg]:size-3 [&_svg]:shrink-0;
+	@apply inline-flex h-6 min-w-6 shrink-0 items-center justify-center rounded-md transition-colors outline-none focus-visible:ring-3 focus-visible:ring-ring [&_svg]:size-3 [&_svg]:shrink-0;
 }
 
 /* The ± either side of a number field — `number-input.svelte`'s composite field and

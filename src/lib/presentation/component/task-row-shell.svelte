@@ -175,7 +175,7 @@
 					aria-label={m.task_toggle_aria({
 						title,
 					})}
-					class="h-4 w-4 shrink-0 cursor-pointer appearance-auto accent-brand focus:ring-2 focus:ring-brand/50"
+					class="h-4 w-4 shrink-0 cursor-pointer appearance-auto accent-brand focus:ring-2 focus:ring-brand-line"
 				/>
 
 				<!-- The dim covers the title and its badges only: the logs beside them are the 🪫
@@ -211,11 +211,11 @@
 						<Tooltip.Trigger class="cursor-help text-left">
 							<!-- body/mind/brand are how every other reading of the same three names is
 				     written (`drain-log-form`, `log-history-list`). -->
-							<span class="font-medium text-body/80">P {physicalDifficulty}</span>
+							<span class="font-medium text-body">P {physicalDifficulty}</span>
 							<span class="text-ty-ghost">·</span>
-							<span class="font-medium text-mind/80">M {mentalDifficulty}</span>
+							<span class="font-medium text-mind">M {mentalDifficulty}</span>
 							<span class="text-ty-ghost">·</span>
-							<span class="font-medium text-brand/80">E {enjoyment}</span>
+							<span class="font-medium text-brand">E {enjoyment}</span>
 						</Tooltip.Trigger>
 						<Tooltip.Content>
 							<p>{m.task_inputs_tooltip()}</p>
@@ -267,11 +267,11 @@
 									<!-- Worded, not `M6`/`B4`: two bare initials beside a duration read as a code
 							     rather than as two ratings, and both words are already localized for the
 							     editor's own fields. -->
-									<span class="font-medium text-mind/90">
+									<span class="font-medium text-mind">
 										{m.energy_drain_mind_label()}
 										{log.mindDrain}
 									</span>
-									<span class="font-medium text-body/90">
+									<span class="font-medium text-body">
 										{m.energy_drain_body_label()}
 										{log.bodyDrain}
 									</span>

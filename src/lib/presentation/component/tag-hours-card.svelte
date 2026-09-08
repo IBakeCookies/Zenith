@@ -181,7 +181,7 @@
 					{#if row.tag !== undefined && editingTag === row.tag}
 						{@const tag = row.tag}
 						<form
-							class="mt-text-xs flex flex-wrap items-end gap-grid-2xs rounded-lg border border-line-soft bg-surface-page/40 p-box-lg"
+							class="mt-text-xs flex flex-wrap items-end gap-grid-2xs rounded-lg border border-line-soft bg-surface-wash p-box-lg"
 							onsubmit={(e) => (e.preventDefault(), save(tag))}
 						>
 							<label class="flex-1 text-2xs text-ty-silent">

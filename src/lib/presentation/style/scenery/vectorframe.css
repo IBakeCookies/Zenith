@@ -37,6 +37,8 @@
 	   channel with its edges still reading. The band is horizontal and
 	   viewport-wide (180deg over a 100%-wide tile) so one scanline crosses all
 	   four conduits at once — any tilt makes them light up in sequence */
+	/* oklch(57.764% 0.22259 27.915) */
+
 	.theme-helper-2::after {
 		content: '';
 		position: absolute;
@@ -45,14 +47,14 @@
 			180deg,
 			transparent 0%,
 			transparent 30%,
-			oklch(85.46% 0.14321 198.756) 50%,
+			oklch(0.8325 0.1354 214.38) 50%,
 			transparent 70%,
 			transparent 100%
 		);
 		background-size: 100% 200%;
 		mask: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 810' preserveAspectRatio='xMidYMid slice'><g fill='none'><path d='M51 0 L78 215 L352 292 L379 810' stroke='%23fff' stroke-width='2.5'/><path d='M385 0 L462 375 L606 471 L660 810' stroke='%23fff' stroke-width='2'/><path d='M1055 0 L978 375 L834 471 L780 810' stroke='%23fff' stroke-width='2'/><path d='M1389 0 L1362 215 L1088 292 L1061 810' stroke='%23fff' stroke-width='2.5'/></g></svg>")
 			center / cover no-repeat;
-		animation: vectorframe-pulse 1.8s linear infinite;
+		animation: vectorframe-pulse 2.2s linear infinite;
 		animation-delay: var(--vectorframe-sheen-phase, 0s);
 	}
 
@@ -86,13 +88,17 @@
    period, so the loop wraps without a jump — any other pair of endpoints
    snaps at the wrap */
 @keyframes vectorframe-pulse {
-	from {
-		background-position: 0% 100%;
+	0% {
+		background-position: 0% 150%;
 	}
-	to {
-		background-position: 0% -100%;
+	60% {
+		background-position: 0% -50%;
+	}
+	100% {
+		background-position: 0% -50%;
 	}
 }
+
 @keyframes vectorframe-twinkle {
 	from {
 		opacity: 0.4;

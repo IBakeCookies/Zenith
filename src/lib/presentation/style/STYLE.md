@@ -28,10 +28,10 @@ Read this before touching markup, classes, or anything under
   _more contrast against this theme's own background_: lighter on every dark
   theme, darker on every light one. Never use it as a fill under light-coloured
   content.
-- **A state or domain colour has three roles; picking the wrong one is the
-  usual contrast bug.** Bare (`bg-danger`, `border-danger`) is the fill.
-  `-strong` (`text-danger-strong`) is text on a _tinted_ background — the
-  `bg-danger/5` + `text-danger-strong` + `border-danger/20` recipe every
+- **A state or domain colour has three roles and three rungs; picking the wrong
+  one is the usual contrast bug.** Bare (`bg-danger`, `border-danger`) is the
+  fill. `-strong` (`text-danger-strong`) is text on a _tinted_ background — the
+  `bg-danger-wash` + `text-danger-strong` + `border-danger-tint` recipe every
   callout uses, and the right choice for anything longer than a label. `-ink`
   (`text-danger-ink`) is text on the _solid_ fill, and exists only for short
   bold labels: chips, badges, chart annotations. `-strong` on a solid fill is
@@ -46,6 +46,9 @@ Read this before touching markup, classes, or anything under
   4.21:1, and a few percent of pairs cannot reach 4.5:1 with _any_ ink (a
   mid-luminance chromatic fill caps out) — one more reason solid fills are for
   labels and the tinted recipe is for prose.
+  The rungs are tokens, never a `/N` on the class: `-wash` (5%) is the fill under
+  prose, `-tint` (20%) a chip's fill or a tinted edge, `-line` (50%) a focus or
+  state border and the ring that traces it — one alpha per rung, or roles drift.
 - **Two hover families, chosen by what the rest state is.** `surface-hover` is a
   6% `ty-primary` tint on _transparent_ — right when the element has no fill of
   its own (`ghost`, list rows) or when it is a child painting over its parent's
@@ -161,13 +164,10 @@ Read this before touching markup, classes, or anything under
   read off rendered pixels whose well is only 0.06 deep, so the derived rule
   would deepen the colour it exists to preserve. `.solid-dark`'s flattening sits
   where the derived rule already lands, so that block no longer sets it.
-- **`--ring` is derived too and a theme almost never needs to say so.** `:root`
-  has `color-mix(in oklch, var(--primary) 50%, transparent)`, which computes to
-  exactly `oklch(... / 0.5)` on the primary — verified against the literal — so
-  the 18 themes that restated it were writing the value they already had. What
-  survives is the 5 that genuinely differ: a different alpha (`zenith`,
-  `kintsugi` at 0.55), a different colour (`royal`, `verdigris`), or a ring that
-  is deliberately not the primary at all (`brutalist`, whose ring is its ink).
+- **`--ring` is the primary's `-line` rung, and the class is bare `ring-ring`.**
+  `:root` derives it at 50%; a `/50` on the class halved it again, to 25%. The
+  themes that restate it genuinely differ: alpha (`zenith`, `kintsugi` at
+  0.55), colour (`royal`, `verdigris`), or the ink itself (`brutalist`).
 - **`bg-control` is the neutral control fill; `bg-input` is a form field.** They
   hold the same value (`--control: var(--input)` — one per-theme knob, and every
   theme turns it), but a button naming `input` was a lie that made every
@@ -294,7 +294,7 @@ Read this before touching markup, classes, or anything under
   every one of those, not just an import.
 - **A composite field rings on its wrapper, not on the input.**
   `number-input.svelte` is a row of two `tabindex={-1}` steppers around a field,
-  so the ring is `has-focus-visible:ring-2 has-focus-visible:ring-ring/50` on
+  so the ring is `has-focus-visible:ring-2 has-focus-visible:ring-ring` on
   that row — `ring-2` rather than the `ring-3` a button carries, because it
   traces a border the caller may already be tinting through `accent`. The
   field's own `outline-none focus:ring-0` stays: `outline-none` drops the UA
@@ -302,8 +302,8 @@ Read this before touching markup, classes, or anything under
   `@tailwindcss/forms` gives every focused input, which is not a token colour.
 - **A raw instrument field rings on itself, in its own channel token.** The 🪫,
   ☕ and ⚡ editors are bare `<input type="number">`, so each carries
-  `focus:ring-1 focus:ring-<channel>/60` beside its `focus:border-<channel>/60`
-  — `field-input`'s shape, at the border's own alpha so the ring reads as the
+  `focus:ring-1 focus:ring-<channel>-line` beside `focus:border-<channel>-line`
+  — `field-input`'s shape, at the border's own rung so the ring reads as the
   border it traces. `outline-none` does not leave such a field unringed: the
   plugin ring above is painted regardless, and the token ring **displaces** it.
   Three of the four recipes are `measurement-prompt.ts`; the ☕ length field is
@@ -384,7 +384,7 @@ Read this before touching markup, classes, or anything under
   (600 fails on five, lime worst). `rest` tracks the middle of its band rather
   than an end (`zinc-300` / `zinc-700`), so it stays a block rather than a hole.
   Both halves' fills now sit close to their surface — under 2:1 for most of them
-  — so the container border and the `series-ink/40` dividers, not the fill, are
+  — so the container border and the `series-divider` dividers, not the fill, are
   what make a block an edge. Keep them.
 - **A categorical scale needs hues that differ in every theme, which the state
   and domain accents do not guarantee.** `--flow` and `--warning` are both amber

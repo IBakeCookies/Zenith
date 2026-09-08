@@ -49,7 +49,7 @@
 	const ENERGY_TICKS = [0, 0.5, 1];
 	// Carried as `currentColor` by both the area and the swatch that keys it, so the
 	// legend cannot come to paint a different alpha from the thing it names.
-	const OUTPUT_TINT = 'text-brand/20';
+	const OUTPUT_TINT = 'text-brand-tint';
 	const hourTicks = $derived.by(() => {
 		// One label per ~44px of plot, so a narrow axis thins out instead of
 		// overprinting its own numbers.

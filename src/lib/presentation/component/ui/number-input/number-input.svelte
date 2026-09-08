@@ -17,7 +17,7 @@
 		// already names it and this would override it with a second name.
 		ariaLabel?: string;
 		// Focus accent, passed as a literal class so Tailwind can see it,
-		// e.g. "focus-within:border-brand/50"
+		// e.g. "focus-within:border-brand-line"
 		accent?: string;
 		/** Merged over the wrapper's own chrome, so a caller that IS the bordered
 		 *  object can drop the border, fill and ring rather than nest a second one. */
@@ -33,7 +33,7 @@
 		unit,
 		id,
 		ariaLabel,
-		accent = 'focus-within:border-brand/50',
+		accent = 'focus-within:border-brand-line',
 		class: className,
 	}: Props = $props();
 
@@ -73,7 +73,7 @@
 
 <div
 	class={cn(
-		'flex items-stretch rounded-lg border border-line-strong bg-input transition-colors has-focus-visible:ring-2 has-focus-visible:ring-ring/50',
+		'flex items-stretch rounded-lg border border-line-strong bg-input transition-colors has-focus-visible:ring-2 has-focus-visible:ring-ring',
 		accent,
 		className,
 	)}

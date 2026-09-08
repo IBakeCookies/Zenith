@@ -224,7 +224,7 @@
 			<a
 				href={localizeHref(date === today ? resolve('/') : `${resolve('/')}?date=${date}`)}
 				class="group flex min-h-0 flex-col overflow-hidden rounded-lg sm:rounded-xl border p-text-2xs sm:p-box-2xs transition-colors
-				       {isToday ? 'border-success/40' : 'border-line-soft hover:border-line-strong'}
+				       {isToday ? 'border-success-line' : 'border-line-soft hover:border-line-strong'}
 				       {s
 					? 'backdrop-blur bg-surface-card hover:bg-surface-card-hover'
 					: 'bg-transparent hover:bg-surface-hover'}

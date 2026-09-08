@@ -55,7 +55,7 @@
 		label: 'Physical Drain',
 		hint: 'How fast physical work spends your body.',
 		value: 0.6,
-		accent: 'focus-within:border-body/50',
+		accent: 'focus-within:border-body-line',
 	}}
 >
 	{#snippet template(args)}

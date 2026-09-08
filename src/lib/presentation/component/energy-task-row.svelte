@@ -92,7 +92,7 @@
 
 {#snippet lead()}
 	<span
-		class="block h-2.5 w-2.5 shrink-0 rounded-full ring-1 ring-series-ink/40"
+		class="block h-2.5 w-2.5 shrink-0 rounded-full ring-1 ring-series-divider"
 		style="background-color: {color}"
 	></span>
 {/snippet}

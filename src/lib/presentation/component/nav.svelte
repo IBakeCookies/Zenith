@@ -89,8 +89,8 @@
 		href === home ? currentPath === home : currentPath.startsWith(href);
 
 	const ACTIVE_CLASS = {
-		past: 'bg-warning/10 text-warning-strong',
-		future: 'bg-info/10 text-info-strong',
+		past: 'bg-warning-tint text-warning-strong',
+		future: 'bg-info-tint text-info-strong',
 		today: 'bg-surface-hover text-ty-primary',
 	} as const;
 

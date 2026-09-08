@@ -278,7 +278,7 @@
 			type="button"
 			class="shrink-0 text-xs transition {restFormOpen
 				? 'text-ty-silent hover:text-ty-secondary'
-				: 'text-info/90 hover:text-info-strong'}"
+				: 'text-info hover:text-info-strong'}"
 			onclick={() => (restFormOpen = !restFormOpen)}
 		>
 			{restFormOpen ? m.common_cancel() : `☕ ${m.energy_log_rest()}`}
@@ -521,7 +521,7 @@
 											type="button"
 											class="text-xs transition {lab.fitsApplied
 												? 'cursor-default text-ty-silent'
-												: 'text-brand/90 hover:text-brand-strong'}"
+												: 'text-brand hover:text-brand-strong'}"
 											disabled={lab.fitsApplied}
 											title={m.energy_apply_fits_title()}
 											onclick={() => lab.applyFits()}
@@ -568,7 +568,7 @@
 									max={2}
 									step={0.05}
 									unit={m.unit_per_hour()}
-									accent="focus-within:border-mind/50"
+									accent="focus-within:border-mind-line"
 									fit={cogDrainReading}
 								/>
 								<ParamRow
@@ -581,7 +581,7 @@
 									max={2}
 									step={0.05}
 									unit={m.unit_per_hour()}
-									accent="focus-within:border-body/50"
+									accent="focus-within:border-body-line"
 									fit={physDrainReading}
 								/>
 								<ParamRow

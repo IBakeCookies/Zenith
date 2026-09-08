@@ -52,7 +52,7 @@
 
 <form
 	class={cn(
-		'mt-text-sm space-y-grid-lg rounded-lg border border-line-soft bg-surface-page/40 p-box-lg',
+		'mt-text-sm space-y-grid-lg rounded-lg border border-line-soft bg-surface-wash p-box-lg',
 		className,
 	)}
 	onsubmit={(e) => (e.preventDefault(), save())}

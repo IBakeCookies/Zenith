@@ -48,7 +48,7 @@
 			duration: formatDuration(block.hours),
 		}}
 		<div
-			class="flex min-w-0 items-center justify-center border-r border-series-ink/40 last:border-r-0"
+			class="flex min-w-0 items-center justify-center border-r border-series-divider last:border-r-0"
 			style="{width(block.hours)}; background-color: {colors.colorOf(block.taskId)}"
 			title={isDone ? m.energy_block_tooltip_done(tooltip) : m.energy_block_tooltip(tooltip)}
 		>

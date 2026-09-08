@@ -37,7 +37,7 @@
 		{@render children?.()}
 		<DialogPrimitive.Close
 			aria-label={m.common_close()}
-			class="absolute top-box-sm right-box-sm rounded-md text-lg leading-none text-ty-silent transition hover:text-ty-secondary focus-visible:ring-3 focus-visible:ring-ring/50 outline-none"
+			class="absolute top-box-sm right-box-sm rounded-md text-lg leading-none text-ty-silent transition hover:text-ty-secondary focus-visible:ring-3 focus-visible:ring-ring outline-none"
 		>
 			✕
 		</DialogPrimitive.Close>

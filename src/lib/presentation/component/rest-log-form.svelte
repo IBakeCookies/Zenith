@@ -87,7 +87,7 @@
 
 <Tooltip.Provider>
 	<form
-		class={cn(MEASUREMENT_FORM_CLASS, 'border-info/20', className)}
+		class={cn(MEASUREMENT_FORM_CLASS, 'border-info-tint', className)}
 		onsubmit={(e) => (e.preventDefault(), save())}
 	>
 		<label class="flex items-center gap-grid-2xs">
@@ -105,7 +105,7 @@
 				{@attach (node) => node.focus()}
 				bind:value={draft.minutes}
 				required
-				class="w-14 rounded-sm border border-info/30 bg-input px-box-3xs py-text-3xs text-xs text-ty-primary outline-none focus:border-info/60 focus:ring-1 focus:ring-info/60"
+				class="w-14 rounded-sm border border-info-tint bg-input px-box-3xs py-text-3xs text-xs text-ty-primary outline-none focus:border-info-line focus:ring-1 focus:ring-info-line"
 			/>
 		</label>
 		<span class="flex items-center gap-grid-2xs">
@@ -114,7 +114,7 @@
 				<Tooltip.Trigger>
 					{#snippet child({ props })}
 						<label class="flex items-center gap-grid-2xs">
-							<span class="font-medium text-mind/80">{m.energy_drain_mind_label()}</span>
+							<span class="font-medium text-mind">{m.energy_drain_mind_label()}</span>
 							<input
 								{...props}
 								id="{id}-mind-before"
@@ -137,7 +137,7 @@
 				<Tooltip.Trigger>
 					{#snippet child({ props })}
 						<label class="flex items-center gap-grid-2xs">
-							<span class="font-medium text-body/80">{m.energy_drain_body_label()}</span>
+							<span class="font-medium text-body">{m.energy_drain_body_label()}</span>
 							<input
 								{...props}
 								id="{id}-body-before"
@@ -163,7 +163,7 @@
 				<Tooltip.Trigger>
 					{#snippet child({ props })}
 						<label class="flex items-center gap-grid-2xs">
-							<span class="font-medium text-mind/80">{m.energy_drain_mind_label()}</span>
+							<span class="font-medium text-mind">{m.energy_drain_mind_label()}</span>
 							<input
 								{...props}
 								id="{id}-mind-after"
@@ -186,7 +186,7 @@
 				<Tooltip.Trigger>
 					{#snippet child({ props })}
 						<label class="flex items-center gap-grid-2xs">
-							<span class="font-medium text-body/80">{m.energy_drain_body_label()}</span>
+							<span class="font-medium text-body">{m.energy_drain_body_label()}</span>
 							<input
 								{...props}
 								id="{id}-body-after"

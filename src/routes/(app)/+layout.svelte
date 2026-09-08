@@ -138,7 +138,7 @@
 </script>
 
 <main
-	class="text-ty-secondary antialiased selection:bg-success/30 selection:text-success-strong flex flex-col
+	class="text-ty-secondary antialiased selection:bg-success-tint selection:text-success-strong flex flex-col
 	       {fullViewport ? 'h-dvh overflow-hidden' : 'min-h-screen'}"
 >
 	<Nav>
@@ -238,26 +238,26 @@
 	</Nav>
 	<div class="page-column flex min-h-0 flex-1 flex-col py-page">
 		{#if session.isDemo}
-			<div role="alert" class="banner-shell border-brand/20 bg-brand/5 text-ty-primary">
+			<div role="alert" class="banner-shell border-brand-tint bg-brand-wash text-ty-primary">
 				<span class="flex-1">{m.demo_banner()}</span>
 				<!-- A link and not a button: leaving the example day IS dropping the param,
 				     so the address bar has to say so too. -->
 				<a
 					href={localizeHref(resolve('/'))}
-					class="border-brand/30 hover:bg-brand/10 shrink-0 rounded-md border px-text-xs py-text-3xs"
+					class="border-brand-tint hover:bg-brand-tint shrink-0 rounded-md border px-text-xs py-text-3xs"
 				>
 					{m.demo_banner_exit()}
 				</a>
 			</div>
 		{/if}
 		{#if storageStatus.error}
-			<div role="alert" class="banner-shell border-danger/20 bg-danger/5 text-danger-strong">
+			<div role="alert" class="banner-shell border-danger-tint bg-danger-wash text-danger-strong">
 				<span class="flex-1">{storageErrorMessage}</span>
 				{#if storageStatus.canRetry}
 					<button
 						type="button"
 						onclick={() => storageStatus.retry()}
-						class="border-danger/20 hover:bg-danger/10 shrink-0 rounded-md border px-text-xs py-text-3xs"
+						class="border-danger-tint hover:bg-danger-tint shrink-0 rounded-md border px-text-xs py-text-3xs"
 					>
 						{m.error_reload()}
 					</button>

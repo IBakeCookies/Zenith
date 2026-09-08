@@ -47,7 +47,7 @@
 				<!-- The ring, not the fill, is what makes a 10px dot visible: a series fill
 				     sits close to its surface by design (STYLE.md). -->
 				<span
-					class="h-2.5 w-2.5 shrink-0 rounded-full ring-1 ring-series-ink/40"
+					class="h-2.5 w-2.5 shrink-0 rounded-full ring-1 ring-series-divider"
 					style="background-color: {colors.colorOf(block.taskId)}"
 				></span>
 				<span class="w-28 shrink-0 tabular-nums text-ty-silent">

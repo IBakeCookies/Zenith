@@ -171,7 +171,7 @@
 											name: routine.name,
 										})}
 								class={[
-									'shrink-0 focus:bg-transparent! focus-visible:ring-3 focus-visible:ring-ring/50',
+									'shrink-0 focus:bg-transparent! focus-visible:ring-3 focus-visible:ring-ring',
 									isConfirming ||
 										'opacity-0 group-hover:opacity-100 focus:opacity-100 [@media(hover:none)]:opacity-100',
 								]}
@@ -185,7 +185,7 @@
 								<DropdownMenu.Item
 									closeOnSelect={false}
 									aria-label={m.common_cancel()}
-									class="shrink-0 focus:bg-transparent! focus-visible:ring-3 focus-visible:ring-ring/50"
+									class="shrink-0 focus:bg-transparent! focus-visible:ring-3 focus-visible:ring-ring"
 									onclick={() => (confirmingDelete = null)}
 								>
 									<X class="h-4 w-4" />

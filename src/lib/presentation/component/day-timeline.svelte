@@ -35,13 +35,13 @@
 			<!-- The floor is the TRACK's width, so every block keeps its share of the day and
 			     the strip grows rather than one shrinking below reading — `--spacer-day-block`. -->
 			<div
-				class="relative h-16"
+				class="relative h-16 bg-surface-inset"
 				style="width: max(100%, calc(var(--spacing-day-block) * {minimumBlockWidths}))"
 			>
 				{#each blocks as block (block.id)}
 					{@const label = bandLabel(block.band)}
 					<div
-						class="absolute inset-y-0 flex flex-col gap-text-2xs rounded-md border bg-surface-inset px-box-3xs py-text-2xs"
+						class="absolute inset-y-0 flex flex-col gap-text-2xs rounded-md bg-surface-inset px-box-3xs py-text-2xs"
 						class:opacity-60={block.isCompleted}
 						style="left: {share(block.startOffset) * 100}%; width: {share(block.hours) * 100}%"
 					>

@@ -130,6 +130,11 @@
 	   scanlines showing THROUGH a card is the theme. */
 	--surface-float: var(--surface-card);
 
+	/* A bordered panel nested in a card: the page showing through at 40%, the rung
+	   between card and inset that presentation/AGENTS.md (`task-edit-form`) settled
+	   after both of those read as one flat plane. */
+	--surface-wash: color-mix(in oklch, var(--surface-page) 40%, transparent);
+
 	/* The modal scrim. One value for all 31 themes and no per-theme override: a
 	   scrim dims toward black on light and dark alike, so unlike every other
 	   surface here it is NOT derived from `--ty-primary` — an ink-derived wash
@@ -346,7 +351,7 @@
 	   red at 4.21:1, and a small share of pairs cannot beat 4.5:1 with ANY ink —
 	   mid-luminance chromatic fills are simply capped, which is most of what
 	   Solarized's published accents are. So this is sound for a short bold label on a solid chip; body copy
-	   wants the soft pattern instead (`bg-danger/5` + `text-danger-strong`).
+	   wants the soft pattern instead (`bg-danger-wash` + `text-danger-strong`).
 	   Re-run scripts/ink-contrast.mjs after changing a state or domain fill. */
 	--danger-ink: oklch(from var(--danger) clamp(0.16, (0.58 - l) * 10000, 0.97) 0.02 h / 1);
 	--warning-ink: oklch(from var(--warning) clamp(0.16, (0.58 - l) * 10000, 0.97) 0.02 h / 1);
@@ -357,6 +362,37 @@
 	--flow-ink: oklch(from var(--flow) clamp(0.16, (0.58 - l) * 10000, 0.97) 0.02 h / 1);
 	--mixed-ink: oklch(from var(--mixed) clamp(0.16, (0.58 - l) * 10000, 0.97) 0.02 h / 1);
 	--brand-ink: oklch(from var(--brand) clamp(0.16, (0.58 - l) * 10000, 0.97) 0.02 h / 1);
+
+	/* The three translucent rungs of every state and domain colour (STYLE.md, the
+	   colour-roles rule), derived so a theme swapping a fill carries its rungs. The
+	   full grid is declared, so no rung is ever a missing token. */
+	--danger-wash: color-mix(in oklch, var(--danger) 5%, transparent);
+	--danger-tint: color-mix(in oklch, var(--danger) 20%, transparent);
+	--danger-line: color-mix(in oklch, var(--danger) 50%, transparent);
+	--warning-wash: color-mix(in oklch, var(--warning) 5%, transparent);
+	--warning-tint: color-mix(in oklch, var(--warning) 20%, transparent);
+	--warning-line: color-mix(in oklch, var(--warning) 50%, transparent);
+	--success-wash: color-mix(in oklch, var(--success) 5%, transparent);
+	--success-tint: color-mix(in oklch, var(--success) 20%, transparent);
+	--success-line: color-mix(in oklch, var(--success) 50%, transparent);
+	--info-wash: color-mix(in oklch, var(--info) 5%, transparent);
+	--info-tint: color-mix(in oklch, var(--info) 20%, transparent);
+	--info-line: color-mix(in oklch, var(--info) 50%, transparent);
+	--mind-wash: color-mix(in oklch, var(--mind) 5%, transparent);
+	--mind-tint: color-mix(in oklch, var(--mind) 20%, transparent);
+	--mind-line: color-mix(in oklch, var(--mind) 50%, transparent);
+	--body-wash: color-mix(in oklch, var(--body) 5%, transparent);
+	--body-tint: color-mix(in oklch, var(--body) 20%, transparent);
+	--body-line: color-mix(in oklch, var(--body) 50%, transparent);
+	--flow-wash: color-mix(in oklch, var(--flow) 5%, transparent);
+	--flow-tint: color-mix(in oklch, var(--flow) 20%, transparent);
+	--flow-line: color-mix(in oklch, var(--flow) 50%, transparent);
+	--mixed-wash: color-mix(in oklch, var(--mixed) 5%, transparent);
+	--mixed-tint: color-mix(in oklch, var(--mixed) 20%, transparent);
+	--mixed-line: color-mix(in oklch, var(--mixed) 50%, transparent);
+	--brand-wash: color-mix(in oklch, var(--brand) 5%, transparent);
+	--brand-tint: color-mix(in oklch, var(--brand) 20%, transparent);
+	--brand-line: color-mix(in oklch, var(--brand) 50%, transparent);
 
 	/* The second line of a two-line chart, derived from `--brand` for the reason
 	   the ink above is: a theme swaps the accents, so any pairing of two DECLARED
@@ -384,6 +420,9 @@
 	--series-8: var(--color-orange-300);
 	--series-rest: var(--color-zinc-300);
 	--series-ink: oklch(0.22 0.01 260);
+	/* The divider between two series blocks: the ink at 40%, fixed per side like
+	   the ink itself (STYLE.md, "A series fill under a label is opaque"). */
+	--series-divider: color-mix(in oklch, var(--series-ink) 40%, transparent);
 }
 
 /* ============================================================
@@ -438,7 +477,7 @@
 
 @layer base {
 	* {
-		@apply border-border outline-ring/50;
+		@apply border-border outline-ring;
 	}
 	body,
 	.innerZoomElementWrapper {

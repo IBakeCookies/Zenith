@@ -139,9 +139,9 @@
      the 34px the desktop row gives it. -->
 <div
 	class={cn(
-		'overflow-hidden relative flex shrink-0 rounded-lg border transition-colors has-focus-visible:ring-2 has-focus-visible:ring-ring/50',
+		'overflow-hidden relative flex shrink-0 rounded-lg border transition-colors has-focus-visible:ring-2 has-focus-visible:ring-ring',
 		isStopped ? 'bg-surface-inset' : 'bg-input',
-		!isStopped && hasRung ? 'border-flow/55' : 'border-transparent',
+		!isStopped && hasRung ? 'border-flow-line' : 'border-transparent',
 		className,
 	)}
 >
@@ -223,7 +223,7 @@
 			<Button
 				variant="ghost"
 				size={timer ? 'icon-sm' : 'sm'}
-				class="focus-visible:ring-0 focus-visible:inset-ring-2 focus-visible:inset-ring-ring/50 {timer
+				class="focus-visible:ring-0 focus-visible:inset-ring-2 focus-visible:inset-ring-ring {timer
 					? ''
 					: 'rounded-none px-2.5'}"
 				aria-label={primaryLabel}
@@ -242,7 +242,7 @@
 			<Button
 				variant="ghost"
 				size="icon-sm"
-				class="hover:text-brand-strong focus-visible:ring-0 focus-visible:inset-ring-2 focus-visible:inset-ring-ring/50"
+				class="hover:text-brand-strong focus-visible:ring-0 focus-visible:inset-ring-2 focus-visible:inset-ring-ring"
 				aria-label={terminalLabel}
 				onclick={onTerminalClick}
 			>

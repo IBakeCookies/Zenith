@@ -12,7 +12,7 @@
 			max: 24,
 			step: 0.25,
 			unit: 'hrs',
-			accent: 'focus-within:border-brand/50',
+			accent: 'focus-within:border-brand-line',
 			ariaLabel: 'Available hours',
 		},
 	});
@@ -118,7 +118,7 @@
 				step={0.5}
 				unit="hrs"
 				ariaLabel="Cognitive pool"
-				accent="focus-within:border-mind/50"
+				accent="focus-within:border-mind-line"
 			/>
 		</div>
 		<div class="max-w-40">
@@ -130,7 +130,7 @@
 				step={0.5}
 				unit="hrs"
 				ariaLabel="Physical pool"
-				accent="focus-within:border-body/50"
+				accent="focus-within:border-body-line"
 			/>
 		</div>
 	</div>
