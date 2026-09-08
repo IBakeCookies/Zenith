@@ -117,6 +117,7 @@ describe('calculateDailyMetrics', () => {
 		const overhead = funded.length > 1 ? (funded.length - 1) * 0.25 : 0;
 
 		expect(allocated + overhead + metrics.planSlackHours).toBeCloseTo(8, 6);
+		expect(metrics.planSwitchHours).toBeCloseTo(overhead, 6);
 	});
 
 	// The scope split is load-bearing: plan-scoped metrics
@@ -291,7 +292,7 @@ describe('calculateDailyMetrics', () => {
 		expect(metrics.zenithGain.optimized).toBeCloseTo(summed, 12);
 	});
 
-	/* The day strip lays its blocks out against the budget and carries no clamp for
+	/* The day's rails lay their blocks out against the budget and carry no clamp for
 	   an overflow (docs/features/the-plan-that-had-no-clock.md, AGENTS.md §0):
 	   `bestPlanWithSwitchCost` buys blocks out of
 	   floor((budget − overhead) / BLOCK_HOURS), so the allocation plus the switch

@@ -16,8 +16,7 @@ export function formatDuration(hours: number): string {
 }
 
 /** A length of time with the fit's spread beside it — "2h 14m ± 21m" — or the length
- *  alone before a fit produced one. The row and the day strip both print ϕ, so the two
- *  spell its uncertainty the same way (R3). */
+ *  alone before a fit produced one. */
 export function formatDurationBand(hours: number, standardDeviation?: number): string {
 	return standardDeviation === undefined
 		? formatDuration(hours)

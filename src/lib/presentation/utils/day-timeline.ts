@@ -1,22 +1,24 @@
-/* The day's strip as a view model: geometry a test can assert, rather than a pile
-   of `$derived` in the component (R2) — `completion-chart-points.ts` is the
-   precedent. Blocks carry a `Band`, never a class string (presentation/AGENTS.md,
+/* The day's axis and the rows' rails as one view model: geometry a test can assert,
+   rather than a pile of `$derived` in markup (R2) — `completion-chart-points.ts` is
+   the precedent. Blocks carry a `Band`, never a class string (presentation/AGENTS.md,
    "Metric color-band thresholds"). */
 
 import type { SuggestedTask } from '$lib/business/model/metric/calculation';
-import { type Band, getBandFlowReached } from '$lib/presentation/utils/band';
+import { BAND_BAR_CLASS, type Band, getBandFlowReached } from '$lib/presentation/utils/band';
 
 export type DayBlock = {
 	id: number;
-	title: string;
-	/** 1-based position in the day's run order. */
-	position: number;
 	hours: number;
-	/** Hours from the day's start; the switch cost is the gap it leaves. */
+	/** Hours from the day's start; `switchHours` follows the block. */
 	startOffset: number;
-	flowHours: number;
-	/** The fit's spread on ϕ, printed beside it. Absent until a fit produced one. */
-	flowHoursStd?: number;
+	/** min(hours, ϕ) — drawn hatched. */
+	warmupHours: number;
+	/** max(0, hours − ϕ) — drawn solid. */
+	inFlowHours: number;
+	/** max(0, ϕ − hours) — the flow time the plan left unfunded, drawn dashed. */
+	ghostHours: number;
+	/** The switch cost after the block; 0 on the last block. */
+	switchHours: number;
 	band: Band;
 	isCompleted: boolean;
 };
@@ -24,25 +26,28 @@ export type DayBlock = {
 export type DayTimeline = {
 	/** The denominator of every width. */
 	totalHours: number;
-	/** The strip's floor, counted in minimum block widths: `totalHours` over the
-	 *  shortest allocation, so scaling the strip up to it lifts the narrowest block
-	 *  to legible while every width stays a share of the day. 0 on a day with none. */
-	minimumBlockWidths: number;
 	blocks: DayBlock[];
 };
 
 export interface DayTimelineInput {
-	suggestedTasks: Pick<
-		SuggestedTask,
-		'id' | 'title' | 'suggestedHours' | 'flowStateTime' | 'flowStateTimeStd' | 'completed'
-	>[];
+	suggestedTasks: Pick<SuggestedTask, 'id' | 'suggestedHours' | 'flowStateTime' | 'completed'>[];
 	runOrder: Map<number, number>;
 	switchCost: number;
 	availableHours: number;
-	/** `constantsFit.fitted` — every other path returns the prior, whose band describes
-	 *  the article's defaults rather than the user, so no block prints one. */
-	isConstantsFitted: boolean;
 }
+
+/** The PATTERN of each segment, shared by the rail and its legend so the two cannot
+ *  drift (R3); pattern is what separates them without colour (WCAG 1.4.1). Ink is the
+ *  caller's: a rail inks warm-up and ghost with its block's band (`BAND_HATCH_CLASS`,
+ *  which the hatch and `border-current` both read as `currentColor`), and in flow is the
+ *  success fill because only a block that reaches flow draws one. The switch is grey
+ *  either way — it is not the task's time. The band's words are the row's verdict. */
+export const RAIL_SEGMENT_CLASS = {
+	warmup: 'hatch',
+	inFlow: BAND_BAR_CLASS.success,
+	ghost: 'border-2 border-dashed border-current',
+	switch: 'bg-ty-ghost',
+} as const;
 
 export function buildDayTimeline(input: DayTimelineInput): DayTimeline {
 	const { runOrder } = input;
@@ -55,30 +60,28 @@ export function buildDayTimeline(input: DayTimelineInput): DayTimeline {
 
 	let startOffset = 0;
 
-	const blocks = ordered.map((task): DayBlock => {
+	const blocks = ordered.map((task, index): DayBlock => {
+		const hours = task.suggestedHours;
+
 		const block: DayBlock = {
 			id: task.id,
-			title: task.title,
-			position: runOrder.get(task.id)!,
-			hours: task.suggestedHours,
+			hours,
 			startOffset,
-			flowHours: task.flowStateTime,
-			flowHoursStd: input.isConstantsFitted ? task.flowStateTimeStd : undefined,
-			band: getBandFlowReached(task.suggestedHours, task.flowStateTime),
+			warmupHours: Math.min(hours, task.flowStateTime),
+			inFlowHours: Math.max(0, hours - task.flowStateTime),
+			ghostHours: Math.max(0, task.flowStateTime - hours),
+			switchHours: index === ordered.length - 1 ? 0 : input.switchCost,
+			band: getBandFlowReached(hours, task.flowStateTime),
 			isCompleted: task.completed,
 		};
 
-		startOffset += task.suggestedHours + input.switchCost;
+		startOffset += hours + input.switchCost;
 
 		return block;
 	});
 
 	return {
 		totalHours: input.availableHours,
-		minimumBlockWidths:
-			blocks.length === 0
-				? 0
-				: input.availableHours / Math.min(...blocks.map((block) => block.hours)),
 		blocks,
 	};
 }

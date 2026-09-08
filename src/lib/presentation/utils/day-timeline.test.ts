@@ -3,7 +3,6 @@ import { buildDayTimeline, type DayTimelineInput } from '$lib/presentation/utils
 
 const task = (id: number, suggestedHours: number, flowStateTime = 1) => ({
 	id,
-	title: `Task ${id}`,
 	suggestedHours,
 	flowStateTime,
 	completed: false,
@@ -15,19 +14,12 @@ const task = (id: number, suggestedHours: number, flowStateTime = 1) => ({
 const dayWithCompleted = () =>
 	input({
 		suggestedTasks: [
-			{
-				...task(1, 2),
-				title: 'Write the PDF',
-			},
+			task(1, 2),
 			{
 				...task(2, 1.5),
-				title: 'Boxing training',
 				completed: true,
 			},
-			{
-				...task(3, 1),
-				title: 'Read the brief',
-			},
+			task(3, 1),
 		],
 		runOrder: new Map([
 			[1, 1],
@@ -42,46 +34,10 @@ const input = (over: Partial<DayTimelineInput> = {}): DayTimelineInput => ({
 	runOrder: new Map(),
 	switchCost: 0,
 	availableHours: 8,
-	isConstantsFitted: false,
 	...over,
 });
 
 describe('buildDayTimeline', () => {
-	/* The strip prints ϕ, so it prints the same spread the row under it does — and on the
-	   same condition: the prior's band describes the article's defaults, not the user. */
-	it("carries the fit's spread on ϕ only once a fit produced one", () => {
-		const flowStateTimeStd = 0.35;
-
-		const withFit = buildDayTimeline(
-			input({
-				suggestedTasks: [
-					{
-						...task(1, 2),
-						flowStateTimeStd,
-					},
-				],
-				runOrder: new Map([[1, 1]]),
-				isConstantsFitted: true,
-			}),
-		);
-
-		expect(withFit.blocks[0].flowHoursStd).toBe(flowStateTimeStd);
-
-		const withoutFit = buildDayTimeline(
-			input({
-				suggestedTasks: [
-					{
-						...task(1, 2),
-						flowStateTimeStd,
-					},
-				],
-				runOrder: new Map([[1, 1]]),
-			}),
-		);
-
-		expect(withoutFit.blocks[0].flowHoursStd).toBeUndefined();
-	});
-
 	it('reads the blocks in run order, each offset by the ones before it', () => {
 		const timeline = buildDayTimeline(
 			input({
@@ -99,58 +55,70 @@ describe('buildDayTimeline', () => {
 		expect(timeline.blocks.map((block) => block.startOffset)).toEqual([0, 1, 2]);
 	});
 
-	// The gap IS the reading: the strip states the switch cost by leaving room for
-	// it rather than printing a second copy of the number.
 	it('separates consecutive blocks by the switch cost', () => {
 		const timeline = buildDayTimeline(
 			input({
-				suggestedTasks: [task(1, 2), task(2, 2)],
+				suggestedTasks: [task(1, 1), task(2, 2)],
 				runOrder: new Map([
 					[1, 1],
 					[2, 2],
 				]),
 				switchCost: 0.25,
-				availableHours: 4.25,
+				availableHours: 4,
 			}),
 		);
 
-		expect(timeline.blocks[1].startOffset).toBe(2.25);
+		expect(timeline.blocks[1].startOffset).toBe(1.25);
 	});
 
-	/* A 15-minute allocation in an 8h day is 3% of the strip — narrower on a phone
-	   than the block's own padding — and it is BY CONSTRUCTION the block carrying
-	   the "short of flow" reading. The floor is the strip's, not the block's: scaled
-	   to this many minimum block widths the shortest allocation clears one of them,
-	   and every width stays a share of the day. */
-	it('counts the strip in minimum block widths off its shortest allocation', () => {
+	/* The rail draws the allocation in two patterns — hatched while the task warms up
+	   toward flow, solid once it is in flow — and dashes the hours flow would still
+	   have needed. The three are the block's own arithmetic on ϕ. */
+	it('splits a block short of flow into warm-up and the flow hours it still needed', () => {
 		const timeline = buildDayTimeline(
 			input({
-				suggestedTasks: [task(1, 2), task(2, 0.25)],
+				suggestedTasks: [task(1, 1, 1.1)],
+				runOrder: new Map([[1, 1]]),
+			}),
+		);
+
+		const [block] = timeline.blocks;
+
+		expect(block.warmupHours).toBe(1);
+		expect(block.inFlowHours).toBe(0);
+		expect(block.ghostHours).toBeCloseTo(0.1, 2);
+	});
+
+	it('splits a block past flow into warm-up and in-flow hours, with no ghost', () => {
+		const timeline = buildDayTimeline(
+			input({
+				suggestedTasks: [task(1, 1.5, 1)],
+				runOrder: new Map([[1, 1]]),
+			}),
+		);
+
+		const [block] = timeline.blocks;
+
+		expect(block.warmupHours).toBe(1);
+		expect(block.inFlowHours).toBe(0.5);
+		expect(block.ghostHours).toBe(0);
+	});
+
+	// The last block's switch leads nowhere, so it is not drawn.
+	it('charges every block but the last its switch cost', () => {
+		const timeline = buildDayTimeline(
+			input({
+				suggestedTasks: [task(1, 1), task(2, 1), task(3, 1)],
 				runOrder: new Map([
 					[1, 1],
 					[2, 2],
+					[3, 3],
 				]),
-				availableHours: 8,
+				switchCost: 0.25,
 			}),
 		);
 
-		expect(timeline.minimumBlockWidths).toBe(32);
-	});
-
-	it('counts a single block off its own allocation', () => {
-		const timeline = buildDayTimeline(
-			input({
-				suggestedTasks: [task(1, 2)],
-				runOrder: new Map([[1, 1]]),
-				availableHours: 8,
-			}),
-		);
-
-		expect(timeline.minimumBlockWidths).toBe(4);
-	});
-
-	it('asks for no width on a day that funded nothing', () => {
-		expect(buildDayTimeline(input()).minimumBlockWidths).toBe(0);
+		expect(timeline.blocks.map((block) => block.switchHours)).toEqual([0.25, 0.25, 0]);
 	});
 
 	it('bands a block by whether its allocation reaches flow', () => {

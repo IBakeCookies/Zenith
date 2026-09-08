@@ -17,6 +17,7 @@ describe('day-constraints-bar.svelte', () => {
 			physicalPool: 3,
 			remainingSuggestedHours: '3.50',
 			planSlackHours: 0,
+			planSwitchHours: 0,
 		};
 
 		const { rerender } = render(DayConstraintsBar, {
@@ -31,8 +32,9 @@ describe('day-constraints-bar.svelte', () => {
 			isOpen: true,
 		});
 
-		// The one-line summary is what a closed bar shows, so its visibility is the
-		// disclosure's state — the fields below stay in the DOM either way now.
-		await expect.element(page.getByText(/6h budget/)).toBeVisible();
+		// The header shows in both states, so the element's own attribute is the state.
+		await expect
+			.element(page.getByText('Day Setup').element().closest('details')!)
+			.not.toHaveAttribute('open');
 	});
 });

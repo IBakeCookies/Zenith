@@ -9,7 +9,7 @@
 		 *  opening is a fresh mount, and no page decides when a form is on screen. It
 		 *  takes the closer: only this card knows the dialog its Cancel closes. */
 		form?: Snippet<[() => void]>;
-		/** Between the heading and the list — `/` its day strip, the Lab its ☕ editor. */
+		/** Between the heading and the list — `/` its day axis, the Lab its ☕ editor. */
 		strip?: Snippet;
 		/** What the screen reads beside the heading — both screens put the day's Load/Save
 		 *  there. A snippet, like `form`: this card is the two screens' shared frame, so
@@ -28,10 +28,21 @@
 		};
 		/** Where the empty state's example-day link points; the Lab passes none. */
 		exampleDayHref?: string;
+		/** After the list — `/`'s legend for its rails; the Lab passes none. */
+		foot?: Snippet;
 		class?: string;
 	}
 
-	let { form, strip, heading, rows, split, exampleDayHref, class: className }: Props = $props();
+	let {
+		form,
+		strip,
+		heading,
+		rows,
+		split,
+		exampleDayHref,
+		foot,
+		class: className,
+	}: Props = $props();
 
 	let addOpen = $state(false);
 </script>
@@ -41,10 +52,10 @@
      the last task. The list carries the group's name instead, and `ruled` divides the two
      at a weight the rows inside one do not use: presentation/AGENTS.md, "`/` reads the day
      as the two groups the plan makes". -->
-<!-- `pt-text-sm` — wider than the card's rhythm, and on the plain `<ul>` below too:
-     the strip is a picture of the day and the list is the day itemised. -->
+<!-- `pt-text-sm` on the ruled group only — wider than the card's rhythm, so the two
+     groups read as two lists rather than one with a line through it. -->
 {#snippet group(label: string, items: Snippet, ruled: boolean)}
-	<div class={cn('space-y-text-2xs pt-text-sm', ruled && 'border-t border-line-strong')}>
+	<div class={cn('space-y-text-2xs', ruled && 'pt-text-sm border-t border-line-strong')}>
 		<p class="text-2xs font-semibold tracking-wider text-ty-silent uppercase">{label}</p>
 		<ul aria-label={label} class="divide-y divide-line-soft">{@render items()}</ul>
 	</div>
@@ -73,7 +84,7 @@
 			{@render group(split.firstLabel, rows, false)}
 			{@render group(split.restLabel, split.rest, true)}
 		{:else if rows}
-			<ul class="divide-y divide-line-soft pt-text-sm">{@render rows()}</ul>
+			<ul class="divide-y divide-line-soft">{@render rows()}</ul>
 		{:else}
 			<div class="flex flex-col items-center justify-center py-empty-state text-center">
 				<div class="text-ty-silent mb-text-xs">
@@ -105,6 +116,7 @@
 				{/if}
 			</div>
 		{/if}
+		{@render foot?.()}
 	</div>
 
 	{#if form}

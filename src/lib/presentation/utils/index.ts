@@ -48,7 +48,6 @@ const twMerge = extendTailwindMerge({
 				'section',
 				'section-lg',
 				'empty-state',
-				'day-block',
 			],
 			text: ['2xs'],
 			shadow: ['card'],

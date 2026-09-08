@@ -11,6 +11,7 @@
 		physicalPool: number;
 		remainingSuggestedHours: string;
 		planSlackHours: number;
+		planSwitchHours: number;
 		// Set at mount and then the user's to control — the browser owns the state from
 		// there. The caller re-asks by remounting the bar (`{#key}` on the loaded day),
 		// because a live value would slam the panel shut the moment its own hours field
@@ -26,6 +27,7 @@
 		physicalPool = $bindable(),
 		remainingSuggestedHours,
 		planSlackHours,
+		planSwitchHours,
 		isOpen = false,
 		class: className,
 	}: Props = $props();
@@ -43,26 +45,9 @@
 	const MINIMUM_REPORTED_SLACK_HOURS = 0.05;
 	const hasSlack = $derived(planSlackHours > MINIMUM_REPORTED_SLACK_HOURS);
 
-	const summary = $derived(
-		[
-			m.budget_summary({
-				hours: availableHours,
-				planned: remainingSuggestedHours,
-			}),
-			...(hasSlack
-				? [
-						m.budget_summary_free({
-							slack: planSlackHours.toFixed(2),
-						}),
-					]
-				: []),
-			m.budget_summary_pools({
-				mind: cognitivePool,
-				body: physicalPool,
-				switchMinutes: switchCostMinutes,
-			}),
-		].join(' · '),
-	);
+	// One template for the header and the controls, so each figure sits over its own
+	// control from lg up: title column, four cells, the chevron's column.
+	const COLUMNS = 'lg:grid-cols-[8rem_repeat(4,minmax(0,1fr))_1rem]';
 
 	function updateSwitchCost(minutes: number) {
 		switchCost = minutes / 60;
@@ -76,25 +61,62 @@
      goes into the state and the re-render agrees with it. `list-none` for the marker
      Safari draws even with a flex summary; the chevron below is this design's own. -->
 <details class={cn('card-shell group px-box-md py-box-sm sm:px-box-xl', className)} bind:open>
-	<summary class="flex list-none cursor-pointer items-baseline justify-between gap-grid-xs">
+	<summary
+		class={cn(
+			'grid list-none cursor-pointer grid-cols-[minmax(0,1fr)_1rem] items-baseline gap-x-grid-xl gap-y-text-xs',
+			COLUMNS,
+		)}
+	>
 		<span class="shrink-0 text-xs font-semibold text-ty-secondary uppercase tracking-wider">
 			{m.budget_title()}
 		</span>
-		<span class="flex min-w-0 items-baseline gap-grid-xs text-xs text-ty-silent">
-			<span class="truncate group-open:hidden">{summary}</span>
-			<span aria-hidden="true" class="shrink-0 text-lg leading-none group-open:hidden">▾</span>
-			<span aria-hidden="true" class="hidden shrink-0 text-lg leading-none group-open:inline"
-				>▴</span
-			>
+		<span aria-hidden="true" class="col-start-2 row-start-1 text-lg leading-none lg:col-start-6">
+			<span class="group-open:hidden">▾</span><span class="hidden group-open:inline">▴</span>
 		</span>
+		<!-- `lg:contents` lifts the four cells into the template's own columns; below lg
+		     they wrap under the title as one row. -->
+		<div class="col-span-full flex flex-wrap gap-x-grid-xl gap-y-text-2xs lg:contents">
+			<span class="figure-cell">
+				<span class="figure"
+					>{availableHours}<span class="figure-unit">{m.unit_hour_symbol()}</span></span
+				>
+				{m.budget_figure_budget()}
+				<span class="text-ty-secondary tabular-nums"
+					>{remainingSuggestedHours} {m.unit_hour_symbol()}</span
+				>
+				{m.budget_figure_planned()}
+				{#if hasSlack}
+					<span class="text-warning-strong tabular-nums">
+						{planSlackHours.toFixed(2)}
+						{m.unit_hour_symbol()}
+						{m.budget_figure_free()}
+					</span>
+				{/if}
+			</span>
+			<span class="figure-cell">
+				<span class="figure"
+					>{cognitivePool}<span class="figure-unit">{m.unit_hour_symbol()}</span></span
+				>
+				<span class="figure-dot bg-mind"></span>{m.budget_figure_mind()}
+			</span>
+			<span class="figure-cell">
+				<span class="figure"
+					>{physicalPool}<span class="figure-unit">{m.unit_hour_symbol()}</span></span
+				>
+				<span class="figure-dot bg-body"></span>{m.budget_figure_body()}
+			</span>
+			<span class="figure-cell">
+				<span class="figure"
+					>{switchCostMinutes}<span class="figure-unit">{m.unit_minutes()}</span></span
+				>
+				{m.budget_figure_per_switch()}
+			</span>
+		</div>
 	</summary>
 
-	<!-- The bar spans both page columns, so all five fit on one row from lg up. -->
-	<div class="mt-text-md grid gap-x-grid-xl gap-y-text-lg sm:grid-cols-2 lg:grid-cols-4">
+	<div class={cn('mt-text-md grid gap-x-grid-xl gap-y-text-lg sm:grid-cols-2', COLUMNS)}>
+		<span class="hidden lg:block"></span>
 		<div>
-			<label for="available-hours" class="mb-text-2xs block text-xs text-ty-silent">
-				{m.budget_available_hours()}
-			</label>
 			<NumberInput
 				id="available-hours"
 				value={availableHours}
@@ -122,9 +144,15 @@
 				class="range-track mt-text-xs accent-brand"
 			/>
 			<p class="mt-text-xs text-xs text-ty-silent">
+				<label for="available-hours" class="text-ty-secondary">{m.budget_available_hours()}</label>
+				·
 				{m.budget_allocated({
-					hours: remainingSuggestedHours,
+					planned: remainingSuggestedHours,
+					switching: planSwitchHours.toFixed(2),
 				})}
+				{#if !hasSlack}
+					· {m.budget_fully_committed()}
+				{/if}
 			</p>
 			{#if hasSlack}
 				<p class="mt-text-2xs text-xs text-warning-strong" title={m.budget_unplanned_title()}>
@@ -136,25 +164,6 @@
 		</div>
 
 		<div>
-			<label for="switch-cost" class="mb-text-2xs block text-xs text-ty-silent">
-				{m.budget_switch_cost()}
-			</label>
-			<NumberInput
-				id="switch-cost"
-				value={switchCostMinutes}
-				onchange={updateSwitchCost}
-				min={0}
-				max={60}
-				step={5}
-				unit={m.unit_minutes()}
-			/>
-			<p class="mt-text-xs text-xs text-ty-silent">{m.budget_switch_cost_hint()}</p>
-		</div>
-
-		<div>
-			<label for="cognitive-pool" class="mb-text-2xs block text-xs text-ty-silent">
-				{m.budget_cognitive_capacity()}
-			</label>
 			<NumberInput
 				id="cognitive-pool"
 				value={cognitivePool}
@@ -165,13 +174,14 @@
 				unit={m.unit_hours()}
 				accent="focus-within:border-mind-line"
 			/>
-			<p class="mt-text-xs text-xs text-ty-silent">{m.budget_cognitive_hint()}</p>
+			<p class="mt-text-xs text-xs text-ty-silent">
+				<label for="cognitive-pool" class="text-ty-secondary">{m.budget_cognitive_capacity()}</label
+				>
+				· {m.budget_cognitive_hint()}
+			</p>
 		</div>
 
 		<div>
-			<label for="physical-pool" class="mb-text-2xs block text-xs text-ty-silent">
-				{m.budget_physical_capacity()}
-			</label>
 			<NumberInput
 				id="physical-pool"
 				value={physicalPool}
@@ -182,7 +192,25 @@
 				unit={m.unit_hours()}
 				accent="focus-within:border-body-line"
 			/>
-			<p class="mt-text-xs text-xs text-ty-silent">{m.budget_physical_hint()}</p>
+			<p class="mt-text-xs text-xs text-ty-silent">
+				<label for="physical-pool" class="text-ty-secondary">{m.budget_physical_capacity()}</label>
+				· {m.budget_physical_hint()}
+			</p>
+		</div>
+		<div>
+			<NumberInput
+				id="switch-cost"
+				value={switchCostMinutes}
+				onchange={updateSwitchCost}
+				min={0}
+				max={60}
+				step={5}
+				unit={m.unit_minutes()}
+			/>
+			<p class="mt-text-xs text-xs text-ty-silent">
+				<label for="switch-cost" class="text-ty-secondary">{m.budget_switch_cost()}</label>
+				· {m.budget_switch_cost_hint()}
+			</p>
 		</div>
 	</div>
 </details>

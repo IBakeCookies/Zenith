@@ -3,6 +3,7 @@
 	import { expect, fn, within } from 'storybook/test';
 	import { getTaskNature, type SuggestedTask } from '$lib/business/model/metric/calculation';
 	import TaskList from '$lib/presentation/component/task-list.svelte';
+	import { buildDayTimeline } from '$lib/presentation/utils/day-timeline';
 
 	const task = (id: number, title: string, overrides: Partial<SuggestedTask> = {}) => {
 		const base = {
@@ -85,6 +86,27 @@
 			onupdate: fn(),
 		},
 	});
+
+	/** Two the plan funded, two it dropped. */
+	const twoGroups: SuggestedTask[] = [
+		task(1, 'design the error boundary', {
+			suggestedHours: 2.5,
+		}),
+		task(2, 'write the PDF solution', {
+			suggestedHours: 1.75,
+		}),
+		task(3, 'reorganize the garage', {
+			suggestedHours: 0,
+		}),
+		task(4, 'inbox', {
+			suggestedHours: 0,
+		}),
+	];
+
+	const twoGroupsOrder = new Map([
+		[1, 1],
+		[2, 2],
+	]);
 
 	/** Five funded tasks, so the list is read at its full length. */
 	const fundedFive: SuggestedTask[] = [
@@ -210,24 +232,14 @@
 <Story
 	name="Two headed groups"
 	args={{
-		suggestedTasks: [
-			task(1, 'design the error boundary', {
-				suggestedHours: 2.5,
-			}),
-			task(2, 'write the PDF solution', {
-				suggestedHours: 1.75,
-			}),
-			task(3, 'reorganize the garage', {
-				suggestedHours: 0,
-			}),
-			task(4, 'inbox', {
-				suggestedHours: 0,
-			}),
-		],
-		runOrder: new Map([
-			[1, 1],
-			[2, 2],
-		]),
+		suggestedTasks: twoGroups,
+		runOrder: twoGroupsOrder,
+		timeline: buildDayTimeline({
+			suggestedTasks: twoGroups,
+			runOrder: twoGroupsOrder,
+			switchCost: 0.25,
+			availableHours: 8,
+		}),
 	}}
 	play={async ({ canvas }) => {
 		// The plan's two answers about a task read as two headed lists, so a row is never
@@ -266,6 +278,13 @@
 		// strip, which is not a claim the plan makes.
 		expect(dropped.parentElement).toHaveClass('border-t');
 		expect(sequence.parentElement).not.toHaveClass('border-t');
+
+		// A rail under every funded row and under no unfunded one: the plan gave the
+		// second group no hours to draw.
+		expect(within(lists[0]).getAllByText('warming up')).toHaveLength(2);
+		expect(within(lists[1]).queryByText('warming up')).toBeNull();
+		// No rail means no line for one either: the unfunded row is its two columns alone.
+		expect(lists[1].querySelector('li')!.childElementCount).toBe(1);
 	}}
 />
 

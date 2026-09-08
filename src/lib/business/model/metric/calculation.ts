@@ -432,11 +432,20 @@ export function calculatePlanSlackHours(
 	switchCost: number,
 ): number {
 	const budget = Number(availableHours) || 0;
-	const funded = tasks.filter((task) => task.suggestedHours > 0);
-	const overhead = funded.length > 1 ? (funded.length - 1) * switchCost : 0;
+	const overhead = calculatePlanSwitchHours(tasks, switchCost);
 	const allocated = tasks.reduce((sum, task) => sum + task.suggestedHours, 0);
 
 	return Math.max(0, Math.max(0, budget - overhead) - allocated);
+}
+
+/** The switch overhead the funded set pays: one transition fewer than its tasks. */
+export function calculatePlanSwitchHours(
+	tasks: Pick<SuggestedTask, 'suggestedHours'>[],
+	switchCost: number,
+): number {
+	const funded = tasks.filter((task) => task.suggestedHours > 0);
+
+	return funded.length > 1 ? (funded.length - 1) * switchCost : 0;
 }
 
 export function calculateHumanCapacity(

@@ -4,6 +4,8 @@
 	import { expect, fn, waitFor, within } from 'storybook/test';
 	import type { Persisted, DrainObservationRecord } from '$lib/business/type';
 	import TaskItem from '$lib/presentation/component/task-item.svelte';
+	import { BAND_TEXT_CLASS } from '$lib/presentation/utils/band';
+	import type { DayBlock } from '$lib/presentation/utils/day-timeline';
 	import { newDrainDraft } from '$lib/presentation/utils/measurement-prompt';
 
 	const { Story } = defineMeta({
@@ -42,6 +44,18 @@
 			onupdate: fn(),
 		},
 	});
+
+	const shortOfFlow: DayBlock = {
+		id: 1,
+		hours: 1,
+		startOffset: 0,
+		warmupHours: 1,
+		inFlowHours: 0,
+		ghostHours: 0.1,
+		switchHours: 0.25,
+		band: 'warning',
+		isCompleted: false,
+	};
 
 	const drainLog = (over: Partial<Persisted<DrainObservationRecord>> = {}) => ({
 		id: 11,
@@ -122,6 +136,54 @@
 		const body = within(canvasElement.ownerDocument.body);
 
 		await waitFor(() => expect(body.getByText(/^What the Fallow model derived/)).toBeVisible());
+	}}
+/>
+
+<Story
+	name="Short of flow"
+	args={{
+		suggestedHours: 1,
+		flowStateTime: 1.1,
+		runOrder: 1,
+		block: shortOfFlow,
+		totalHours: 8,
+	}}
+	play={async ({ canvas }) => {
+		const verdict = canvas.getByText('short of flow by 6m');
+
+		await expect(verdict).toHaveClass(...BAND_TEXT_CLASS.warning.split(' '));
+		expect(verdict.parentElement).toContainElement(canvas.getByText('prio 12.4'));
+
+		const columns = canvas.getByRole('listitem').firstElementChild!.getBoundingClientRect();
+
+		const rail = canvas
+			.getByText('warming up')
+			.parentElement!.parentElement!.getBoundingClientRect();
+
+		expect(rail.top).toBeGreaterThanOrEqual(columns.bottom);
+		expect(rail.left).toBeCloseTo(columns.left, 0);
+		expect(rail.right).toBeCloseTo(columns.right, 0);
+	}}
+/>
+
+<Story
+	name="Reaches flow"
+	args={{
+		suggestedHours: 1.5,
+		flowStateTime: 1,
+		runOrder: 1,
+		block: {
+			...shortOfFlow,
+			hours: 1.5,
+			inFlowHours: 0.5,
+			ghostHours: 0,
+			band: 'success',
+		},
+		totalHours: 8,
+	}}
+	play={async ({ canvas }) => {
+		expect(canvas.queryByText(/short of flow/)).toBeNull();
+		await expect(canvas.getByText('in flow')).toBeInTheDocument();
 	}}
 />
 
@@ -320,6 +382,13 @@
 	args={{
 		completed: true,
 		runOrder: 1,
+		suggestedHours: 1,
+		flowStateTime: 1.1,
+		block: {
+			...shortOfFlow,
+			isCompleted: true,
+		},
+		totalHours: 8,
 	}}
 	play={async ({ args, canvas, userEvent }) => {
 		// Un-completing ends no session, so it asks for no measurement
@@ -334,6 +403,9 @@
 
 		await expect(canvas.queryByText('#1')).not.toBeInTheDocument();
 		await expect(canvas.queryByText('12.4')).not.toBeInTheDocument();
+
+		await expect(canvas.getByText('warming up').parentElement!.parentElement!).toBeVisible();
+		expect(canvas.queryByText(/short of flow/)).toBeNull();
 
 		await userEvent.click(checkbox);
 		await expect(args.onflowopen).not.toHaveBeenCalled();

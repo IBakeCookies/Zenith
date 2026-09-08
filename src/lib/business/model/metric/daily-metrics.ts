@@ -33,6 +33,7 @@ import {
 	calculateMomentum,
 	calculatePhysicalLoad,
 	calculatePlanSlackHours,
+	calculatePlanSwitchHours,
 	calculateQuickWins,
 	calculateRecoveryRatio,
 	calculateRewardDensity,
@@ -66,6 +67,8 @@ export interface DailyMetrics {
 	runOrder: Map<number, number>;
 	/** Hours the plan deliberately leaves unspent (optimal stopping + pools). */
 	planSlackHours: number;
+	/** Hours the funded plan spends on transitions between its tasks. */
+	planSwitchHours: number;
 	remainingSuggestedHours: number;
 	totalTasks: number;
 	completedTasks: number;
@@ -119,6 +122,7 @@ export function calculateDailyMetrics(input: DailyMetricsInput): DailyMetrics {
 	const budget = Number(availableHours) || 0;
 	const activeTasks = suggestedTasks.filter((task) => !task.completed);
 	const planSlackHours = calculatePlanSlackHours(suggestedTasks, availableHours, switchCost);
+	const planSwitchHours = calculatePlanSwitchHours(suggestedTasks, switchCost);
 	const cognitiveLoad = calculateCognitiveLoad(suggestedTasks, availableHours);
 	const physicalLoad = calculatePhysicalLoad(suggestedTasks, availableHours);
 
@@ -131,6 +135,7 @@ export function calculateDailyMetrics(input: DailyMetricsInput): DailyMetrics {
 		// depleted as work got done moved rows out from under the user.
 		runOrder: new Map(calculateInterleavedOrder(suggestedTasks).map((task, i) => [task.id, i + 1])),
 		planSlackHours,
+		planSwitchHours,
 		remainingSuggestedHours: activeTasks.reduce((sum, task) => sum + task.suggestedHours, 0),
 		totalTasks: tasks.length,
 		completedTasks: tasks.filter((task) => task.completed).length,

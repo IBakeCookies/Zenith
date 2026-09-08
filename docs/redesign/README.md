@@ -75,7 +75,7 @@ every break and is a figure nobody computed. That left only the start, which
 shipped for a while as a per-day persisted field labelling the strip `from 09:00`
 — and no formula, fit or metric ever read it: the plan was identical with and
 without it. A label anchored to nothing is not an anchor, so the field, the
-label and the stored key were removed; the strip now prints no time of day and
+label and the stored key were removed; the day axis now prints no time of day and
 every duration on it is an offset from the day's own zero. That is what leaves
 MATH.md §8.3's circadian boundary settled, rejected until there is an
 instrument, and the only time-of-day instrument the data carries is the

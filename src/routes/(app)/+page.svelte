@@ -36,6 +36,7 @@
 	import DayActions from '$lib/presentation/component/day-actions.svelte';
 	import TaskList from '$lib/presentation/component/task-list.svelte';
 	import DayConstraintsBar from '$lib/presentation/component/day-constraints-bar.svelte';
+	import DayLegend from '$lib/presentation/component/day-legend.svelte';
 	import DayTimeline from '$lib/presentation/component/day-timeline.svelte';
 	import MetricHeadlineStrip from '$lib/presentation/component/metric-headline-strip.svelte';
 	import MetricsDashboard from '$lib/presentation/component/metrics-dashboard.svelte';
@@ -144,7 +145,6 @@
 			runOrder: daily.runOrder,
 			switchCost: session.switchCost,
 			availableHours: daily.budgetHours,
-			isConstantsFitted: session.constantsFit.fitted,
 		}),
 	);
 	const advice = $derived(plan.advice ? buildAdviceDisplay(plan.advice, getDateLocale()) : null);
@@ -212,10 +212,14 @@
 	/>
 {/snippet}
 
-<!-- Withheld on an empty day: the card's own empty state already says there is
-     nothing, and the strip's "nothing is funded" would say it a second time. -->
+<!-- The axis, withheld on an empty day: the card's own empty state already says there
+     is nothing, and "nothing is funded" would say it a second time. -->
 {#snippet dayStrip()}
-	<DayTimeline {...timeline} />
+	<DayTimeline {...timeline} class="m-0" />
+{/snippet}
+
+{#snippet dayFoot()}
+	<DayLegend switchHours={session.switchCost} />
 {/snippet}
 
 <!-- No `{#key}` and no "is it open" reading of the day: the card mounts this in a
@@ -289,6 +293,7 @@
 				bind:physicalPool={session.physicalPool}
 				{remainingSuggestedHours}
 				planSlackHours={daily.planSlackHours}
+				planSwitchHours={daily.planSwitchHours}
 				isOpen={session.loadedDate !== null && session.availableHours <= 0}
 			/>
 		{/key}
@@ -329,6 +334,8 @@
 					: (taskId, changes) => session.updateTask(taskId, changes)}
 				form={isViewingPast ? undefined : addTaskForm}
 				strip={daily.suggestedTasks.length ? dayStrip : undefined}
+				{timeline}
+				foot={timeline.blocks.length ? dayFoot : undefined}
 				actions={dayActions}
 				exampleDayHref={session.isDemo || isViewingPast ? undefined : getDemoHref()}
 			/>

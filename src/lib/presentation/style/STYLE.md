@@ -309,17 +309,17 @@ Read this before touching markup, classes, or anything under
   Three of the four recipes are `measurement-prompt.ts`; the ☕ length field is
   inline, being the one `info` tint.
 - **An overflowing panel scrolls with `nice-scrollbar` (`base.css`), never the
-  native bar** — the theme dropdown, the analytics log history, `/`'s day strip and
-  the dialog and calendar bodies are all it. No palette reaches a UA scrollbar, so it renders as
-  the same grey slab on every theme. The strip's container also carries
-  `tabindex="0"`, because a region that only scrolls is unreachable by keyboard
-  otherwise (axe `scrollable-region-focusable`), which is why it holds a scoped
+  native bar** — the theme dropdown, the analytics log history and the dialog and
+  calendar bodies are all it. No palette reaches a UA scrollbar, so it renders as
+  the same grey slab on every theme. A region that only scrolls also needs
+  `tabindex="0"` (axe `scrollable-region-focusable`), with a scoped
   `svelte-ignore` for `a11y_no_noninteractive_tabindex`.
 - **A repeated cluster becomes an `@utility`, not a wrapper component** —
   `field-input` (every text and date field), `range-track` (every slider, its
-  `accent-*` left to the call site), `row-action` (a row's right-edge controls)
-  and `input-overlay` (the carve-outs above), over `banner-shell` and
-  `card-shell`. A wrapper would cost each caller a level it cannot always afford,
+  `accent-*` left to the call site), `row-action` (a row's right-edge controls),
+  `input-overlay` (the carve-outs above) and `hatch` (the rail's warm-up segment
+  and its legend swatch — a `repeating-linear-gradient` no class expresses,
+  striped in `currentColor` so the ink stays a `text-*`), over `banner-shell` and `card-shell`. A wrapper would cost each caller a level it cannot always afford,
   as `hint-underline`'s would the heading level or the label association.
 - **The hand cursor marks anything clickable** — Tailwind v4's Preflight gives
   buttons `cursor: default` (the spec reading, where the hand means "link");
