@@ -3,6 +3,7 @@ import {
 	claimPendingMinutes,
 	completionPromptAction,
 	drainDraftFromLog,
+	MEASUREMENT_MINUTES_CLASS,
 	newDrainDraft,
 	type DrainDraft,
 	RATING_INPUT_CLASS,
@@ -79,6 +80,16 @@ describe('RATING_INPUT_CLASS', () => {
 	it('spells both channels identically apart from the capacity token', () => {
 		expect(RATING_INPUT_CLASS.mind.replaceAll('mind', 'CAPACITY')).toBe(
 			RATING_INPUT_CLASS.body.replaceAll('body', 'CAPACITY'),
+		);
+	});
+});
+
+describe('MEASUREMENT_MINUTES_CLASS', () => {
+	// The ☕ length field is the ⚡/🪫 one in the `info` tint. It was spelled inline for
+	// three months, the one recipe of the four with a second definition and no test.
+	it('spells both tints identically apart from the channel token', () => {
+		expect(MEASUREMENT_MINUTES_CLASS.flow.replaceAll('flow', 'CHANNEL')).toBe(
+			MEASUREMENT_MINUTES_CLASS.info.replaceAll('info', 'CHANNEL'),
 		);
 	});
 });

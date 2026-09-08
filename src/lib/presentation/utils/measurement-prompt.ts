@@ -131,8 +131,12 @@ export const drainDraftFromLog = (log: Persisted<DrainObservationRecord>): Drain
 export const MEASUREMENT_FORM_CLASS =
 	'mt-text-xs flex flex-wrap items-center gap-x-grid-xs gap-y-grid-2xs rounded-lg border border-flow-tint bg-surface-wash px-box-xs py-box-2xs text-2xs text-ty-silent';
 
-export const MEASUREMENT_MINUTES_CLASS =
-	'w-14 rounded-sm border border-flow-tint bg-input px-box-3xs py-text-3xs text-xs text-ty-primary outline-none focus:border-flow-line focus:ring-1 focus:ring-flow-line';
+/* The length field in two tints, like the rating pair below: `flow` for ⚡ and 🪫,
+   `info` for ☕. Full literals for the same scanner reason. */
+export const MEASUREMENT_MINUTES_CLASS = {
+	flow: 'w-14 rounded-sm border border-flow-tint bg-input px-box-3xs py-text-3xs text-xs text-ty-primary outline-none focus:border-flow-line focus:ring-1 focus:ring-flow-line',
+	info: 'w-14 rounded-sm border border-info-tint bg-input px-box-3xs py-text-3xs text-xs text-ty-primary outline-none focus:border-info-line focus:ring-1 focus:ring-info-line',
+} as const;
 
 /* The 0–10 rating fields are the same field in two paints — mind and body — and the
    capacity is spelled into three classes each. Six copies of that pair had to be
