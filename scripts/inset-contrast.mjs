@@ -154,6 +154,7 @@ const median = (values) => {
 };
 
 const fails = [];
+/** @type {{ theme: string; step: number; cr: number; secPageCr: number; secCardCr: number; silPageCr: number; silCardCr: number; silInsetCr: number; rung: Record<'page' | 'card' | 'inset', { ps: number; ss: number }> }[]} */
 const results = [];
 
 for (const theme of THEMES) {
@@ -295,19 +296,20 @@ await browser.close();
 
 console.log('\nsummary:');
 
-for (const [label, key, checked] of /** @type {[string, string, boolean][]} */ ([
-	['secondary/page', 'secPageCr', false],
-	['secondary/card', 'secCardCr', true],
-	['secondary/inset (cr)', 'cr', true],
-	['silent/page', 'silPageCr', false],
-	['silent/card', 'silCardCr', true],
-	['silent/inset', 'silInsetCr', true],
+for (const [
+	label,
+	pick,
+	checked,
+] of /** @type {[string, (r: (typeof results)[number]) => number, boolean][]} */ ([
+	['secondary/page', (r) => r.secPageCr, false],
+	['secondary/card', (r) => r.secCardCr, true],
+	['secondary/inset (cr)', (r) => r.cr, true],
+	['silent/page', (r) => r.silPageCr, false],
+	['silent/card', (r) => r.silCardCr, true],
+	['silent/inset', (r) => r.silInsetCr, true],
 ])) {
-	const values = results.map((r) => r[/** @type {keyof typeof r} */ (key)]);
-
-	const under = checked
-		? results.filter((r) => r[/** @type {keyof typeof r} */ (key)] < MIN_CR).map((r) => r.theme)
-		: [];
+	const values = results.map(pick);
+	const under = checked ? results.filter((r) => pick(r) < MIN_CR).map((r) => r.theme) : [];
 
 	console.log(
 		`  ${label}: min=${Math.min(...values).toFixed(2)} median=${median(values).toFixed(2)}${
