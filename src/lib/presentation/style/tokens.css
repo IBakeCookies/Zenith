@@ -356,10 +356,10 @@
    and "the rounded opaque themes", plus blueprint and parchment) it is the same
    flat ink and the rows vanished. The recessed rung is what a well cut into a
    card is for, and deriving `--surface-inset` per side rather than hand-setting
-   it (STYLE.md) is what made the rung distinct on the 25 dark themes, where it
+   it (STYLE.md) is what made the rung distinct on the dark themes, where it
    used to measure 1.013-1.079 against its own card and this row was the
    invisible thing this comment once claimed it was not. It is measured now
-   rather than asserted — scripts/inset-contrast.mjs, worst 1.081 of 46 — and
+   rather than asserted — scripts/inset-contrast.mjs — and
    the step is 0.1 per side with `ukiyo` overriding it at 0.14, that being the
    one card 0.1 leaves this row invisible on (base.css). */
 /* An advisory strip across the top of the page's column: the storage banner and the
