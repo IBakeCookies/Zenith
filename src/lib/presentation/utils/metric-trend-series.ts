@@ -9,6 +9,7 @@
    a parameter for the reason `number-format.ts` gives. */
 
 import * as m from '$lib/paraglide/messages.js';
+import { DASH } from '$lib/presentation/utils/series-runs';
 import { addDays, fromISO } from '$lib/business/utils/date';
 import type { MetricTrendPoint } from '$lib/business/model/metric/history';
 
@@ -20,9 +21,9 @@ export interface TrendSeries {
 	strokeClass: string;
 	/** The matching `fill-*`, for a day with no neighbour to draw a line to. */
 	fillClass: string;
-	/** A matching `bg-*` for the legend swatch. */
-	swatchClass: string;
-	isDashed: boolean;
+	/** `stroke-dasharray`, or undefined for the solid line. One style per series,
+	 *  never two series sharing one — see `DASH`. */
+	dash?: string;
 }
 
 export interface MetricTrendSeriesInput {
@@ -75,14 +76,14 @@ function line<T>(
 	slots: (T | null)[],
 	label: string,
 	read: (row: T) => number | null,
-	classes: Pick<TrendSeries, 'strokeClass' | 'fillClass' | 'swatchClass'>,
-	isDashed = false,
+	classes: Pick<TrendSeries, 'strokeClass' | 'fillClass'>,
+	dash?: string,
 ): TrendSeries {
 	return {
 		label,
 		values: slots.map((row) => (row === null ? null : read(row))),
 		...classes,
-		isDashed,
+		dash,
 	};
 }
 
@@ -99,17 +100,27 @@ export function metricTrendSeries(input: MetricTrendSeriesInput): {
 
 	return {
 		labels,
+		// Three series, three line styles: `danger`/`mind`/`body` are three DECLARED
+		// tokens, and STYLE.md's rule is that no pairing of those survives every
+		// theme — `terminal` gives --mind and --body two greens of one lightness, and
+		// the accents of any one theme share a lightness band, so the hues alone leave
+		// some theme drawing two of these three the same. Burnout Risk keeps the solid
+		// line because it is the reading the card is named for.
 		series: [
 			line(slots, m.metric_burnout_risk(), (p) => p.burnoutRisk, {
 				strokeClass: 'stroke-danger',
 				fillClass: 'fill-danger',
-				swatchClass: 'bg-danger',
 			}),
-			line(slots, m.metric_cognitive_load(), (p) => p.cognitiveLoad, {
-				strokeClass: 'stroke-mind',
-				fillClass: 'fill-mind',
-				swatchClass: 'bg-mind',
-			}),
+			line(
+				slots,
+				m.metric_cognitive_load(),
+				(p) => p.cognitiveLoad,
+				{
+					strokeClass: 'stroke-mind',
+					fillClass: 'fill-mind',
+				},
+				DASH.dotted,
+			),
 			line(
 				slots,
 				m.metric_physical_load(),
@@ -117,9 +128,8 @@ export function metricTrendSeries(input: MetricTrendSeriesInput): {
 				{
 					strokeClass: 'stroke-body',
 					fillClass: 'fill-body',
-					swatchClass: 'bg-body',
 				},
-				true,
+				DASH.dashed,
 			),
 		],
 	};

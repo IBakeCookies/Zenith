@@ -1,7 +1,11 @@
 /* Eclipse: the corona breathes; its streamers wheel around the black moon.
    Both helpers center on that moon, whose address is --eclipse-disc-y in the
    .eclipse block of themes.css — the gradient there paints the disc, these two
-   ring it, and one property keeps the three in register. */
+   ring it, and that property keeps the three in register. --eclipse-scale, from
+   the same block, keeps them in proportion: the gradient multiplies its stops
+   by it, and a `scale` here does the whole helper at once — box-shadow, mask
+   and all — about the centre `translate` has already put on the moon, which is
+   the same centre the gradient scales about. */
 .eclipse .theme-scenery {
 	display: block;
 
@@ -14,6 +18,7 @@
 		translate: -50% -50%;
 		border-radius: 50%;
 		box-shadow: 0 0 3.5rem 1.25rem oklch(0.95 0.07 88 / 0.28);
+		scale: var(--eclipse-scale);
 		animation: eclipse-breathe 7s ease-in-out infinite alternate;
 	}
 
@@ -39,6 +44,7 @@
 			transparent 342deg 360deg
 		);
 		mask-image: radial-gradient(circle, transparent 7rem, black 8.5rem 12rem, transparent 20rem);
+		scale: var(--eclipse-scale);
 		animation: eclipse-wheel 90s linear infinite;
 	}
 }

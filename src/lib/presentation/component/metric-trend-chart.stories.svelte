@@ -2,6 +2,7 @@
 	import { defineMeta } from '@storybook/addon-svelte-csf';
 	import { expect } from 'storybook/test';
 	import type { TrendSeries } from '$lib/presentation/utils/metric-trend-series';
+	import { DASH } from '$lib/presentation/utils/series-runs';
 	import MetricTrendChart from '$lib/presentation/component/metric-trend-chart.svelte';
 
 	/** The shape `metricTrendSeries` hands over, spelled out so a story can bend it. */
@@ -9,7 +10,7 @@
 		label: string,
 		values: (number | null)[],
 		hue: 'danger' | 'mind' | 'body',
-		isDashed = false,
+		dash?: string,
 	): TrendSeries => ({
 		label,
 		values,
@@ -17,16 +18,15 @@
 		// for classes it only passes through, so the template is safe here.
 		strokeClass: `stroke-${hue}`,
 		fillClass: `fill-${hue}`,
-		swatchClass: `bg-${hue}`,
-		isDashed,
+		dash,
 	});
 
 	const WEEK = ['Jul 25', 'Jul 26', 'Jul 27', 'Jul 28', 'Jul 29', 'Jul 30', 'Jul 31'];
 
 	const threeLines = (burnout: (number | null)[]): TrendSeries[] => [
 		line('Burnout Risk', burnout, 'danger'),
-		line('Cognitive Load', [40, 55, 62, 48, 51, 70, 66], 'mind'),
-		line('Physical Load', [10, 12, 8, 20, 15, 9, 11], 'body', true),
+		line('Cognitive Load', [40, 55, 62, 48, 51, 70, 66], 'mind', DASH.dotted),
+		line('Physical Load', [10, 12, 8, 20, 15, 9, 11], 'body', DASH.dashed),
 	];
 
 	const { Story } = defineMeta({
@@ -56,15 +56,58 @@
 		for (const stroke of ['stroke-danger', 'stroke-mind', 'stroke-body'])
 			await expect(canvasElement.querySelectorAll(`path.${stroke}`)).toHaveLength(1);
 
-		// Physical Load is dashed; the other two are not — on `terminal`, --mind
-		// and --body are two greens of the same lightness, so the dash carries it
-		await expect(canvasElement.querySelector('path.stroke-body')).toHaveAttribute(
-			'stroke-dasharray',
+		// One line style per series, never two series sharing one: --mind and --body
+		// are two greens of the same lightness on `terminal`, and STYLE.md's rule is
+		// that NO pairing of declared tokens survives every theme, so this holds for
+		// the danger/mind pair too. Solid is Burnout Risk's, the reading the card is
+		// named for.
+		const styleOf = (stroke: string) =>
+			canvasElement.querySelector(`path.${stroke}`)?.getAttribute('stroke-dasharray');
+
+		await expect(styleOf('stroke-danger')).toBe(null);
+		await expect(styleOf('stroke-mind')).toBe(DASH.dotted);
+		await expect(styleOf('stroke-body')).toBe(DASH.dashed);
+
+		// Each line is cut out of the ones under it, so a crossing shows which is in
+		// front. The plot draws the legend's order in reverse, so Burnout Risk — the
+		// reading the card is named for — is the line in front, cut by nothing and
+		// needing no mask. Physical, drawn first, is cut by the two over it.
+		const cutsPerMask = [...canvasElement.querySelectorAll('mask')].map(
+			(mask) => mask.querySelectorAll('path[stroke=black]').length,
 		);
 
-		await expect(canvasElement.querySelector('path.stroke-mind')).not.toHaveAttribute(
-			'stroke-dasharray',
-		);
+		await expect(cutsPerMask).toEqual([2, 1]);
+
+		// Each plot's masks are its own — `$props.id()` per instance, which is what
+		// lets the autodocs page hold every story of this file at once.
+		const maskIds = [...canvasElement.querySelectorAll('mask')].map((mask) => mask.id);
+
+		await expect(new Set(maskIds).size).toBe(2);
+
+		await expect(
+			[...canvasElement.querySelectorAll('g[mask]')].map((g) => g.getAttribute('mask')),
+		).toEqual(maskIds.map((id) => `url(#${id})`));
+
+		// The cut repeats its own line's dasharray, or a coinciding line underneath is
+		// cut away whole rather than showing through the gaps. Burnout is solid, so
+		// two of the three cuts carry no dasharray at all.
+		await expect(
+			[...canvasElement.querySelectorAll('mask path[stroke=black]')].map((cut) =>
+				cut.getAttribute('stroke-dasharray'),
+			),
+		).toEqual([DASH.dotted, null, null]);
+
+		// The legend swatch is the line, not a bar in its colour — same stroke, same
+		// dasharray, so a dotted series cannot show up solid in the key.
+		// Each key wraps its swatch in a <span>; the plot's own <line>s (the gridlines)
+		// sit directly under the plot <svg>, so this reaches only the swatches.
+		const swatches = [...canvasElement.querySelectorAll('span svg line')];
+
+		await expect(swatches.map((swatch) => swatch.getAttribute('stroke-dasharray'))).toEqual([
+			null,
+			DASH.dotted,
+			DASH.dashed,
+		]);
 
 		// The first day reads 12%, which sits at 12 + 142·(1 − 0.12) = 137.0
 		const first = canvasElement
@@ -153,8 +196,9 @@
 		await expect(printed).toContain('Jul 6');
 		await expect(printed).not.toContain('Jul 2');
 
-		// A single series draws no legend — its name is the card heading above it
-		await expect(canvasElement.querySelectorAll('.h-0\\.5')).toHaveLength(0);
+		// A single series draws no legend — its name is the card heading above it.
+		// The plot is then the only <svg> on the card; each legend key adds one.
+		await expect(canvasElement.querySelectorAll('svg')).toHaveLength(1);
 	}}
 >
 	{#snippet template(args)}

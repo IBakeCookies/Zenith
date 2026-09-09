@@ -57,14 +57,15 @@ describe('metricTrendSeries', () => {
 		expect(series.map((s) => s.values[0])).toEqual([10, 11, 12]);
 	});
 
-	// Physical Load is the only dashed line: `terminal` maps --mind and --body to
-	// two greens of the same lightness, so on that theme the dash is the only
-	// thing separating the two load lines (STYLE.md, and energy-chart does the
-	// same). Burnout Risk is a different token, so it needs no dash.
-	it('separates the two loads by more than hue', () => {
+	// One line style per series, because hue does not separate them on every theme:
+	// `terminal` maps --mind and --body to two greens of the same lightness, and
+	// STYLE.md's rule is stronger than that — NO pairing of two declared tokens
+	// survives all of `themes.css`, so danger/mind is no safer than mind/body.
+	// Three tokens therefore need three styles, not one dash on the odd one out.
+	it('separates every series by more than hue', () => {
 		const { series } = metricTrendSeries(input());
 
-		expect(series.map((s) => s.isDashed)).toEqual([false, false, true]);
+		expect(new Set(series.map((s) => s.dash)).size).toBe(series.length);
 		expect(new Set(series.map((s) => s.strokeClass)).size).toBe(3);
 	});
 
