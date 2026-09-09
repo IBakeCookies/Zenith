@@ -1,5 +1,13 @@
 import { expect, test } from '@playwright/test';
-import { addTask, AUTOSAVE_MS, logFlow, setBudget, taskRow } from './helpers';
+import {
+	addTask,
+	AUTOSAVE_MS,
+	calibrationCard,
+	logFlow,
+	seedPastDay,
+	setBudget,
+	taskRow,
+} from './helpers';
 
 /* The ⚡ flow log is the only user input that feeds fitUserConstants, so it is the
    one place where editing a task changes the model rather than just the row —
@@ -10,8 +18,8 @@ import { addTask, AUTOSAVE_MS, logFlow, setBudget, taskRow } from './helpers';
 /* A plan for the viewed day reads only logs dated before it, so what
    the UI can show today is the badge, the deferral, and that both survive a
    reload. That the log then MOVES the constants is a unit claim
-   (`session-store.svelte.spec.ts`) rather than an e2e one, because ⚡ is
-   today-only and no UI path produces a log dated yesterday. */
+   (`session-store.svelte.spec.ts`) rather than an e2e one: a fitted constant is not a
+   number a browser assertion can read off a row. */
 test('logging time-to-flow badges the task and defers the model update', async ({ page }) => {
 	await page.goto('/');
 	await addTask(page, 'Boxing training');
@@ -32,6 +40,30 @@ test('logging time-to-flow badges the task and defers the model update', async (
 
 	await expect(page.getByText(/1 ⚡ logged today/)).toBeVisible();
 	await expect(page.getByText(/to start personalizing/)).toHaveCount(0);
+});
+
+/* A ⚡ typed onto a day already worked is a measurement taken late, not one taken today:
+   it carries the viewed day, so the history lists it there and the fit counts it at once
+   instead of holding it until tomorrow. */
+test('a ⚡ logged onto a past day carries that day and is not deferred', async ({ page }) => {
+	const day = await seedPastDay(page, 3, ['Boxing training']);
+
+	await logFlow(page, 90);
+
+	await expect(page.getByText('⚡ 90m').first()).toBeVisible();
+
+	await page.goto('/analytics');
+
+	await expect(
+		page.getByRole('button', {
+			name: `Delete Time to flow logged on ${day}`,
+		}),
+	).toBeVisible();
+
+	const flow = calibrationCard(page, 'Flow Calibration');
+
+	await expect(flow).toBeVisible();
+	await expect(flow.getByText(/counted from tomorrow/)).toHaveCount(0);
 });
 
 /* The prompt for the ⚡ button once sat behind the collapsed Day Setup disclosure,

@@ -513,13 +513,31 @@ describe('SessionStore persistence', () => {
 		);
 	});
 
-	// The other side of the rule: a correction re-describes a measurement that exists,
-	// while a FIRST one on a past day is a measurement nobody took. Refused here rather
-	// than only hidden in the UI, because the store is what the date belongs to.
-	it('refuses a first ⚡ on a past day', async () => {
+	// A first measurement on a past day is one taken late, not one nobody took: it is
+	// stamped with the viewed day and derives (E, β) from that day's task, so it enters
+	// every plan dated after it at once. Refused only ahead of today — a day nobody has
+	// worked yet — and here rather than only in the UI, because the date is the store's.
+	it('stamps a first ⚡ on a past day with that day', async () => {
 		readAllFlowObservationsMock.mockResolvedValue([]);
 
 		const store = await viewing('2000-01-01');
+
+		await store.logFlow(3, 25);
+
+		expect(createOrUpdateFlowObservationMock).toHaveBeenCalledWith(
+			expect.objectContaining({
+				date: '2000-01-01',
+				taskId: 3,
+				taskTitle: 'a slow one',
+				phiHours: 25 / 60,
+			}),
+		);
+	});
+
+	it('refuses a first ⚡ on a day ahead', async () => {
+		readAllFlowObservationsMock.mockResolvedValue([]);
+
+		const store = await viewing('2999-01-01');
 
 		await store.logFlow(3, 25);
 

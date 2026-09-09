@@ -154,8 +154,8 @@
 				}),
 	);
 
-	// `rangeStart` alone bounds it: a measurement is stamped with the live clock, so
-	// none is ever dated ahead.
+	// `rangeStart` alone bounds it: both stores refuse a measurement on a day ahead of
+	// today, so none is ever dated ahead.
 	let allTime = $state(false);
 
 	// Named by what each task is CALLED now, not by the title copied onto the record

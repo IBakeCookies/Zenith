@@ -103,7 +103,7 @@ describe('getPendingMinutes', () => {
 });
 
 describe('sanitizeSessionTimer', () => {
-	// A new 🪫 measurement is today-only, and forgetting to stop overnight is the
+	// Minutes are counted on today alone, and forgetting to stop overnight is the
 	// commonest way a timer goes wrong — one check disposes of both.
 	it('drops a timer that did not start today', () => {
 		expect(

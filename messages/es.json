@@ -173,7 +173,7 @@
 	"banner_future_title": "Planificando por adelantado:",
 	"banner_future_body": "las tareas y el presupuesto que definas aquí se guardan en {date} — ábrelo ese día para trabajar el plan.",
 	"banner_past_title": "Estás viendo un día pasado:",
-	"banner_past_body": "aún puedes marcar y desmarcar tareas (¿se te olvidó una antes de medianoche? corrígelo aquí — los cambios se guardan), pero añadir o editar tareas solo es posible en el día de hoy.",
+	"banner_past_body": "aún puedes marcar y desmarcar tareas y registrar un ⚡ o 🪫 de una sesión que olvidaste valorar (los cambios se guardan), pero añadir o editar tareas solo es posible en el día de hoy.",
 	"metrics_more": "{count} métricas más",
 	"metric_group_fit": "¿Cabe el día?",
 	"metric_group_worth": "¿Está bien invertido el tiempo?",

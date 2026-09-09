@@ -63,11 +63,11 @@
 	const isViewingFuture = $derived(session.isViewingFuture);
 	const tasks = $derived(session.tasks);
 
-	// Gates logging, not correcting. Why: presentation/AGENTS.md, "Both corrections are
-	// offered on any day the page shows, a new measurement only today".
+	// Gates logging, not correcting. Why: presentation/AGENTS.md, "Both writers are
+	// offered on any day up to today, the timer only today".
 	// Not on the example day: a ⚡ or 🪫 rating is a real measurement, and one taken
 	// against a fabricated task would land in the visitor's own model fit.
-	const canLog = $derived(selectedDate === today && !session.isDemo);
+	const canLog = $derived(selectedDate <= today && !session.isDemo);
 
 	let flowDrafts = $state<Record<number, EditorDraft>>({});
 	let drainDrafts = $state<Record<number, DrainDraft>>({});
@@ -79,11 +79,11 @@
 		delete flowDrafts[taskId];
 	};
 
+	// The timer's minutes were counted today, so only today's 🪫 may take or spend them.
+	const pendingMinutes = $derived(isViewingPast ? null : getPendingMinutes(timerStore.timer));
+
 	const openDrainLog = (taskId: number, source: EditorSource) =>
-		(drainDrafts[taskId] = newDrainDraft(
-			source,
-			claimPendingMinutes(drainDrafts, getPendingMinutes(timerStore.timer)),
-		));
+		(drainDrafts[taskId] = newDrainDraft(source, claimPendingMinutes(drainDrafts, pendingMinutes)));
 
 	const editDrainLog = (taskId: number, log: Persisted<DrainObservationRecord>) =>
 		(drainDrafts[taskId] = drainDraftFromLog(log));
@@ -121,7 +121,7 @@
 
 			// One stop funds one log: the editor that claimed the reading is the one that
 			// spends it — no other row's append, and no correction.
-			if (spendsPendingMinutes(draft, getPendingMinutes(timerStore.timer))) timerStore.timer = null;
+			if (spendsPendingMinutes(draft, pendingMinutes)) timerStore.timer = null;
 		} else {
 			observations.editDrainLog(draft.recordId, entry.hours, entry.mind, entry.body);
 		}

@@ -20,23 +20,26 @@ import type {
 
 const CONTEXT_KEY = Symbol();
 
-/** Looks up the day's tasks — a drain rating captures the rated task's demands. */
-export type ReadTasks = () => Task[];
+/**
+ * The loaded day with its tasks — a drain rating captures the rated task's
+ * demands and is stamped with the day those tasks belong to. `date` is null
+ * while no day is loaded.
+ */
+export type ReadLoadedDay = () => { date: string | null; tasks: Task[] };
 
 /**
  * Drain and rest observations: the measurements that calibrate the energy
  * model's drain rates α and recovery rate r (MATH.md §8.7/§8.9).
  *
  * Separate from the session store because it shares none of that store's
- * state. A measurement is stamped with the live clock's today, never the viewed
- * day, so none of the date-routing, load or auto-save machinery applies — and
- * the one thing it needs from the session (a task lookup) is injected, so it
- * owns no session state either. Failures go to the app-wide banner's own store,
- * not through the session's.
+ * state. It is handed the loaded day together with its tasks and routes no
+ * date itself, so none of the date-routing, load or auto-save machinery
+ * applies, and it owns no session state. Failures go to the app-wide banner's
+ * own store, not through the session's.
  *
- * Flow observations deliberately stay in the session store: logging one reads the
- * VIEWED day and that day's task to write it, which is this store's one blind spot —
- * it has no notion of a viewed day and must not grow one.
+ * Flow observations deliberately stay in the session store: `logFlow` guards
+ * mid-navigation against the session's own loaded/selected pair, which this
+ * store never sees.
  *
  * Created via context in the (app) layout — never at module scope, so no state
  * can leak between SSR requests.
@@ -47,11 +50,11 @@ export class EnergyObservationStore {
 	/** Whether the first read is still in flight — see the getter. */
 	#isLoading = $state(true);
 
-	#readTasks: ReadTasks;
+	#readDay: ReadLoadedDay;
 	#reporter: StorageReporter;
 
-	constructor(readTasks: ReadTasks, status: StorageStatusStore) {
-		this.#readTasks = readTasks;
+	constructor(readDay: ReadLoadedDay, status: StorageStatusStore) {
+		this.#readDay = readDay;
 		this.#reporter = status.register('energyObservations', () => this.retryLoad());
 
 		// No `initializeStorage()` here: the localStorage migration it runs writes
@@ -125,8 +128,8 @@ export class EnergyObservationStore {
 	 * how the two drift.
 	 *
 	 * Takes the day rather than reading the live clock: the main page renders any
-	 * date, and a row must show the ratings of the day it is showing. Writes still
-	 * stamp `liveToday` — this store has no notion of a viewed day and must not.
+	 * date, and a row must show the ratings of the day it is showing. A write
+	 * stamps the day it is handed with the tasks — this store routes no date.
 	 *
 	 * A plain `Map`, not a `SvelteMap`: it is rebuilt on every read from `$state`
 	 * observations, so the reactivity is already the array's — a reactive Map here
@@ -160,18 +163,23 @@ export class EnergyObservationStore {
 	// task already rated today appends rather than replacing, because the
 	// day's worked hours are the sum of its sessions (MATH.md §8.7); unlike
 	// logFlow, which upserts because time-to-flow is one number per day.
-	// Today-only because it is a measurement, not a plan.
+	// Stamped with the day the tasks belong to: a first measurement lands on the
+	// day being viewed, so a session forgotten that day is rated onto that day.
+	// Never a day ahead — nobody has worked it — and refused here as well as by
+	// the page, because an editor opened on today outlives a navigation.
 	async logDrain(id: number, hours: number, mindDrain: number, bodyDrain: number) {
-		const task = this.#readTasks().find((t) => t.id === id);
+		const { date, tasks } = this.#readDay();
+		const task = tasks.find((t) => t.id === id);
 
-		// A rating needs the task's demands, so an id the day no longer holds (a
-		// task deleted while the rating dialog was open) is nothing to log, not a
-		// storage failure — drop it silently rather than raise the banner.
-		if (!task) return;
+		// A rating needs a day and the task's demands, so no loaded day, or an id
+		// the day no longer holds (a task deleted while the rating dialog was open),
+		// is nothing to log, not a storage failure — drop it silently rather than
+		// raise the banner.
+		if (!date || date > liveToday.value || !task) return;
 
 		try {
 			await drainObservationRepository.$createDrainObservation({
-				date: liveToday.value,
+				date,
 				taskId: id,
 				taskTitle: task.title,
 				hours,
@@ -268,7 +276,7 @@ export class EnergyObservationStore {
 	// Log a pre/post-rest rating pair: a break of `hours`, with both energy
 	// systems rated going in and coming out (0–10). Not tied to a task, and
 	// appended rather than upserted — several breaks a day are normal.
-	// Today-only like the other measurements.
+	// Today-only: the rest button renders on today alone, so it stamps the live clock.
 	async logRest(
 		hours: number,
 		mindBefore: number,
@@ -365,12 +373,12 @@ export class EnergyObservationStore {
 }
 
 export function setEnergyObservationStore(
-	readTasks: ReadTasks,
+	readDay: ReadLoadedDay,
 	status: StorageStatusStore,
 ): EnergyObservationStore {
 	return setContext<EnergyObservationStore>(
 		CONTEXT_KEY,
-		new EnergyObservationStore(readTasks, status),
+		new EnergyObservationStore(readDay, status),
 	);
 }
 

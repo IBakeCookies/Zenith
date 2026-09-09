@@ -12,6 +12,7 @@ import {
 	plantRunningTimer,
 	rowDrainForm,
 	seedDay,
+	seedPastDay,
 	setBudget,
 	taskRow,
 } from './helpers';
@@ -799,10 +800,60 @@ test('a rating logged today is named as deferred', async ({ page }) => {
 	await expect(drain.getByText('1 rating logged today, counted from tomorrow')).toBeVisible();
 });
 
-/** One 🪫 dated `date` under `taskTitle`. No UI path dates a drain log in the past — the
- *  record carries the viewed day and past days are read-only — so the store is written
- *  directly, the way the ⚡ rows above are. Written whole rather than copied off a logged
- *  row, because the ratings and demands ARE the fixture. One row per date, which is what
+/* The 🪫 twin of the past-day ⚡ in flow-log.e2e.ts: stamped with the viewed day, listed
+   there and counted at once — and read back off that day after a reload, which is what
+   says the day the record carries is the day the row shows. */
+test('a 🪫 logged onto a past day carries that day and is not deferred', async ({ page }) => {
+	const day = await seedPastDay(page, 3, ['Deep work']);
+
+	await logDrain(page, 120, 9, 5);
+
+	await expect(drainChips(page)).toHaveCount(1);
+
+	await page.goto('/analytics');
+
+	await expect(
+		page.getByRole('button', {
+			name: `Delete Session rating logged on ${day}`,
+		}),
+	).toBeVisible();
+
+	const drain = calibrationCard(page, 'Drain Calibration');
+
+	await expect(drain).toBeVisible();
+	await expect(drain.getByText(/logged today, counted from tomorrow/)).toHaveCount(0);
+
+	await page.goto(`/?date=${day}`);
+
+	await expect(drainChips(page)).toHaveCount(1);
+});
+
+/* The minutes a stopped timer holds were counted today, so only today's 🪫 may spend
+   them: a past day's editor opens empty even while the reading is waiting. The clock
+   runs three days ahead here, so the timer is planted on the app's today, not the
+   runner's. */
+test('a past day’s 🪫 editor does not take today’s stopped reading', async ({ page }) => {
+	const day = await seedPastDay(page, 3, ['Deep work']);
+
+	await page.goto('/');
+	await plantRunningTimer(page, 45, null, isoDate(3));
+	await page.reload();
+
+	await page
+		.getByRole('button', {
+			name: 'Stop timer',
+		})
+		.click();
+
+	await page.goto(`/?date=${day}`);
+	await openDrainEditor(page, 'Deep work');
+
+	await expect(drainForm(page).locator('input[type="number"]').first()).toHaveValue('');
+});
+
+/** One 🪫 dated `date` under `taskTitle`. Written to the store directly rather than
+ *  logged onto each day: faster, it sets `createdAt`, and the ratings and demands ARE the
+ *  fixture, so it is written whole rather than copied off a logged row. One row per date, which is what
  *  makes each of them its day's first session (MATH.md §8.14). */
 async function writeDrainLog(page: Page, date: string, taskTitle: string, mindDrain: number) {
 	await page.evaluate(

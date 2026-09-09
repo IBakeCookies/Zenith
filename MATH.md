@@ -59,7 +59,7 @@ retype a row, regenerate:
   §5.1      620-729  Posterior-aware allocation
 §6          731-743  Summary of v1 → v2 changes
 §7          745-769  Known approximations and deliberate non-changes
-§8         771-1855  Energy model (zenith-energy.ts) — fatigue-recovery exten…
+§8         771-1858  Energy model (zenith-energy.ts) — fatigue-recovery exten…
   §8.1      783-805  Intermittent-rest recovery correction
   §8.2      807-826  Warm-up carryover instead of binary reset
   §8.3      828-846  Verified consequences and a calibration question, closed
@@ -73,9 +73,9 @@ retype a row, regenerate:
   §8.11   1446-1577  Live stop advisor — §8.10 run forward mid-day
   §8.12   1579-1733  The budget curve — what the day's LENGTH is worth
   §8.13   1735-1799  Capacity from the fitted drain rate
-  §8.14   1801-1855  Per-title drain rate — which task costs more than its sl…
-§9        1857-1919  Plan-adherence reading and its verdict band
-§10       1921-1968  References
+  §8.14   1801-1858  Per-title drain rate — which task costs more than its sl…
+§9        1860-1922  Plan-adherence reading and its verdict band
+§10       1924-1971  References
 ```
 
 <!-- section-index:end -->
@@ -1825,7 +1825,10 @@ task habitually worked last would top the ranking on _when_ it is done, not on
 what it costs, and the user would drop a task whose real remedy is an earlier
 slot. Restricting each day to its single earliest row by `createdAt` is the
 only filter under which every observation satisfies the assumption the fit
-makes about it. Rejected: keeping every row and disclosing the bias, which
+makes about it. A row logged onto a past day carries a `createdAt` later than
+any row logged live that day, so it never displaces a live first row; its
+calendar day differs from `date`, which is how a time-of-day reading would
+exclude it. Rejected: keeping every row and disclosing the bias, which
 ships a biased order and asks the reader to invert it.
 
 **Three gates, because a ranking is acted on.** A title needs
