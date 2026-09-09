@@ -87,14 +87,13 @@
 	   set-square themes" and "the rounded opaque themes"). */
 	--surface-card: oklch(1 0 0 / 0.7);
 
-	/* DERIVED, and the only place it is set outside `.solid-light` —
-	   45 themes hand-set this and 22 of the 25 dark ones set it to black at
-	   alpha, which on a page already at L 0.09-0.16 is a well cut into a floor
-	   that is already the bottom: the range track measured 1.013-1.079 against
-	   its own card, i.e. invisible. Direction is the whole point and it flips
-	   with the page, exactly as `.solid-dark` says of its three rungs — an inset
-	   RECEDES on a light theme and CLIMBS on a dark one. The step is 0.1 on both
-	   sides and only the sign differs; the ALPHA gains are what differ by side.
+	/* DERIVED — hand-set, this was black at alpha on most dark themes, which on
+	   a page already at L 0.09-0.16 is a well cut into a floor that is already
+	   the bottom: the range track measured 1.013-1.079 against its own card,
+	   i.e. invisible. Direction is the whole point and it flips with the page,
+	   exactly as `.solid-dark` says of its three rungs — an inset RECEDES on a
+	   light theme and CLIMBS on a dark one. The step is 0.1 on both sides and
+	   only the sign differs; the ALPHA gains are what differ by side.
 
 	   Both channels move for the same reason `--surface-card-hover` moves both:
 	   an opaque card has no alpha to scale and a white-at-6% card has no
@@ -107,11 +106,7 @@
 	   under AA. One theme cannot take 0.1 — `ukiyo` measures 1.007, a near-white
 	   translucent card (L 0.98 at alpha 0.6) being the white-on-white case above
 	   taken to its limit — so it overrides this with 0.14 (themes.css), and
-	   `blueprint` overrides the dark rule's sign.
-	   Shipped, over all 46: light min 1.081 and median 1.195, dark min 1.249 and
-	   median 1.405. The label ratios that stood beside them read the ink as
-	   opaque; composited, the row label runs min 3.19 and median 5.76 and five
-	   light themes are under AA (STYLE.md's ink note). */
+	   `blueprint` overrides the dark rule's sign. */
 	--surface-inset: oklch(
 		from var(--surface-card) calc(l - 0.1) c h / calc(alpha + (1 - alpha) * 0.4)
 	);

@@ -38,12 +38,10 @@ Read this before touching markup, classes, or anything under
   the same hue twice and reads as mush. `-ink` is derived in `base.css` from
   the fill's own lightness — not the theme's, because the two diverge (on a
   light theme white reads on `danger` but fails on `warning`) — so a theme that
-  overrides a fill silently changes its ink, and `themes.css` overrides fills
-  200+ times. After touching a state or domain fill, run
-  `node scripts/ink-contrast.mjs` (dev server on :5173): every theme × 9 fills,
-  and it prints the current tallies rather than asking you to trust one written
-  here. Worst case in the catalogue is `solarized-light`'s published red at
-  4.21:1, and a few percent of pairs cannot reach 4.5:1 with _any_ ink (a
+  overrides a fill silently changes its ink. After touching a state or domain
+  fill, run `node scripts/ink-contrast.mjs` (dev server on :5173): every
+  theme × 9 fills, and it prints the current tallies rather than asking you to
+  trust one written here. Some pairs cannot reach 4.5:1 with _any_ ink (a
   mid-luminance chromatic fill caps out) — one more reason solid fills are for
   labels and the tinted recipe is for prose.
   The rungs are tokens, never a `/N` on the class: `-wash` (5%) is the fill under
@@ -56,119 +54,61 @@ Read this before touching markup, classes, or anything under
   the hover class _replaces_ that fill, so use the fill's own paired token —
   `bg-control` → `hover:bg-control-hover`, and likewise for
   `secondary`/`primary`. Each is derived _from_ the fill it hovers, so it follows
-  a theme that re-tints the base, and the derivation differs by fill type: a
-  **translucent** fill scales its own alpha (proportional, so a faint fill gains a
-  little and an assertive one a lot), a **solid** one steps away from its own ink
-  (the only direction that both reads as stronger and cannot cost label
-  contrast). Do not restate a fixed value and do not fade: `surface-hover` on a
-  filled element _inverts_ the hover (the outline button went 55% white → 6%
-  black on the light-glass themes and receded), an alpha fade
-  (`hover:bg-primary/80`) moves the fill _toward_ the surface, and mixing a
-  fixed tint in moved a 0.09-alpha fill by ΔL 0.012 while moving a 0.65-alpha one
-  by 0.13. All three were measured and rejected — `node scripts/hover-contrast.mjs`
+  a theme that re-tints the base: a **translucent** fill scales its own alpha, a
+  **solid** one steps away from its own ink, and `--control-hover` moves
+  lightness as well, in the page's direction, because alpha alone is a no-op on
+  an opaque fill and nearly one for white at high alpha over a near-white page.
+  `--secondary-hover` stays alpha-only on purpose. The derivations and every
+  measurement behind them sit above each token in `base.css`. Do not restate a
+  fixed value and do not fade: `surface-hover` on a filled element _inverts_ the
+  hover on the light-glass themes, a fixed tint mixed in moves a faint fill
+  barely and an assertive one a lot, and an alpha fade (`hover:bg-primary/80`)
+  moves the fill _toward_ the surface. `node scripts/hover-contrast.mjs`
   (Storybook on :6006) re-runs it over every theme × the 5 variants that carry
-  a hover fill (`link` carries none) and prints the residue that no hover token
-  can reach, most of it the danger palette cap below. It judges a step by
-  CONTRAST RATIO and not by a difference of luminances, because relative
-  luminance is compressed near black: one 6% tint measures ΔL 0.129 over white
-  and 0.0048 over black, so a ΔL bound calls a token that does not vary broken on
-  every dark theme. As a ratio that same tint reads 1.14 and 1.10, and `ghost`
-  clears the bound on every theme. **`--control-hover` moves TWO channels, alpha and lightness,
-  and the lightness sign is the page's.** Alpha alone dies at both ends: it is a
-  no-op on an OPAQUE fill, which is why ten themes plus the two classics used to
-  set it themselves, and it is nearly a no-op where a light theme writes
-  `--input` as white at high alpha, since more white over a near-white page goes
-  nowhere — `glass-light` measured a step of exactly 1.000, no hover at all, with
-  `daybreak`, `bubblegum`, `glacier`, `sundial`, `hourglass`, `foliage` and
-  `fallow` all under the 1.03 bound. (`weathervane` had already dodged it locally
-  by tinting its `--input` slate rather than white.) Stepping lightness away from
-  the page as well gives one channel or the other somewhere to go on every theme:
-  measured after, min 1.089, none under 1.03, and all 12 hand-set
-  `--control-hover` overrides deleted. **`--secondary-hover` does NOT get the same
-  treatment, and trying it was a mistake worth recording**: its worst step was
-  already 1.044, over the bound, so there was no bug to fix — and a lightness
-  channel there is harmful, because `--secondary` is a wash of the primary whose
-  label is `ty-primary`, so lifting the fill on a dark theme walks it toward its
-  own near-white label. It stays alpha-only, and the opaque themes still set it
-  themselves.
+  a hover fill (`link` carries none), judges a step by contrast ratio and not
+  by ΔL (its header says why), and prints the residue no hover token can reach.
   `hover:bg-surface-card` on an element already sitting on a card is a no-op —
   easy to miss, and on an opaque theme it is a no-op even when the element is
   NOT on a card, since nothing composites. **`hover:border-line-strong` is the
   same trap on the border side**: `--color-line-strong` IS `--border`, which is
   what a bare `border` already resolves to, so it re-sets the colour the element
-  had — measured 1.000 on every theme. A border hover needs `border-line-soft`
-  at rest to have anywhere to go (soft -> strong measures 1.15–1.94). The
-  calendar's day cells hit both halves at once: filled, so their
-  `hover:bg-surface-hover` replaced the fill instead of tinting it, and
-  bare-bordered, so the border hover did nothing either — no hover at all on a
-  dark theme, and a panel vanishing to bare page on an opaque one. They now use
-  `hover:bg-surface-card-hover`, the card's own paired token.
+  had. A border hover needs `border-line-soft` at rest to have anywhere to go.
+  The calendar's day cells hit both halves at once — filled and bare-bordered,
+  so no hover at all on a dark theme — and use `hover:bg-surface-card-hover`,
+  the card's own paired token.
 - **A card hovers by LIFTING, which is why `--surface-card-hover` is neither of
   the two derivations above.** A card is lighter than its page on every theme, so
   raising lightness is the only direction that always widens the separation
   making a card read as a card; alpha carries the translucent ones, where L is
-  already 1. Tinting toward `ty-primary` — the intuitive choice — is worse here
-  than for a control: a light theme's card sits near the L ceiling, so a dark
-  tint walks it THROUGH its page (a 6% mix left `solarized-light` at 1.014 and
-  `parchment` at 1.031 against their own pages, i.e. a hovered card that stops
-  reading as filled). Alpha moves by its remaining headroom rather than by a
-  factor, since a factor overshoots — `alpha * 1.9` clamped 14 translucent cards
-  to opaque, a glass card losing its blur on hover. No theme hand-sets it, and
-  separation from the page rises on every theme, so a hovered card can never stop
-  reading as a card. **It cannot give an even step, though, and nothing can**: the
-  same delta swings 2.05 over a near-black page and 1.017 over a pale one,
-  because the step depends on the page luminance behind the card. A hover that
-  must be visible on every theme therefore needs a page-independent channel
-  alongside it — the calendar ramps its border, which is what carries the eight
-  light translucent themes.
+  already 1, and moves by its remaining headroom so a glass card never goes
+  opaque on hover. Tinting toward `ty-primary` — the intuitive choice — walks a
+  light theme's card THROUGH its page; the measurements are above the token in
+  `base.css`. No theme hand-sets it. **It cannot give an even step, though, and
+  nothing can**: the step depends on the page luminance behind the card. A hover
+  that must be visible on every theme therefore needs a page-independent channel
+  alongside it — the calendar ramps its border.
 - **`--surface-inset` is DERIVED from the card, and its direction flips with the
   page.** An inset is a well cut into a card, and on a light theme that means
   darker while on a dark theme it means LIGHTER — the same thing `.solid-dark`
   says of its three rungs, and the same sense `-strong` carries above: more
-  contrast against this theme's own background, not a fixed direction. Nearly
-  every theme used to hand-set it, and most of the dark ones set it to black at alpha, which
-  over a page already at L 0.09-0.16 is a well in a floor that is already the
-  bottom — the range track and `log-row` measured 1.013-1.079 against their own
-  card, invisible. Now one rule per side in `base.css` (`:root` and `.dark`),
-  ΔL 0.1 receding on the light side and 0.1 climbing on the dark one — the sign
-  is the point, and the ALPHA gains are what differ by side — and both channels
-  move for the reason
-  `--surface-card-hover` moves both: an opaque card has no alpha to scale, a
-  white-at-6% card has no lightness left to raise, and every theme is one or the
-  other. The alpha gains differ (0.4 light, 0.06 dark) because white-on-white
-  buys almost nothing per point of alpha and white-on-near-black buys almost
-  everything. `scripts/inset-contrast.mjs` measures each side against its own
-  card. Both sides were 0.14 when the derivation landed and both came down to
-  0.1, because 0.14 drops `blueprint`'s row label to 3.95:1 on its own well —
-  under AA, and a pair nothing measured until that script existed. `ukiyo` is the
-  one theme 0.1 does not carry: it measures 1.007, under the 1.03 bound and back
-  to invisible, because a near-white translucent card (L 0.98 at alpha 0.6) is
-  the white-on-white limit where alpha has no room and only lightness moves. It
-  overrides the rule with 0.14 in `themes.css` — a per-theme exception is the
-  right shape for one outlier, where re-raising the whole light side would cost
-  `blueprint` its label. Shipped, over all 46: light min 1.081 and median 1.195,
-  dark min 1.249 and median 1.405. The label ratio that stood beside them —
-  "worst row label 4.68:1, no reading under the bound" — was the instrument
-  reading the ink as OPAQUE, where `--ty-secondary` is `--ty-primary` at 70%;
-  it overstated by 1.49 to 9.61 points; composited, 70/55 put the row label
-  under 4.5:1 on five themes and `--ty-silent` under it on 35 of 46 insets.
+  contrast against this theme's own background, not a fixed direction. One rule
+  per side in `base.css` (`:root` and `.dark`), lightness receding on the light
+  side and climbing on the dark one, both channels moving for the reason
+  `--surface-card-hover` moves both; the step, the alpha gains and the
+  measurements that set them sit above the token. `scripts/inset-contrast.mjs`
+  measures each side against its own card with the inks COMPOSITED — read as
+  opaque, a translucent ink overstates. Two `themes.css` exceptions, each block
+  saying why: `ukiyo`, a near-white translucent card at the white-on-white limit
+  where only lightness moves, takes a deeper step; `blueprint`, near-white ink
+  on a mid-luminance opaque card, takes a receding well and the light text pair.
   **The text ladder is one rule per side, sized by that script** over both
-  content rungs on page, card and inset: light 80/75, dark 70/65 — the smallest
-  alphas at which every card and inset clears 4.5:1 with adjacent rungs still
-  ≥ 1.03 apart (the step bound, asked of two inks on one fill). As the script
-  prints them: secondary min 5.27 / median 7.86 on the card, 5.13 / 6.32 on the
-  inset; silent 4.86 / 6.92 and 4.65 / 5.65; faintest rung step 1.085.
-  `blueprint` was every minimum of the sizing run and neither rule carries it —
-  near-white ink on a mid-luminance opaque card — so it is the second
-  `themes.css` exception: a receding well and the light pair (its block says
-  why). These dark figures do NOT reproduce
-  337aad1's (min 1.381, median 1.521): that run is ~0.10 higher on both and its
-  sample area is not recoverable, so this script's numbers replace them rather
-  than reconcile with them. `.solid-light` is
-  the one block that still sets it by hand, and deliberately: it is a flattening
-  read off rendered pixels whose well is only 0.06 deep, so the derived rule
-  would deepen the colour it exists to preserve. `.solid-dark`'s flattening sits
-  where the derived rule already lands, so that block no longer sets it.
+  content rungs on page, card and inset: the smallest alphas at which every card
+  and inset clears 4.5:1 with adjacent rungs still ≥ 1.03 apart (the step bound,
+  asked of two inks on one fill). `.solid-light` is the one block that still
+  sets the inset by hand, and deliberately: it is a flattening read off rendered
+  pixels whose well is only 0.06 deep, so the derived rule would deepen the
+  colour it exists to preserve. `.solid-dark`'s flattening sits where the derived
+  rule already lands, so that block no longer sets it.
 - **`--ring` is the primary's `-line` rung, and the class is bare `ring-ring`.**
   `:root` derives it at 50%; a `/50` on the class halved it again, to 25%. The
   themes that restate it genuinely differ: alpha (`zenith`, `kintsugi` at
@@ -192,14 +132,12 @@ Read this before touching markup, classes, or anything under
 - **A danger control uses `bg-destructive-soft`, the one OPAQUE fill in the
   system**, with `text-destructive-foreground` (which resolves to `-strong`) on
   it. Both halves are load-bearing. `text-destructive` on it is red ink on a red
-  wash, exactly the mush the colour-role rule above warns about. (The measured
-  range that stood here was taken when `--danger` was red-600; the step down to
-  red-700 moved both the ink and the wash, so it is deleted rather than
-  re-derived — no instrument covers this pair.) And a translucent `bg-destructive/10` inherits whatever is
-  behind it, so on the themes with a photographic or gradient backdrop the same
-  pair measured anywhere from 1.87:1 to 4.4:1 depending on where the button
-  happened to sit; mixing into `--surface-page` instead makes the pairing a
-  property of the palette rather than the wallpaper. Opaque also means **no
+  wash, exactly the mush the colour-role rule above warns about. And a
+  translucent `bg-destructive/10` inherits whatever is behind it, so on the
+  themes with a photographic or gradient backdrop the same pair measured
+  anywhere from 1.87:1 to 4.4:1 depending on where the button happened to sit;
+  mixing into `--surface-page` instead makes the pairing a property of the
+  palette rather than the wallpaper. Opaque also means **no
   `backdrop-blur`** on it, and it is the one fill that cannot use the
   alpha-scaling hover rule. How faint it is, is the one thing in the system that
   had to split light from dark (in `.dark`, which already swaps `--danger`
@@ -237,7 +175,7 @@ Read this before touching markup, classes, or anything under
 - **`scrim` is the one surface NOT derived from `--ty-primary`, and has no
   per-theme override.** A modal scrim dims toward black on a light and a dark
   theme alike, so an ink-derived wash — the recipe every other surface here
-  follows — would brighten the 25 dark themes instead of dimming them. One
+  follows — would brighten every dark theme instead of dimming it. One
   value in base.css, and `dialog-overlay.svelte` is its only caller. The dialog
   PANEL is a separate question and follows the toast: `bg-popover`
   (→ `--surface-page`), never `surface-card`, for the reason under sonner below.
@@ -364,7 +302,7 @@ Read this before touching markup, classes, or anything under
   and no theme can reach them.
 - `rounded-full` is **circles only** — it is the one radius no theme can reach.
   Tailwind compiles it to a literal `calc(infinity * 1px)` and not a `--radius-*`
-  lookup, so the four square themes drew pill-shaped bars inside hard-cornered
+  lookup, so the square themes drew pill-shaped bars inside hard-cornered
   cards. Bars, tracks, chart legend swatches and chips take `rounded-lg`; the
   argument sits above `--radius-*` in `tokens.css`, which owns the token.
 - `--series-1…8` + `--series-rest` (`base.css`) are the categorical scale for
@@ -399,7 +337,7 @@ Read this before touching markup, classes, or anything under
 - **A categorical scale needs hues that differ in every theme, which the state
   and domain accents do not guarantee.** `--flow` and `--warning` are both amber
   in `base.css` and stay amber through most of `themes.css`, so a chart giving
-  two categories those two tokens draws one colour twice on a dozen themes (that
+  two categories those two tokens draws one colour twice on many themes (that
   is why the day profiles colour Grind `--danger`). Check a new pairing against
   `themes.css`, not against the token names. **No pairing of two declared tokens
   passes** — `abyss`, `vectorframe`, `meridian` and `orbit` put `--info` and
