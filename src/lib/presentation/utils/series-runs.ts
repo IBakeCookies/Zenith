@@ -10,6 +10,15 @@
    `completion-yield-chart` centres on a slot, `metric-trend-chart` spreads edge
    to edge. */
 
+/* Here rather than in either chart because the two cards sit one above the other
+   on the analytics page: a dash 10 long in one and 5 in the other reads as two
+   unrelated encodings of the same idea. Why every series needs one at all is
+   STYLE.md's. `dotted` is short enough that the round linecap makes it a dot. */
+export const DASH = {
+	dotted: '1 4',
+	dashed: '10 5',
+};
+
 /** Consecutive recorded slots, split at every unrecorded one. */
 export function runsOf(
 	values: (number | null)[],

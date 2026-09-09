@@ -408,9 +408,10 @@ Read this before touching markup, classes, or anything under
   every theme have to be **derived from one**: `--brand-counter` (base.css) is
   `--brand` rotated 150°, which is fixed separation no theme can collapse. A
   theme whose brand has no hue to rotate overrides it (`eink`), as does one the
-  rotation takes outside its palette (`terminal`). The second line is dashed as
-  well (`TrendSeries.isDashed`) — hue is the separation, the dash is what
-  survives a colour-blind reading of it.
+  rotation takes outside its palette (`terminal`). **Every series gets its own
+  line style** (`DASH` in `series-runs.ts`), never two sharing one, and the
+  swatch is that line. **Where they cross, mask out the lower one**: no colour
+  _is_ a translucent card's background, and `multiply` kills a light stroke.
 - **A length two files both draw from is a custom property on the theme class**
   (properties inherit downward only, so that is the one place above both
   readers) **and anything that must follow it is a `calc()` off it** — see

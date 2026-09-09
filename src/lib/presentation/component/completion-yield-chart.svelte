@@ -15,7 +15,7 @@
 	   same mechanism `energy-chart.svelte` uses. */
 
 	import type { ChartPoint } from '$lib/presentation/utils/completion-chart-points';
-	import { runsOf } from '$lib/presentation/utils/series-runs';
+	import { DASH, runsOf } from '$lib/presentation/utils/series-runs';
 	import { cn } from '$lib/presentation/utils';
 	import * as m from '$lib/paraglide/messages.js';
 
@@ -74,6 +74,11 @@
 	const rate = $derived(plot((point) => point.value));
 	const yield_ = $derived(plot((point) => point.line));
 
+	// Per-instance, because a document can hold more than one plot — the autodocs
+	// page mounts every story of this file at once — and a shared mask id would have
+	// the second plot cut against the first one's lines (STYLE.md on `$props.id()`).
+	const haloId = $props.id();
+
 	const readingOf = (point: ChartPoint) =>
 		`${point.full} — ${point.value === null ? m.ana_no_data() : `${point.value}% · ${point.sub}`}`;
 </script>
@@ -118,6 +123,42 @@
 		{/if}
 	{/each}
 
+	<!-- A fat copy of the rate line, punched OUT of the yield line so a crossing
+	     reads as the dashes passing in front (STYLE.md, "mask out the lower one").
+	     Repeating the dasharray is what keeps both readings visible where they
+	     coincide: the gaps cut nothing, so the yield line shows through them.
+	     `white`/`black` are the mask's keep/cut channel, not colours to tokenise. -->
+	<mask id={haloId} maskUnits="userSpaceOnUse" x="0" y="0" width={CHART.w} height={CHART.h}>
+		<!-- The keep-everything ground; a path, since the stories count the plot's rects. -->
+		<path d="M0,0H{CHART.w}V{CHART.h}H0Z" fill="white" />
+		{#each rate.paths as path (path)}
+			<path
+				d={path}
+				fill="none"
+				stroke="black"
+				stroke-width="4.4"
+				stroke-linejoin="round"
+				stroke-dasharray={DASH.dashed}
+			/>
+		{/each}
+	</mask>
+
+	<g mask="url(#{haloId})">
+		{#each yield_.paths as path (path)}
+			<path
+				d={path}
+				fill="none"
+				stroke-width="1.8"
+				stroke-linecap="round"
+				stroke-linejoin="round"
+				class="stroke-brand-counter"
+			/>
+		{/each}
+		{#each yield_.dots as dot (dot.x)}
+			<circle cx={dot.x} cy={dot.y} r="2.2" class="fill-brand-counter" />
+		{/each}
+	</g>
+
 	{#each rate.paths as path (path)}
 		<path
 			d={path}
@@ -125,26 +166,12 @@
 			stroke-width="1.8"
 			stroke-linecap="round"
 			stroke-linejoin="round"
-			stroke-dasharray="5 3"
+			stroke-dasharray={DASH.dashed}
 			class="stroke-brand"
 		/>
 	{/each}
 	{#each rate.dots as dot (dot.x)}
 		<circle cx={dot.x} cy={dot.y} r="2.2" class="fill-brand" />
-	{/each}
-
-	{#each yield_.paths as path (path)}
-		<path
-			d={path}
-			fill="none"
-			stroke-width="1.8"
-			stroke-linecap="round"
-			stroke-linejoin="round"
-			class="stroke-brand-counter"
-		/>
-	{/each}
-	{#each yield_.dots as dot (dot.x)}
-		<circle cx={dot.x} cy={dot.y} r="2.2" class="fill-brand-counter" />
 	{/each}
 
 	<!-- Last, so the hover targets stay above both lines. The empty case says "no

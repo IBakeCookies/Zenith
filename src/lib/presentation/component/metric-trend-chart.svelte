@@ -66,6 +66,16 @@
 		return 'middle';
 	};
 
+	// Drawn back to front, so the series the card is named for is the one nothing
+	// cuts. The legend keeps `series` order, which is the metric hierarchy — the plot
+	// reverses it, because the LAST line drawn is the one in front.
+	const drawn = $derived([...plotted].reverse());
+
+	// Per-instance, because a document can hold more than one plot — the autodocs
+	// page mounts every story of this file at once — and a shared mask id would have
+	// the second plot cut against the first one's lines (STYLE.md on `$props.id()`).
+	const maskId = $props.id();
+
 	const ticks = $derived(
 		labels
 			.map((label, index) => {
@@ -111,21 +121,55 @@
 		>
 	{/each}
 
-	{#each plotted as line (line.label)}
-		{#each line.paths as path (path)}
-			<path
-				d={path}
-				fill="none"
-				stroke-width="1.8"
-				stroke-linecap="round"
-				stroke-linejoin="round"
-				stroke-dasharray={line.isDashed ? '5 3' : undefined}
-				class={line.strokeClass}
-			/>
-		{/each}
-		{#each line.dots as dot (dot.x)}
-			<circle cx={dot.x} cy={dot.y} r="2.2" class={line.fillClass} />
-		{/each}
+	<!-- Each line is cut by a fat copy of every line ABOVE it, so a crossing shows
+	     which of the three is in front (STYLE.md, "mask out the lower one"). Each cut
+	     repeats its own line's dasharray, which is what keeps two readings that
+	     coincide both visible: the gaps cut nothing, so the line underneath shows
+	     through them. The topmost series is cut by nothing and needs no mask. -->
+	{#each drawn as line, i (line.label)}
+		{@const above = drawn.slice(i + 1)}
+		{#if above.length > 0}
+			<mask
+				id="{maskId}-{i}"
+				maskUnits="userSpaceOnUse"
+				x="0"
+				y="0"
+				width={CHART.w}
+				height={CHART.h}
+			>
+				<!-- `white`/`black` are the mask's keep/cut channel, not colours to tokenise. -->
+				<path d="M0,0H{CHART.w}V{CHART.h}H0Z" fill="white" />
+				{#each above as over (over.label)}
+					{#each over.paths as path (path)}
+						<path
+							d={path}
+							fill="none"
+							stroke="black"
+							stroke-width="4.4"
+							stroke-linejoin="round"
+							stroke-dasharray={over.dash}
+						/>
+					{/each}
+				{/each}
+			</mask>
+		{/if}
+
+		<g mask={above.length > 0 ? `url(#${maskId}-${i})` : undefined}>
+			{#each line.paths as path (path)}
+				<path
+					d={path}
+					fill="none"
+					stroke-width="1.8"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					stroke-dasharray={line.dash}
+					class={line.strokeClass}
+				/>
+			{/each}
+			{#each line.dots as dot (dot.x)}
+				<circle cx={dot.x} cy={dot.y} r="2.2" class={line.fillClass} />
+			{/each}
+		</g>
 	{/each}
 </svg>
 
@@ -133,17 +177,21 @@
 	<div class="mt-text-2xs flex flex-wrap gap-grid-md text-xs text-ty-silent">
 		{#each series as line (line.label)}
 			<span class="flex items-center gap-grid-2xs">
-				{#if line.isDashed}
-					<!-- The dash is what separates this line from the one above it on a
-					     theme that gives both the same lightness, so the swatch carries
-					     it too — as two segments rather than a raw gradient var(). -->
-					<span class="flex w-4 gap-grid-2xs">
-						<span class="h-0.5 w-1.5 {line.swatchClass}"></span>
-						<span class="h-0.5 w-1.5 {line.swatchClass}"></span>
-					</span>
-				{:else}
-					<span class="h-0.5 w-4 rounded-lg {line.swatchClass}"></span>
-				{/if}
+				<!-- The same stroke with the same dasharray — the pair of `bg-*` spans this
+				     replaced could not draw a dotted line at all. 20 wide so `dashed` reads
+				     as dash-gap-dash. -->
+				<svg width="20" height="4" aria-hidden="true" class="shrink-0">
+					<line
+						x1="0"
+						y1="2"
+						x2="20"
+						y2="2"
+						stroke-width="2"
+						stroke-linecap="round"
+						stroke-dasharray={line.dash}
+						class={line.strokeClass}
+					/>
+				</svg>
 				{line.label}
 			</span>
 		{/each}

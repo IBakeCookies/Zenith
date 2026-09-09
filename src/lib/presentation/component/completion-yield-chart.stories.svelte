@@ -64,7 +64,27 @@
 
 		// Dashed, which is the second channel separating it from Yield on a theme
 		// that gives both hues the same lightness.
-		await expect(rate[0].getAttribute('stroke-dasharray')).toBe('5 3');
+		await expect(rate[0].getAttribute('stroke-dasharray')).toBe('10 5');
+
+		// The third channel: the yield line is masked by a fat copy of the rate line,
+		// so a crossing cuts the line underneath instead of blending with it. The mask
+		// has to repeat the dasharray, or a coinciding yield line is cut away whole
+		// rather than showing through the gaps.
+		const mask = canvasElement.querySelector('mask');
+		const cuts = mask?.querySelectorAll('path[stroke=black]');
+
+		// Asserted before it is compared below, or `url(#undefined)` would match
+		// `url(#undefined)` and prove nothing. `$props.id()` mints one per instance,
+		// which is what lets the autodocs page hold every story at once.
+		await expect(mask?.id).toBeTruthy();
+
+		await expect(cuts).toHaveLength(2);
+		await expect(cuts?.[0].getAttribute('stroke-dasharray')).toBe('10 5');
+		await expect(cuts?.[0].getAttribute('d')).toBe(rate[0].getAttribute('d'));
+
+		await expect(
+			canvasElement.querySelector('path.stroke-brand-counter')?.parentElement?.getAttribute('mask'),
+		).toBe(`url(#${mask?.id})`);
 
 		// Yield is recorded on Sat, Mon and Wed–Fri: one path and two lone dots.
 		await expect(canvasElement.querySelectorAll('path.stroke-brand-counter')).toHaveLength(1);

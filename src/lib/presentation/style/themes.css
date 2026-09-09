@@ -782,14 +782,14 @@
 	   it. Custom properties inherit downward only, so the shared one has to sit
 	   on the theme class, above both — a copy on `.theme-scenery` cannot be
 	   seen from up here. Move the disc by editing this and nothing else. */
-	--eclipse-disc-y: 12rem;
+	--eclipse-disc-y: 0;
 
 	/* How big, as a multiple of the size drawn here. It reaches both files the
 	   same way --eclipse-disc-y does: this gradient multiplies its stops by it,
 	   and scenery/eclipse.css scales both helpers by it about the same centre,
 	   so moon, corona and streamers keep their proportions. Resize the eclipse
 	   by editing this and nothing else. */
-	--eclipse-scale: 5;
+	--eclipse-scale: 1.5;
 
 	--background-image:
 		radial-gradient(
