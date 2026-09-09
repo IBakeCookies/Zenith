@@ -87,13 +87,19 @@ const restRecord = (
  * one: what matters is which failure kind reaches it, and that the store
  * registered its own re-read there.
  */
-async function setup(tasks: Task[] = [task()]) {
+/** The day the harness says its tasks belong to — never the live clock's. */
+const LOADED_DAY = '2000-01-01';
+
+async function setup(tasks: Task[] = [task()], date: string | null = LOADED_DAY) {
 	const status = new StorageStatusStore();
 	let store!: EnergyObservationStore;
 
 	render(Harness, {
 		onstore: (s: EnergyObservationStore) => (store = s),
-		readTasks: () => tasks,
+		readDay: () => ({
+			date,
+			tasks,
+		}),
 		status,
 	});
 
@@ -122,17 +128,37 @@ describe('EnergyObservationStore', () => {
 		vi.useRealTimers();
 	});
 
-	// The invariant that makes this a separate store: a measurement belongs to
-	// the day it was taken, so it reads the live clock and has no notion of the
-	// viewed day — browsing to another date must not be able to misdate one.
-	it('stamps a drain rating with today, not with any viewed day', async () => {
+	// The day arrives with the tasks, so the two agree by construction: a rating is
+	// stamped with the day the rated task belongs to, never with the live clock —
+	// which is how a session forgotten on the day is rated onto it afterwards.
+	it('stamps a drain rating with the day its tasks belong to, not the live clock', async () => {
 		const { store } = await setup();
 
 		await store.logDrain(1, 3, 9, 4);
 
 		expect(createDrainMock.mock.calls[0][0]).toMatchObject({
-			date: toISODate(),
+			date: LOADED_DAY,
 		});
+	});
+
+	// A day ahead has been worked by nobody. Refused here and not only by the page's
+	// gate, because a 🪫 editor opened on today outlives a navigation onto a day ahead
+	// that reuses the task's id — and the date is the store's.
+	it('refuses a rating on a day ahead', async () => {
+		const { store } = await setup([task()], '2999-01-01');
+
+		await store.logDrain(1, 3, 9, 4);
+
+		expect(createDrainMock).not.toHaveBeenCalled();
+	});
+
+	it('writes nothing while no day is loaded', async () => {
+		const { store, status } = await setup([task()], null);
+
+		await store.logDrain(1, 3, 9, 4);
+
+		expect(createDrainMock).not.toHaveBeenCalled();
+		expect(status.error).toBeNull();
 	});
 
 	// The row corrects a rating on whatever day it is showing, so a correction must

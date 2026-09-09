@@ -2,9 +2,9 @@ import { redirect } from '@sveltejs/kit';
 import type { PageLoad } from './$types';
 
 /**
- * The Lab is a today-only instrument: 🪫/☕ measurements are stamped with the
- * live clock and the λ₀ fit reads FINISHED days out of history, so there is no
- * such thing as the Lab "viewing" another day. The session store's date reader
+ * The Lab is a today-only instrument: ☕ stamps the live clock, 🪫 the loaded
+ * day, and the λ₀ fit reads FINISHED days out of history, so there is no such
+ * thing as the Lab "viewing" another day. The session store's date reader
  * belongs to the (app) layout and is route-blind, though, so a hand-typed or
  * stale `/energy?date=…` would load that day's tasks under copy that promises
  * today's session (business/model/AGENTS.md).

@@ -48,7 +48,7 @@
 		flowMinutes?: number;
 		flowDraft?: EditorDraft | null;
 		/** Why two ⚡ callbacks, and why 🪫's corrections are required: presentation/AGENTS.md,
-		 *  "Both corrections are offered on any day the page shows". */
+		 *  "Both writers are offered on any day up to today, the timer only today". */
 		onflowopen?: (source: EditorSource) => void;
 		onflowedit: () => void;
 		onflowclose: () => void;
@@ -153,8 +153,8 @@
 	}
 
 	const hasLogged = $derived(hasFlowReading || drainLogs.length > 0);
-	// A past day passes none of the four, and an empty box would take the right end of
-	// the line the hours are meant to hold.
+	// With none of the four passed, an empty box would take the right end of the line
+	// the hours are meant to hold.
 	const hasControls = $derived(Boolean(onflowopen || ondrainopen || onupdate || onremove));
 </script>
 

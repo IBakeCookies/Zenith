@@ -418,14 +418,12 @@
 	args={{
 		flowMinutes: 40,
 		drainLogs: [drainLog()],
-		onflowopen: undefined,
-		ondrainopen: undefined,
 		onupdate: undefined,
 		onremove: undefined,
 	}}
 	play={async ({ args, canvas, userEvent }) => {
-		// A past day: correct, never append. A new observation stamps the LIVE clock's today, so both
-		// LOGGING buttons are withheld while both corrections stay offered.
+		// A past day: the plan is frozen, the measurements are not. Both LOGGING buttons
+		// and both corrections stay offered; only the plan's edit and delete are withheld.
 		await expect(canvas.getByRole('checkbox')).toBeVisible();
 
 		await expect(
@@ -441,16 +439,16 @@
 		).not.toBeInTheDocument();
 
 		await expect(
-			canvas.queryByRole('button', {
+			canvas.getByRole('button', {
 				name: 'Log time to flow',
 			}),
-		).not.toBeInTheDocument();
+		).toBeVisible();
 
 		await expect(
-			canvas.queryByRole('button', {
+			canvas.getByRole('button', {
 				name: 'Log end-of-session drain',
 			}),
-		).not.toBeInTheDocument();
+		).toBeVisible();
 
 		await userEvent.click(
 			canvas.getByRole('button', {

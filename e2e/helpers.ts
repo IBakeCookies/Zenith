@@ -197,10 +197,11 @@ export const plantRunningTimer = (
 	page: Page,
 	minutes: number,
 	targetMinutes: number | null = null,
+	startedOn: string = isoDate(0),
 ) =>
 	page.evaluate((timer) => localStorage.setItem('fallow:session-timer', JSON.stringify(timer)), {
 		phase: 'running',
-		startedOn: isoDate(0),
+		startedOn,
 		runningSince: Date.now(),
 		accumulatedMs: minutes * 60_000,
 		targetMs: targetMinutes === null ? null : targetMinutes * 60_000,
@@ -401,7 +402,7 @@ export const calibrationCard = (page: Page, title: string) =>
 		}),
 	});
 
-/** Plan a day. Past days are read-only, so seeding uses today or a day ahead. */
+/** Plan a day: today or a day ahead — a past day's plan is read-only, so see `seedPastDay`. */
 export async function seedDay(page: Page, offset: number, titles: string[]) {
 	await page.goto(offset === 0 ? '/' : `/?date=${isoDate(offset)}`);
 
@@ -412,10 +413,35 @@ export async function seedDay(page: Page, offset: number, titles: string[]) {
 	await page.waitForTimeout(AUTOSAVE_MS);
 }
 
-/** A second ⚡ dated `date`, copied off the one already logged. No UI path dates a flow
- *  log in the past — the record carries the viewed day and past days are read-only — so
- *  the store is written directly, which is also all this needs: the row under test reads
- *  the log back out. */
+/** Plan a day `daysAgo` back and open it. A past day cannot be planned, so it is planned
+ *  as today and the page's clock is run past it; the runner's own clock stands still, so
+ *  the returned date is `isoDate(0)` — the day the app now sees `daysAgo` behind. Leaves
+ *  the page's clock installed. */
+export async function seedPastDay(page: Page, daysAgo: number, titles: string[]) {
+	await page.clock.install();
+	await page.goto('/');
+
+	for (const title of titles) {
+		await addTask(page, title);
+	}
+
+	// The autosave debounce runs on the page's own clock, which is now faked.
+	await page.clock.runFor(AUTOSAVE_MS);
+	await page.waitForTimeout(AUTOSAVE_MS);
+
+	await page.clock.fastForward(daysAgo * 24 * 60 * 60 * 1000);
+
+	const date = isoDate(0);
+
+	await page.goto(`/?date=${date}`);
+	await expect(page.getByText('Viewing a past day:')).toBeVisible();
+
+	return date;
+}
+
+/** A second ⚡ dated `date`, copied off the one already logged. Written to the store
+ *  directly rather than logged onto the day: faster, it sets `createdAt`, and it is all
+ *  this needs — the row under test reads the log back out. */
 export async function copyFlowLogToDate(page: Page, date: string) {
 	await page.evaluate(
 		(date) =>

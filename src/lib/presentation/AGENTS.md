@@ -668,18 +668,18 @@ addressable **by record id alone** — off any screen, with no day in view, and
 for a task since deleted. ☕ got a correction at all on that account: it has no
 task, hence no row on either screen, so this list is its only editor.
 
-### Both corrections are offered on any day the page shows, a new measurement only today
+### Both writers are offered on any day up to today, the timer only today
 
-`logDrain` stamps the live clock (a rating browsed onto a past day would
-misdate itself), while `editDrainLog` passes no `date` at all — the data
+A ⚡ or 🪫 is logged and corrected on any day up to today — a day ahead has not
+been worked. `logDrain` stamps the loaded day it is handed with the tasks, so
+stamp and lookup agree, and refuses a day ahead itself — an editor opened on today outlives a navigation; `editDrainLog` passes no `date` at all — the data
 layer's upsert rules have the type-level reason.
 
 ⚡ has two writers split by ADDRESS and not by verb: `logFlow` is the row's
 (keyed `(taskId, date)`, since a row has no record id) and `editFlowLog` is the
 analytics list's. `logFlow` stamps the **viewed** day and refuses a first
-measurement dated before today, so a correction lands and a back-dated log
-cannot. The two are not interchangeable: handing the row's UPSERT a record that
-has since been deleted re-creates it under its own id with a fresh stamp, so
+measurement only ahead of today. The two are not interchangeable: handing the
+row's UPSERT a record that has since been deleted re-creates it under its own id with a fresh stamp, so
 the by-id path is a real `$updateFlowObservation` and not
 `$createOrUpdateFlowObservation` with the record spread back in.
 
@@ -689,15 +689,15 @@ the by-id path is a real `$updateFlowObservation` and not
 could not be corrected before, because the badge was ALSO a `flowMinutes` field
 on the day's task and the autosave never rewrites a past day, so an amended one
 came back on the next load. Hence two callbacks on the row and not one:
-`onflowopen` is the ⚡ BUTTON (a first measurement, today only) and `onflowedit`
-is the badge (a correction, any day) — a past day passes the second and
-withholds the first, exactly as it does for 🪫.
+`onflowopen` is the ⚡ BUTTON (a first measurement, any day up to today) and
+`onflowedit` is the badge (a correction, any day) — a day ahead passes the
+second and withholds the first, exactly as it does for 🪫.
 `SessionStore.clearFlowLog(taskId)` is the row's delete — the same delete as
 `deleteFlowLog(recordId)`, addressed the way a row can address it — and drops
 the viewed day's reading, since that is the one on screen.
 
 The timer that fills a 🪫 length is gated the same way — `day-actions.svelte` renders
-`session-clock.svelte` on **today** alone. It is one bounded object whose outline holds
+`session-clock.svelte` on **today** alone, and a past day's 🪫 editor takes no stopped reading (`pendingMinutes` in the main page). It is one bounded object whose outline holds
 across the phases; ink weight and the track carry the phase, not which controls exist. The state is `SessionTimerStore`'s, bound in
 by both screens that render it (`bind:timer`), and `localStorage`'s —
 `business/utils/session-timer.ts` owns the shape, the transitions, `getPendingMinutes`

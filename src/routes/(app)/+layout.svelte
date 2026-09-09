@@ -116,7 +116,13 @@
 				: null,
 	);
 
-	const observations = setEnergyObservationStore(() => session.tasks, storageStatus);
+	const observations = setEnergyObservationStore(
+		() => ({
+			date: session.loadedDate,
+			tasks: session.tasks,
+		}),
+		storageStatus,
+	);
 
 	// Why here and not on `/energy`: business/AGENTS.md, "Context is the creation rule".
 	setEnergyLabStore(session, observations, storageStatus, () =>

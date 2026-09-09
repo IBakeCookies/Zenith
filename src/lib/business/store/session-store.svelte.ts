@@ -125,9 +125,9 @@ function toTaskDefinition(task: TaskDefinition): TaskDefinition {
  * between SSR requests — and consumed by any page that needs live tasks
  * (main page, Energy Lab).
  *
- * Drain and rest measurements live in `EnergyObservationStore`: they key on the
- * live clock rather than the viewed day, so none of the date-routing or
- * auto-save machinery here applies to them.
+ * Drain and rest measurements live in `EnergyObservationStore`: it is handed the
+ * loaded day with its tasks, so none of the date-routing or auto-save machinery
+ * here applies to them.
  */
 export class SessionStore {
 	// Assigned first thing in the constructor. The `!` is load-bearing: the
@@ -214,9 +214,8 @@ export class SessionStore {
 	#dateParam = $derived(this.#demoTitles === null ? this.#readDateParam() : null);
 	#selectedDate = $derived(isISODate(this.#dateParam) ? this.#dateParam : this.#today);
 
-	// Day modes: past is read-only history (completion toggles only), future
-	// is a plan you can edit freely; flow logging — an actual measurement —
-	// stays today-only.
+	// Day modes: past is read-only history (completion toggles and measurements),
+	// future is a plan you can edit freely and never measure.
 	#isViewingPast = $derived(this.#selectedDate < this.#today);
 	#isViewingFuture = $derived(this.#selectedDate > this.#today);
 
@@ -1125,9 +1124,9 @@ export class SessionStore {
 	// is also the ⚡ badge the row reads back. Re-logging the same task on the
 	// same day REPLACES the earlier measurement (typo correction).
 	//
-	// Stamped with the VIEWED day, not the live clock, and today is the only day
-	// a FIRST measurement may land on: a correction re-describes a measurement
-	// that exists, while a first one on a past day is a measurement nobody took.
+	// Stamped with the VIEWED day, not the live clock. A first measurement is
+	// refused only ahead of today — a day nobody has worked yet; a correction
+	// re-describes a measurement that exists, on any day.
 	// The guard is here rather than only in the UI because the date is the store's.
 	async logFlow(id: number, minutes: number) {
 		// The example day's tasks are fabricated, so a ϕ measurement against one
@@ -1147,7 +1146,7 @@ export class SessionStore {
 		const date = this.#selectedDate;
 		const existing = this.#flowLogFor(id, date);
 
-		if (date !== this.#today && !existing) return;
+		if (date > this.#today && !existing) return;
 
 		// A CORRECTION keeps what the record froze; only a first measurement derives it.
 		// The rule is about the correction and not the address it arrived by,

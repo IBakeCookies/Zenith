@@ -383,10 +383,11 @@ or speak for another store. Three consequences worth not undoing:
 ### Drain and rest observations live in `EnergyObservationStore`
 
 Not the session store — the one cluster whose extraction cost **zero** new
-cross-module exports: a measurement is stamped with the live clock's today,
-never the viewed day, so it needs none of the date-routing, load or auto-save
-state — only a task lookup and somewhere to report a failed write, both already
-available (`tasks`, and `liveToday` needs no store at all). It also needs no
+cross-module exports: the store is handed the loaded day together with its
+tasks and routes no date itself, so it needs none of the date-routing, load or
+auto-save state — only that one thunk and somewhere to report a failed write,
+both already available (`loadedDate` and `tasks`; ☕ stamps `liveToday`, which
+needs no store at all). It also needs no
 `initializeStorage()` ordering: the localStorage migration writes only sessions
 and `energyParams`, never these two object stores. What deliberately did **not**
 move (re-proposing it is churn):
@@ -474,8 +475,8 @@ the fork this replaced.
 
 A dated URL is refused rather than served — `/energy?date=…` redirects to the
 canonical route, because the layout's date reader is route-blind while the Lab
-is a today-only instrument (🪫/☕ stamp the live clock, the λ₀ fit reads finished
-days). That redirect belongs in `energy/+page.ts`, not in a `$effect`: a load
+is a today-only instrument (☕ stamps the live clock, 🪫 the loaded day, the λ₀
+fit reads finished days). That redirect belongs in `energy/+page.ts`, not in a `$effect`: a load
 redirect runs before the layout hands the session store a date, so the wrong
 day is never read, and it holds with JS disabled.
 

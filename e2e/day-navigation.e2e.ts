@@ -1,5 +1,14 @@
 import { expect, test } from '@playwright/test';
-import { addTask, AUTOSAVE_MS, isoDate, logFlow, setBudget, taskRow } from './helpers';
+import {
+	addTask,
+	AUTOSAVE_MS,
+	isoDate,
+	logFlow,
+	seedDay,
+	seedPastDay,
+	setBudget,
+	taskRow,
+} from './helpers';
 
 test('past day is read-only with a banner', async ({ page }) => {
 	await page.goto(`/?date=${isoDate(-3)}`);
@@ -43,7 +52,8 @@ test('past day is read-only with a banner', async ({ page }) => {
 		}),
 	).toHaveCount(0);
 
-	// Nor the timer that fills a 🪫 editor: a new measurement is today's alone.
+	// Nor the timer that fills a 🪫 editor: minutes are counted on today alone, even
+	// though a 🪫 may now be typed onto a past day.
 	await expect(
 		page.getByRole('button', {
 			name: 'Start timer',
@@ -181,6 +191,47 @@ test('a rollover drops a timer left running overnight', async ({ page }) => {
 			.locator('input[type="number"]')
 			.first(),
 	).toHaveValue('');
+});
+
+/* A day already worked takes a measurement as today does — a session forgotten on
+   the day is still a session — so completing a task there asks both questions. A day
+   ahead has been worked by nobody and keeps refusing both. */
+test('ticking a task done on a past day asks both questions', async ({ page }) => {
+	await seedPastDay(page, 3, ['Deep work']);
+
+	const row = taskRow(page, 'Deep work');
+
+	await row.getByRole('checkbox').check();
+
+	await expect(
+		row.locator('form').filter({
+			hasText: 'Minutes to reach flow',
+		}),
+	).toBeVisible();
+
+	await expect(
+		row.locator('form').filter({
+			hasText: 'After the session',
+		}),
+	).toBeVisible();
+});
+
+test('a day ahead offers neither measurement', async ({ page }) => {
+	await seedDay(page, 3, ['Deep work']);
+
+	await expect(taskRow(page, 'Deep work')).toBeVisible();
+
+	await expect(
+		page.getByRole('button', {
+			name: 'Log time to flow',
+		}),
+	).toHaveCount(0);
+
+	await expect(
+		page.getByRole('button', {
+			name: 'Log end-of-session drain',
+		}),
+	).toHaveCount(0);
 });
 
 /* The rails are not a today-only reading — a past day draws the plan it was made
