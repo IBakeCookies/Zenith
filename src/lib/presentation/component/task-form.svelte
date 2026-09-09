@@ -204,7 +204,7 @@
      order, so the tab order is the column as written: no `order-*`, and never a
      positive `tabindex`. -->
 <form
-	class={cn('grid gap-grid-xl', preview !== undefined && 'md:grid-cols-[2fr_1fr]', className)}
+	class={cn('grid gap-grid-lg', preview !== undefined && 'md:grid-cols-[2fr_1fr]', className)}
 	onsubmit={handleSubmit}
 >
 	<!-- Framed only when there is a reading to be told apart from; a form with no
