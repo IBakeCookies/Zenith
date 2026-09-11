@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { MetricTrendPoint } from '$lib/business/model/metric/history';
+import type { MetricTrendPoint, WeeklyMetricTrend } from '$lib/business/model/metric/history';
 import {
 	metricTrendSeries,
 	type MetricTrendSeriesInput,
@@ -13,7 +13,9 @@ const point = (date: string, burnoutRisk: number): MetricTrendPoint => ({
 });
 
 const input = (over: Partial<MetricTrendSeriesInput> = {}): MetricTrendSeriesInput => ({
+	range: 'week',
 	trend: [],
+	weeklyTrend: [],
 	rangeStart: '2026-07-25',
 	rangeDays: 7,
 	locale: 'en-US',
@@ -87,5 +89,51 @@ describe('metricTrendSeries', () => {
 
 		expect(labels[0]).toBe('Jul 25');
 		expect(labels[6]).toBe('Jul 31');
+	});
+
+	// One point per 7-day block, like the completion chart above it: 365 daily
+	// points at this width read as noise, and the two year charts must line up
+	// slot for slot.
+	it('gives the year view one slot per 7-day block, labelled once a month', () => {
+		const weeklyTrend: WeeklyMetricTrend[] = [
+			{
+				start: '2026-06-24',
+				isMonthStart: true,
+				burnoutRisk: 30,
+				cognitiveLoad: 31,
+				physicalLoad: 32,
+			},
+			{
+				start: '2026-07-01',
+				isMonthStart: true,
+				burnoutRisk: null,
+				cognitiveLoad: null,
+				physicalLoad: null,
+			},
+			{
+				start: '2026-07-08',
+				isMonthStart: false,
+				burnoutRisk: 50,
+				cognitiveLoad: 51,
+				physicalLoad: 52,
+			},
+		];
+
+		const { labels, series } = metricTrendSeries(
+			input({
+				range: 'year',
+				rangeDays: 365,
+				weeklyTrend,
+			}),
+		);
+
+		// 52 labels do not fit the axis; only the block opening a month prints one.
+		expect(labels).toEqual(['Jun', 'Jul', '']);
+
+		expect(series.map((s) => s.values)).toEqual([
+			[30, null, 50],
+			[31, null, 51],
+			[32, null, 52],
+		]);
 	});
 });

@@ -1,6 +1,7 @@
-/* The completion chart's x-axis is three different things: a weekday per bar for
-   the week view, a date per bar for the month, and a calendar month per bar for
-   the year. All three shapes, the today label and the empty slot used to live in
+/* The completion chart's x-axis is two different things: a date per bar for the
+   week and month views, and a 7-day block per bar for the year, labelled once a
+   calendar month. Both shapes,
+   the today label and the empty slot used to live in
    `analytics/+page.svelte`, where none of them could be asserted — including the
    `null`-versus-`0` distinction the chart deliberately draws differently.
 
@@ -8,7 +9,7 @@
 
 import * as m from '$lib/paraglide/messages.js';
 import { addDays, fromISO } from '$lib/business/utils/date';
-import type { DaySummary, MonthlyRollup } from '$lib/business/model/metric/history';
+import type { DaySummary, WeeklyRollup } from '$lib/business/model/metric/history';
 import type { AnalyticsRange } from '$lib/business/store/analytics-store.svelte';
 
 export type ChartPoint = {
@@ -29,7 +30,7 @@ export type ChartPoint = {
 export interface CompletionChartInput {
 	range: AnalyticsRange;
 	summaries: DaySummary[];
-	monthlyRollups: MonthlyRollup[];
+	weeklyRollups: WeeklyRollup[];
 	rangeStart: string;
 	rangeDays: number;
 	today: string;
@@ -37,26 +38,29 @@ export interface CompletionChartInput {
 	locale: string;
 }
 
-/** One point per chart slot: a calendar month for the year view, a day otherwise. */
+/** One point per chart slot: a 7-day block for the year view, a day otherwise. */
 export function completionChartPoints(input: CompletionChartInput): ChartPoint[] {
 	const { range, locale, today } = input;
 
 	if (range === 'year') {
-		return input.monthlyRollups.map((month) => {
-			const first = fromISO(`${month.month}-01`);
+		return input.weeklyRollups.map((week) => {
+			const first = fromISO(week.start);
 
 			return {
-				label: first.toLocaleDateString(locale, {
-					month: 'short',
+				// 52 labels do not fit the axis, so only a block that opens a calendar
+				// month carries one — the density the year view already read at.
+				label: week.isMonthStart
+					? first.toLocaleDateString(locale, {
+							month: 'short',
+						})
+					: '',
+				full: m.ana_week_of({
+					date: dayMonth(first, locale),
 				}),
-				full: first.toLocaleDateString(locale, {
-					month: 'long',
-					year: 'numeric',
-				}),
-				value: month.average,
-				line: month.yieldAverage,
-				sub: monthSub(month.dayCount),
-				showLabel: true,
+				value: week.average,
+				line: week.yieldAverage,
+				sub: activeDaysSub(week.dayCount),
+				showLabel: week.isMonthStart,
 			};
 		});
 	}
@@ -73,12 +77,7 @@ export function completionChartPoints(input: CompletionChartInput): ChartPoint[]
 			const day = fromISO(date);
 
 			return {
-				label:
-					range === 'week'
-						? day.toLocaleDateString(locale, {
-								weekday: 'short',
-							})
-						: dayMonth(day, locale),
+				label: dayMonth(day, locale),
 				full:
 					date === today
 						? m.ana_today_label({
@@ -111,7 +110,7 @@ function dayMonth(day: Date, locale: string): string {
 	});
 }
 
-function monthSub(dayCount: number): string {
+function activeDaysSub(dayCount: number): string {
 	if (dayCount === 0) return m.ana_no_data();
 
 	return dayCount === 1

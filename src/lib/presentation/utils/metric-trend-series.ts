@@ -1,4 +1,6 @@
-/* The analytics line cards' series, laid onto one slot per day of the viewed range.
+/* The analytics line cards' series, laid onto one slot per day of the viewed
+   range — or one per 7-day block on the year range, which is where the
+   completion chart above it also stops counting days.
 
    The gaps are made here: the chart draws a break at a `null`, which is what
    keeps a day with no reading — never opened, or nothing finished on it — from
@@ -11,7 +13,8 @@
 import * as m from '$lib/paraglide/messages.js';
 import { DASH } from '$lib/presentation/utils/series-runs';
 import { addDays, fromISO } from '$lib/business/utils/date';
-import type { MetricTrendPoint } from '$lib/business/model/metric/history';
+import type { MetricTrendPoint, WeeklyMetricTrend } from '$lib/business/model/metric/history';
+import type { AnalyticsRange } from '$lib/business/store/analytics-store.svelte';
 
 export interface TrendSeries {
 	label: string;
@@ -27,22 +30,28 @@ export interface TrendSeries {
 }
 
 export interface MetricTrendSeriesInput {
+	range: AnalyticsRange;
 	trend: MetricTrendPoint[];
+	/** Read instead of `trend` on the year range */
+	weeklyTrend: WeeklyMetricTrend[];
 	rangeStart: string;
 	rangeDays: number;
 	/** BCP-47 tag — `getDateLocale()` at the call site */
 	locale: string;
 }
 
+/** What both lay-outs hand `line()`: the three readings, either of which may be absent. */
+type TrendSlot = Pick<WeeklyMetricTrend, 'burnoutRisk' | 'cognitiveLoad' | 'physicalLoad'>;
+
 /** About this many x-axis ticks at any range length; 7 slots print all seven. */
 const TICK_TARGET = 7;
 
-function layOutRange<T extends { date: string }>(
-	rows: T[],
+function layOutDays(
+	rows: MetricTrendPoint[],
 	rangeStart: string,
 	rangeDays: number,
 	locale: string,
-): { slots: (T | null)[]; labels: string[] } {
+): { slots: (TrendSlot | null)[]; labels: string[] } {
 	const byDate = new Map(rows.map((row) => [row.date, row]));
 	const step = Math.ceil(rangeDays / TICK_TARGET);
 
@@ -68,14 +77,33 @@ function layOutRange<T extends { date: string }>(
 	};
 }
 
+// 52 labels do not fit the axis, so only a block that opens a calendar month
+// carries one — the density the year view already read at, and the same blocks
+// `completionChartPoints` labels.
+function layOutWeeks(
+	weeks: WeeklyMetricTrend[],
+	locale: string,
+): { slots: TrendSlot[]; labels: string[] } {
+	return {
+		slots: weeks,
+		labels: weeks.map((week) =>
+			week.isMonthStart
+				? fromISO(week.start).toLocaleDateString(locale, {
+						month: 'short',
+					})
+				: '',
+		),
+	};
+}
+
 // Every class is spelled out rather than derived from the stroke name:
 // Tailwind tree-shakes the @theme aliases down to what its scanner can see
 // literally, so `'stroke-' + hue` resolves to nothing (STYLE.md, and the same
 // trap `series-color.ts` documents).
-function line<T>(
-	slots: (T | null)[],
+function line(
+	slots: (TrendSlot | null)[],
 	label: string,
-	read: (row: T) => number | null,
+	read: (row: TrendSlot) => number | null,
 	classes: Pick<TrendSeries, 'strokeClass' | 'fillClass'>,
 	dash?: string,
 ): TrendSeries {
@@ -91,12 +119,10 @@ export function metricTrendSeries(input: MetricTrendSeriesInput): {
 	labels: string[];
 	series: TrendSeries[];
 } {
-	const { slots, labels } = layOutRange(
-		input.trend,
-		input.rangeStart,
-		input.rangeDays,
-		input.locale,
-	);
+	const { slots, labels } =
+		input.range === 'year'
+			? layOutWeeks(input.weeklyTrend, input.locale)
+			: layOutDays(input.trend, input.rangeStart, input.rangeDays, input.locale);
 
 	return {
 		labels,

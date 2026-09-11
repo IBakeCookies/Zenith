@@ -1,6 +1,7 @@
 <script lang="ts">
-	/* The analytics Load trend card: one slot per day of the viewed range, every
-	   series on the same 0–100% axis its readings are already given on.
+	/* The analytics Load trend card: one slot per label, every series on the same
+	   0–100% axis its readings are already given on. What a slot stands for is
+	   `metricTrendSeries`' to decide — a day, or a calendar month on the year range.
 
 	   Fixed viewBox at `w-full`, like `completion-yield-chart` above it on the same
 	   page. Colours are utility classes, not raw `var()` (STYLE.md). */
@@ -57,7 +58,7 @@
 	// The first and last slots sit ON the plot edges, so a centred label there
 	// hangs half outside the viewBox and is clipped — "Jul 31" rendering as
 	// "Jul". Turning only the edge labels keeps every tick between them centred
-	// on the day it stands for.
+	// on the slot it stands for.
 	const anchorAt = (x: number) => {
 		if (x <= CHART.left) return 'start';
 
@@ -66,10 +67,12 @@
 		return 'middle';
 	};
 
-	// Drawn back to front, so the series the card is named for is the one nothing
-	// cuts. The legend keeps `series` order, which is the metric hierarchy — the plot
-	// reverses it, because the LAST line drawn is the one in front.
-	const drawn = $derived([...plotted].reverse());
+	// The LAST line drawn is the one in front, and a SOLID line in front hides
+	// whatever it crosses outright. So the plot keeps `series` order — solid first,
+	// at the bottom — and the dotted and dashed lines over it cut only where their
+	// own strokes land, letting it show through their gaps.
+	// `completion-yield-chart` stacks its pair the same way.
+	const drawn = $derived(plotted);
 
 	// Per-instance, because a document can hold more than one plot — the autodocs
 	// page mounts every story of this file at once — and a shared mask id would have
@@ -125,7 +128,8 @@
 	     which of the three is in front (STYLE.md, "mask out the lower one"). Each cut
 	     repeats its own line's dasharray, which is what keeps two readings that
 	     coincide both visible: the gaps cut nothing, so the line underneath shows
-	     through them. The topmost series is cut by nothing and needs no mask. -->
+	     through them. With the solid line at the bottom no cut is solid, so no
+	     crossing hides a reading. The topmost series is cut by nothing. -->
 	{#each drawn as line, i (line.label)}
 		{@const above = drawn.slice(i + 1)}
 		{#if above.length > 0}
