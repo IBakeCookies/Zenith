@@ -8,7 +8,9 @@ reasoning from code.
 
 - Source article: [The Zenith Gradient Algorithm](https://thequantasticjournal.com/how-to-over-engineer-a-todo-app-the-zenith-gradient-algorithm-67712737135e)
   (copy in `/zenith.md`)
-- Model **v1** = the article's math plus our earlier robustness fixes
+- Model **v1** = our first implementation: the article's objective and
+  time-to-flow plane with a curve and `p₀`/`a` mappings of our own (§2 says
+  how they differ from the article's), plus robustness fixes
   (ridge-regularized constants fit, ϕ floor, per-task optimum caps,
   switch-cost drop search).
 - Model **v2** = the 2026-07 revision documented here: new productivity curve,
@@ -49,33 +51,33 @@ retype a row, regenerate:
 `npm run lint` runs it with `--check`, so a stale index fails the build.
 
 ```text
-§0           83-124  Objective
-§1          126-151  Inputs and parameter mappings (unchanged from the articl…
-§2          153-254  Productivity curve — v2 change
-§3          256-348  Optimal stopping — v2 change: per-task, no longer a univ…
-§4          350-439  Allocation — v2 change: discrete blocks, exact greedy, e…
-§5          441-729  Personalization — v2 change: full Bayesian posterior
-  §5.2      540-618  Recency weighting of the ϕ fit
-  §5.1      620-729  Posterior-aware allocation
-§6          731-743  Summary of v1 → v2 changes
-§7          745-769  Known approximations and deliberate non-changes
-§8         771-1858  Energy model (zenith-energy.ts) — fatigue-recovery exten…
-  §8.1      783-805  Intermittent-rest recovery correction
-  §8.2      807-826  Warm-up carryover instead of binary reset
-  §8.3      828-846  Verified consequences and a calibration question, closed
-  §8.4      848-918  Per-task satiety — concave daily value
-  §8.5      920-960  Micro-recovery gate — a positive floor for full-demand t…
-  §8.6     962-1008  Optimizer reliability — compound moves and drop-one seeds
-  §8.7    1010-1105  Drain-rate calibration from end-of-session ratings
-  §8.8    1107-1142  45-minute plan granularity
-  §8.9    1144-1191  Recovery-rate calibration from pre/post-rest pairs
-  §8.10   1193-1444  Stopping-value calibration from observed stop times
-  §8.11   1446-1577  Live stop advisor — §8.10 run forward mid-day
-  §8.12   1579-1733  The budget curve — what the day's LENGTH is worth
-  §8.13   1735-1799  Capacity from the fitted drain rate
-  §8.14   1801-1858  Per-title drain rate — which task costs more than its sl…
-§9        1860-1922  Plan-adherence reading and its verdict band
-§10       1924-1971  References
+§0           85-126  Objective
+§1          128-162  Inputs and parameter mappings
+§2          164-280  Productivity curve — v2 change
+§3          282-374  Optimal stopping — v2 change: per-task, no longer a univ…
+§4          376-465  Allocation — v2 change: discrete blocks, exact greedy, e…
+§5          467-755  Personalization — v2 change: full Bayesian posterior
+  §5.2      566-644  Recency weighting of the ϕ fit
+  §5.1      646-755  Posterior-aware allocation
+§6          757-769  Summary of v1 → v2 changes
+§7          771-796  Known approximations and deliberate non-changes
+§8         798-1885  Energy model (zenith-energy.ts) — fatigue-recovery exten…
+  §8.1      810-832  Intermittent-rest recovery correction
+  §8.2      834-853  Warm-up carryover instead of binary reset
+  §8.3      855-873  Verified consequences and a calibration question, closed
+  §8.4      875-945  Per-task satiety — concave daily value
+  §8.5      947-987  Micro-recovery gate — a positive floor for full-demand t…
+  §8.6     989-1035  Optimizer reliability — compound moves and drop-one seeds
+  §8.7    1037-1132  Drain-rate calibration from end-of-session ratings
+  §8.8    1134-1169  45-minute plan granularity
+  §8.9    1171-1218  Recovery-rate calibration from pre/post-rest pairs
+  §8.10   1220-1471  Stopping-value calibration from observed stop times
+  §8.11   1473-1604  Live stop advisor — §8.10 run forward mid-day
+  §8.12   1606-1760  The budget curve — what the day's LENGTH is worth
+  §8.13   1762-1826  Capacity from the fitted drain rate
+  §8.14   1828-1885  Per-title drain rate — which task costs more than its sl…
+§9        1887-1949  Plan-adherence reading and its verdict band
+§10       1951-1998  References
 ```
 
 <!-- section-index:end -->
@@ -123,7 +125,7 @@ optimal stopping time **lowers** the objective, so an abundant budget
 correctly leaves slack. (The `zenith-energy.ts` model takes the total-output
 alternative; see §8.)
 
-## 1. Inputs and parameter mappings (unchanged from the article)
+## 1. Inputs and parameter mappings
 
 User inputs per task: difficulty `Eᵤ ∈ [1,10]`, enjoyment `βᵤ ∈ [1,10]`.
 
@@ -138,6 +140,15 @@ a  = E·β                            (peak productivity scale)
 
 Defaults `c₁ = 0.56, c₂ = −0.24, c₃ = 0.5`; ϕ is floored at 0.1h because a
 fitted plane can extrapolate to ≤ 0 far from the measured tasks.
+
+The `Eᵤ`, `βᵤ` maps and the ϕ plane with `c₁ = 0.56, c₂ = −0.24` are the
+article's. The rest is ours: the article's worked examples run `c₃ = 0`;
+our 0.5 is a prior, not a floor — on the input ranges ϕ stays ≥ 0.08 h at
+`c₃ = 0`, and it adds half an hour to every fresh user's time-to-flow (about
+0.75–0.9 h to every T*) until logs fit it away. The article's own
+mappings are `p₀ = β²/E²` and `a = β²·(1 + ln E)`. We kept `β/E` and `E·β`
+from v1 (§2 explains what the curve needs from them; §7 records why `a`
+monotone in `E` stays).
 
 **v2 amplitude cap.** The v2 curve (§2) requires `p₀ < a`. With the mappings
 above, `p₀/a = 1/E²`, which reaches exactly 1 at `E = 1` (user difficulty 1) —
@@ -154,20 +165,35 @@ The cap only binds for `E < 1/√0.9 ≈ 1.054`, i.e. user difficulty below
 
 ### What changed and why
 
-The article defines `p₀ = β/E` as _initial productivity_, but its curve
+Three curves are in play. The article's (its closed-form objective and its
+four-task example are both built on it) adds a constant that never decays:
+
+```
+article:  p(t) = p₀ + a·t·e^(−t/ϕ),   p₀ = β²/E²,  a = β²·(1 + ln E)
+```
+
+Our v1 moved `p₀` into the amplitude and put the `k` back in front of `t`:
 
 ```
 v1:  p(t) = (a + p₀)·k·t·e^(−kt),   k = 1/ϕ
 ```
 
-forces `p(0) = 0` for every task — `p₀` was silently just an amplitude term,
-and the story the article tells about it ("we start easier on enjoyable,
-low-effort tasks") was not actually in the math. v2 uses a curve where the
-claim is true:
+which forces `p(0) = 0` for every task — `p₀` was silently just an amplitude
+term, and the story about it ("we start easier on enjoyable, low-effort
+tasks") was not in the math. v2 uses a curve where the claim is true:
 
 ```
 v2:  p(t) = (a·k·t + p₀)·e^(−kt),   k = (1 − r)/ϕ,   r = p₀/a
 ```
+
+Why not return to the article's form, which also starts above zero? Its
+constant sits outside the exponential, so `p(t) → p₀` instead of 0 — no
+burnout tail — and its peak `a·ϕ/e + p₀` grows with time-to-flow, so a task
+that is slow to reach flow is rewarded with a higher peak. v2 keeps the
+nonzero start while decaying to 0 and holding the peak independent of ϕ.
+(Because an additive constant drops out of `dP̄/dt`, the article's stopping
+rule is the same `eˣ = x² + x + 1` that §3 recovers at `r = 0`; on its own
+four-task example the two models' allocations differ by under 0.1 h.)
 
 ### Properties
 
@@ -188,8 +214,8 @@ v2:  p(t) = (a·k·t + p₀)·e^(−kt),   k = (1 − r)/ϕ,   r = p₀/a
   no convex kink before you'd stop anyway.
 - **Decays to 0** as `t → ∞` — the burnout tail is preserved.
 
-(Pedantic note: the article calls the v1 shape "a Poisson distribution"; it is
-a Gamma(2)/Erlang-2 _density_ shape. Poisson is discrete.)
+(Pedantic note: the article calls the `t·e^(−kt)` ramp "a Poisson
+distribution"; it is a Gamma(2)/Erlang-2 _density_ shape. Poisson is discrete.)
 
 ### Average productivity (closed form)
 
@@ -732,7 +758,7 @@ negligible next to the subset enumeration.
 
 | #   | What                   | v1                                                                     | v2                                                                                    | Why                                                                                                                                    |
 | --- | ---------------------- | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | Curve                  | `(a+p₀)·k·t·e^(−kt)`, `p(0) = 0`                                       | `(a·kt+p₀)·e^(−kt)`, `p(0) = p₀`                                                      | Make "initial productivity" actually true; article's own story about p₀ wasn't in its math                                             |
+| 1   | Curve                  | `(a+p₀)·k·t·e^(−kt)`, `p(0) = 0`                                       | `(a·kt+p₀)·e^(−kt)`, `p(0) = p₀`                                                      | Make "initial productivity" actually true; v1 had lost the article's nonzero start (§2 on why not the article's form)                  |
 | 2   | `k`                    | `1/ϕ`                                                                  | `(1−r)/ϕ`                                                                             | Keep the peak exactly at t = ϕ under the new curve                                                                                     |
 | 3   | Peak value             | `(a+p₀)/e`                                                             | `a·e^(r−1)`                                                                           | Exact peak of new curve; v1 value is its small-r approximation                                                                         |
 | 4   | Optimal stopping       | universal `1.7933·ϕ`                                                   | per-task `ϕ·x*(r)/(1−r) ∈ [1.5194ϕ, 1.7933ϕ]`                                         | Follows from the new curve; root of `eˣ = 1+x+x²/(1+r)`                                                                                |
@@ -763,8 +789,9 @@ negligible next to the subset enumeration.
 - **`zenith-energy.ts` intentionally still uses the v1 curve.** It is a
   standalone total-output model with its own fatigue dynamics (documented in
   §8); migrating it to the v2 curve is a separate decision.
-- **`a = E·β` (peak monotone in effort) is kept from the article** even
-  though flow research suggests an inverted-U in challenge (see references);
+- **`a = E·β` (peak monotone in effort) is kept from v1** — the article's
+  own `β²·(1 + ln E)` is monotone in `E` too — even though flow research
+  suggests an inverted-U in challenge (see references);
   changing it alters the meaning of the difficulty slider and deserves its
   own revision.
 
