@@ -1011,7 +1011,10 @@ describe('EnergyLabStore', () => {
 	// sibling, zenith-energy.test.ts): it wins the unfiltered max at every level
 	// of logged hours, so recommending the open one can only come through the
 	// filter. With the ratings the other way round, dropping the candidate set
-	// entirely leaves the same answer and the assertion pins nothing.
+	// entirely leaves the same answer and the assertion pins nothing. 3 h logged,
+	// not 4.5: on the v2 curve a cold start pays from its first minute, and at
+	// 4.5 h the fresh weak task wins the unfiltered max (read 2026-09-11), which
+	// would leave the same assertion pinning nothing.
 	it("prices the open task against a completed one's logged hours", async () => {
 		mockSession.tasks = [
 			{
@@ -1039,7 +1042,7 @@ describe('EnergyLabStore', () => {
 		mockObservations.drainObservations = [
 			drainRecord({
 				date: '2026-07-20',
-				hours: 4.5,
+				hours: 3,
 			}),
 		];
 
@@ -1055,7 +1058,7 @@ describe('EnergyLabStore', () => {
 					workedHours: [
 						{
 							taskId: 1,
-							hours: 4.5,
+							hours: 3,
 						},
 					],
 					openTaskIds: new Set([2]),
@@ -1079,7 +1082,7 @@ describe('EnergyLabStore', () => {
 					workedHours: [
 						{
 							taskId: 1,
-							hours: 4.5,
+							hours: 3,
 						},
 					],
 				},
@@ -1210,7 +1213,7 @@ describe('EnergyLabStore', () => {
 			sessionHours: 0.75,
 		});
 
-		expect(marginalValue(first)).toBeCloseTo(0.79304, 4);
+		expect(marginalValue(first)).toBeCloseTo(0.79857, 4);
 
 		// What the upsert left behind after the second session: less worked, priced
 		// higher, still `continue`.
@@ -1221,7 +1224,7 @@ describe('EnergyLabStore', () => {
 			sessionHours: 0.75,
 		});
 
-		expect(marginalValue(truncated)).toBeCloseTo(1.23928, 4);
+		expect(marginalValue(truncated)).toBeCloseTo(1.22214, 4);
 
 		// The day that actually happened — two rows, summed.
 		const whole = logged(3, 1.5);
@@ -1231,7 +1234,7 @@ describe('EnergyLabStore', () => {
 			sessionHours: 0.75,
 		});
 
-		expect(marginalValue(whole)).toBeCloseTo(0.46104, 4);
+		expect(marginalValue(whole)).toBeCloseTo(0.48214, 4);
 		expect(marginalValue(whole)).toBeLessThan(marginalValue(first));
 	});
 
@@ -1298,7 +1301,7 @@ describe('EnergyLabStore', () => {
 			verdict: 'stop',
 		});
 
-		expect(marginalValue(batched)).toBeCloseTo(0.46104, 4);
+		expect(marginalValue(batched)).toBeCloseTo(0.48214, 4);
 
 		expect(spaced).toMatchObject({
 			verdict: 'continue',
