@@ -5,7 +5,7 @@
 	import { fromISO } from '$lib/business/utils/date';
 
 	// Bump this date whenever the policy's content changes.
-	const updated = fromISO('2026-07-26').toLocaleDateString(getDateLocale(), {
+	const updated = fromISO('2026-09-11').toLocaleDateString(getDateLocale(), {
 		year: 'numeric',
 		month: 'long',
 		day: 'numeric',
