@@ -99,3 +99,11 @@ unprefixed. Three consequences that are easy to get wrong:
   build/dev/vitest, and in the `paraglide` npm script for `check`/`prepare`.
   paraglide 2.x has no config file for it, so this is a deliberate, documented
   exception to R3; change one and you must change the other.
+
+## The adapter is Vercel's unless `ADAPTER=node`
+
+2026-09-11. `vite.config.ts` picks `@sveltejs/adapter-node` when `ADAPTER=node`,
+which only the Docker `prod` stage sets; Vercel's build is unchanged. The
+container has no `x-vercel-ip-timezone` and no `/_vercel/*` scripts — the
+layout already re-derives the clock at mount and gates analytics on
+`isVercel`, so nothing else branches on the host.

@@ -137,7 +137,7 @@ the animated scenery are per-browser settings.
 - TypeScript, [Vite](https://vite.dev/)
 - IndexedDB for local persistence
 - [Vitest](https://vitest.dev/) (unit) + [Playwright](https://playwright.dev/) (e2e), [Storybook](https://storybook.js.org/) for components
-- Deployed on Vercel (`@sveltejs/adapter-vercel`)
+- Deployed on Vercel (`@sveltejs/adapter-vercel`); `ADAPTER=node` builds the standalone Docker image
 
 The productivity math lives in
 [`src/lib/business/model/zenith.ts`](src/lib/business/model/zenith.ts) (pure,
@@ -163,6 +163,18 @@ npm run test         # unit tests (vitest) + e2e (playwright)
 npm run test:unit    # unit tests only
 npm run check        # svelte-check type checking
 npm run storybook    # component explorer on :6006
+```
+
+### In Docker
+
+No node or npm on the host; `make` wraps `docker compose`.
+
+```sh
+make dev             # dev server with HMR on :5173, source bind-mounted
+make deps            # after a package.json change: rebuild + renew node_modules
+make test            # check + lint + depcheck + server unit tests
+make e2e             # browser unit projects + Playwright e2e → test-result/
+make prod            # adapter-node production build on :3000
 ```
 
 ## Credits

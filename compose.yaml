@@ -1,0 +1,52 @@
+# `make <target>` wraps these; every service is behind a profile so a bare
+# `docker compose up` starts nothing by accident — name the service.
+# DEV_IMAGE / RUN_IMAGE swap the base images, e.g. for the hardened pair after
+# `docker login dhi.io` (see Dockerfile).
+x-build: &build
+  args:
+    DEV_IMAGE: ${DEV_IMAGE:-node:24-alpine}
+    RUN_IMAGE: ${RUN_IMAGE:-node:24-alpine}
+
+services:
+  dev:
+    build:
+      <<: *build
+      target: dev
+    ports:
+      - '5173:5173'
+    volumes:
+      # The source is mounted for HMR; node_modules is the image's, not the
+      # host's (anonymous volume shadows the bind mount — `make deps` renews it).
+      - .:/app
+      - /app/node_modules
+    profiles: [dev]
+
+  test:
+    build:
+      <<: *build
+      target: test
+    volumes:
+      - .:/app
+      - /app/node_modules
+    profiles: [test]
+
+  e2e:
+    build:
+      dockerfile: Dockerfile.e2e
+    # Chromium needs the host's shared memory to not crash on larger pages.
+    ipc: host
+    # CI settings by default (one worker, retries, coverage): six browser
+    # workers in the container time out real-timer specs that pass alone.
+    environment:
+      CI: ${CI:-true}
+    volumes:
+      - ./test-result:/app/test-result
+    profiles: [test]
+
+  prod:
+    build:
+      <<: *build
+      target: prod
+    ports:
+      - '3000:3000'
+    profiles: [prod]

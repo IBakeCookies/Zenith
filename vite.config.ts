@@ -2,7 +2,8 @@ import { paraglideVitePlugin } from '@inlang/paraglide-js';
 import tailwindcss from '@tailwindcss/vite';
 import { defineConfig } from 'vitest/config';
 import { playwright } from '@vitest/browser-playwright';
-import adapter from '@sveltejs/adapter-vercel';
+import vercel from '@sveltejs/adapter-vercel';
+import node from '@sveltejs/adapter-node';
 import { sveltekit } from '@sveltejs/kit/vite';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -21,7 +22,9 @@ export default defineConfig({
 				runes: ({ filename }) =>
 					filename.split(/[/\\]/).includes('node_modules') ? undefined : true,
 			},
-			adapter: adapter(),
+			// Vercel hosts the site; the Docker `prod` stage sets ADAPTER=node so the
+			// same build runs standalone under `node build`.
+			adapter: process.env.ADAPTER === 'node' ? node() : vercel(),
 			paths: {
 				// `resolve()` returns a ROOT-relative path, not SvelteKit's default
 				// page-relative one. Two things break on `./`: the nav compares
