@@ -1,19 +1,40 @@
-// Regenerate the README hero shot: node scripts/readme-screenshot.mjs [outPath]
-// Requires a running app (`npm run dev`, or `npm run build && npm run preview` for
-// the production styling the README should show) and system NSS libs for headless
-// chromium — if chromium fails with `libnspr4.so`, see .claude/skills/verify/SKILL.md.
-// Point it elsewhere with BASE_URL=http://localhost:4173.
+// Regenerate the README hero shot: `npm run screenshot:readme` (builds, previews,
+// shoots). Without BASE_URL the script starts `vite preview` itself against the
+// current build; BASE_URL=http://localhost:5173 points it at a running dev server
+// instead. Needs system NSS libs for headless chromium — if chromium fails with
+// `libnspr4.so`, see .claude/skills/verify/SKILL.md.
 //
 // Seeds a fixed day through the app's own import path, so the allocations,
 // priorities and stopping times in the image are the ones the shipped model
 // actually computes for these three tasks — not a mock-up.
 import { chromium } from 'playwright';
+import { spawn } from 'node:child_process';
 import { writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 const out = process.argv[2] ?? 'static/fallow-daily-time-allocation.png';
-const baseUrl = process.env.BASE_URL ?? 'http://localhost:5173';
+let baseUrl = process.env.BASE_URL;
+let server;
+
+if (!baseUrl) {
+	baseUrl = 'http://localhost:4173';
+
+	// The binary itself, not `npx vite`: kill() must reach the server, not a wrapper.
+	server = spawn(join('node_modules', '.bin', 'vite'), ['preview', '--strictPort'], {
+		stdio: 'ignore',
+	});
+
+	while (
+		!(await fetch(baseUrl).then(
+			() => true,
+			() => false,
+		))
+	) {
+		await new Promise((resolve) => setTimeout(resolve, 200));
+	}
+}
+
 const fixture = join(tmpdir(), 'fallow-readme-fixture.json');
 // Today, because the app plans the current day and nothing else.
 const now = new Date();
@@ -108,4 +129,5 @@ await page.screenshot({
 });
 
 await browser.close();
+server?.kill();
 console.log(`wrote ${out}`);
