@@ -15,15 +15,16 @@
  *   constant coefficients per block give a closed-form exponential trajectory —
  *   no ODE solver.
  *
- * - Warm-up is PER TASK with decaying carryover: productivity is
- *   p(s) = (a+p₀)·k·s·e^(−ks), where s is the SESSION PHASE — time
- *   accumulated on that task, not clock time. Leaving a task for a gap g and
- *   returning resumes at s·e^(−g/τ) rather than 0 (Monk/Trafton memory-for-
- *   goals) — a brief switch costs little warm-up, a long gap approaches a cold
- *   restart. Because p(s) is hump-shaped, this one decay does double duty:
- *   below the peak it models lost warm-up (breaks hurt), above it models
- *   boredom relief (a break moves you back toward peak). Fragmentation is still
- *   costly, just no longer catastrophic the way a hard reset made it. MATH.md §8.2.
+ * - Warm-up is PER TASK with decaying carryover: productivity is the classic
+ *   model's own curve p(s) = (a·k·s + p₀)·e^(−ks), k = (1−r)/ϕ (MATH.md §2),
+ *   starting at p₀, where s is the SESSION PHASE — time accumulated on that
+ *   task, not clock time. Leaving a task for a gap g and returning resumes at
+ *   s·e^(−g/τ) rather than 0 (Monk/Trafton memory-for-goals) — a brief switch
+ *   costs little warm-up, a long gap approaches a cold restart. Because p(s)
+ *   is hump-shaped, this one decay does double duty: below the peak it models
+ *   lost warm-up (breaks hurt), above it models boredom relief (a break moves
+ *   you back toward peak). Fragmentation is still costly, just no longer
+ *   catastrophic the way a hard reset made it. MATH.md §8.2.
  *
  * - Instantaneous output = p(s) · C_cog^wc · C_phys^wp (Cobb-Douglas gate):
  *   a drained reservoir throttles exactly the tasks that demand it.
@@ -56,10 +57,11 @@
 
 import type { TaskImportance } from '$lib/data/type';
 import {
-	calculateFlowStateTime,
+	calculateTaskParams,
+	findOptimalSingleTaskTime,
 	mapEffort,
 	mapEnjoyability,
-	OPTIMAL_PHI_MULTIPLIER,
+	productivity,
 	DEFAULT_USER_CONSTANTS,
 	type UserConstants,
 } from '$lib/business/model/zenith';
@@ -129,10 +131,10 @@ export interface EnergyParams {
 	 * Per-task diminishing daily returns. A task's raw daily output O is valued
 	 * as V(O) = κ·ln(1 + O/κ) with κ = satietyScale · O_ref, where O_ref is the
 	 * task's reference single-session output (fresh reservoirs, one contiguous
-	 * T* = 1.7933·ϕ run). At O = κ the marginal value of further output on that
-	 * task has fallen to ½, so a satiated task loses to a fresh one — this is
-	 * what breaks the winner-take-all pathology. ≤0 disables (V = identity),
-	 * recovering the pure total-output objective. MATH.md §8.4.
+	 * run of the task's own T*, MATH.md §3). At O = κ the marginal value of
+	 * further output on that task has fallen to ½, so a satiated task loses to a
+	 * fresh one — this is what breaks the winner-take-all pathology. ≤0 disables
+	 * (V = identity), recovering the pure total-output objective. MATH.md §8.4.
 	 */
 	satietyScale: number;
 	/** Starting energy levels, 0–1 */
@@ -221,16 +223,19 @@ export interface TrajectoryPoint {
 interface TaskCurve {
 	id: number;
 	title: string;
-	amp: number; // a + p₀
-	k: number; // 1/ϕ
+	a: number;
+	p0: number;
+	k: number;
 	phi: number;
+	tStar: number; // hours (MATH.md §3)
 	wc: number;
 	wp: number;
 	/**
-	 * Reference single-session output: one contiguous T* = 1.7933·ϕ run from
-	 * FULL reservoirs (a standardized yardstick, deliberately independent of
-	 * initialCog/initialPhys). Sets the satiety scale κ = satietyScale·refOutput,
-	 * so satiety auto-scales with how much a good session on this task yields.
+	 * Reference single-session output: one contiguous run of the task's own T*
+	 * (MATH.md §3) from FULL reservoirs (a standardized yardstick, deliberately
+	 * independent of initialCog/initialPhys). Sets the satiety scale
+	 * κ = satietyScale·refOutput, so satiety auto-scales with how much a good
+	 * session on this task yields.
 	 */
 	refOutput: number;
 	/** This task's reservoir laws under the params the curves were built with. */
@@ -254,18 +259,18 @@ function buildCurves(
 	const b = params.microRecoveryFraction;
 
 	for (const task of tasks) {
-		const E = mapEffort(task.difficulty);
-		const beta = mapEnjoyability(task.enjoyment);
-		const phi = calculateFlowStateTime(E, beta, constants);
+		const { phi, k, a, p0 } = calculateTaskParams(task, constants);
 		const wc = clamp01(task.cognitiveDemand);
 		const wp = clamp01(task.physicalDemand);
 
 		const curve: TaskCurve = {
 			id: task.id,
 			title: task.title,
-			amp: E * beta + beta / E,
-			k: 1 / phi,
+			a,
+			p0,
+			k,
 			phi,
+			tStar: findOptimalSingleTaskTime(task, constants),
 			wc,
 			wp,
 			refOutput: 0,
@@ -273,14 +278,7 @@ function buildCurves(
 			lawP: reservoirLaw(wp, params.alphaPhys, params.recoveryRate, m, b),
 		};
 
-		curve.refOutput = blockOutput(
-			curve,
-			1,
-			1,
-			curve.lawC,
-			curve.lawP,
-			OPTIMAL_PHI_MULTIPLIER * phi,
-		);
+		curve.refOutput = blockOutput(curve, 1, 1, curve.lawC, curve.lawP, curve.tStar);
 
 		curves.set(task.id, curve);
 	}
@@ -452,7 +450,7 @@ function blockOutput(
 	for (let j = 0; j <= n; j++) {
 		const u = j * h;
 		const s = sStart + u;
-		const p = curve.amp * curve.k * s * Math.exp(-curve.k * s);
+		const p = productivity(s, curve.a, curve.p0, curve.k); // MATH.md §2, §8.2
 
 		const gate =
 			Math.pow(reservoirAt(cog0, lawC, u), curve.wc) *
@@ -666,10 +664,7 @@ export function sampleTrajectory(
 			const s = sStart + u;
 
 			const rate = curve
-				? curve.amp *
-					curve.k *
-					s *
-					Math.exp(-curve.k * s) *
+				? productivity(s, curve.a, curve.p0, curve.k) *
 					Math.pow(c, curve.wc) *
 					Math.pow(p, curve.wp)
 				: 0;
@@ -794,17 +789,18 @@ export function optimizeSchedule(
 		};
 	}
 
-	// T* per task, snapped to the lattice, for the full-session insert move.
+	// T* per task, snapped to the lattice: the classic seed's session and the
+	// full-session insert move.
 	const sessionHours = new Map<number, number>();
 
 	for (const curve of curves.values()) {
-		sessionHours.set(curve.id, snapToStep(OPTIMAL_PHI_MULTIPLIER * curve.phi, step));
+		sessionHours.set(curve.id, snapToStep(curve.tStar, step));
 	}
 
 	let best: ScheduleBlock[] = [];
 	let bestEval = emptyEval;
 
-	for (const seed of buildSeeds(tasks, windowHours, constants, step, pairSeedTasks)) {
+	for (const seed of buildSeeds(tasks, windowHours, sessionHours, step, pairSeedTasks)) {
 		const result = localSearch(
 			seed.blocks,
 			seed.tasks,
@@ -855,13 +851,10 @@ interface Seed {
 function buildSeeds(
 	tasks: EnergyTaskInput[],
 	windowHours: number,
-	constants: UserConstants,
+	sessionHours: Map<number, number>,
 	step: number,
 	pairSeedTasks: number,
 ): Seed[] {
-	const phiOf = (task: EnergyTaskInput) =>
-		calculateFlowStateTime(mapEffort(task.difficulty), mapEnjoyability(task.enjoyment), constants);
-
 	const byValue = [...tasks].sort((x, y) => taskAmplitude(y) - taskAmplitude(x));
 	// Seeds start on the lattice and moves only add/remove whole steps, so the
 	// search never leaves it; the sub-step window tail stays free time.
@@ -876,7 +869,7 @@ function buildSeeds(
 		for (const task of list) {
 			if (left < step - 1e-9) break;
 
-			const hours = Math.min(snapToStep(OPTIMAL_PHI_MULTIPLIER * phiOf(task), step), left);
+			const hours = Math.min(sessionHours.get(task.id)!, left);
 
 			seed.push({
 				taskId: task.id,
@@ -1080,7 +1073,7 @@ function* neighbors(
 
 		// Hand the second half of a block to another task: swaps time in at a
 		// useful session length, where the one-step path (shrink, then insert)
-		// dies at a sub-warm-up sliver.
+		// prices a single step of a cold task, below its peak (MATH.md §8.6).
 		if (blocks[i].taskId !== null && blocks[i].hours >= 2 * step) {
 			for (const task of tasks) {
 				if (task.id === blocks[i].taskId) continue;
@@ -1130,9 +1123,10 @@ function* neighbors(
 				...blocks.slice(pos),
 			];
 
-			// Full-T*-session insert: a step-sized sliver of a cold task rarely
-			// pays (warm-up), but a whole session might. Both terms are lattice
-			// multiples (sessionHours is snapped, avail is floored).
+			// Full-T*-session insert: a single step of a cold task is priced on the
+			// climb toward its peak and can be downhill where a whole session is
+			// uphill (MATH.md §8.6). Both terms are lattice multiples (sessionHours
+			// is snapped, avail is floored).
 			const session = Math.min(sessionHours.get(task.id) ?? step, avail);
 
 			if (session > step + 1e-9) {
@@ -1954,13 +1948,17 @@ export const STOP_FIT_MAX = 3;
  *     half-width median 0.125, summing to 0.125 — not 0.25.
  *
  * RE-DERIVED 2026-08-13 (`scripts/stop-margin-fit-error.probe.ts`, re-read
- * 2026-08-25) and it is not derivable: over [0.1, 0.5] the whole range moves λ₀
- * fit RMSE by at most 0.0072 — 2.9% of σ₀ — because most interrupted days never
- * invert at all (26.6% / 19.6% do, only 12.8% / 12.4% past 0.25), so censoring
- * cannot reach the contamination it exists for.
- * 0.25 is LEFT as an arbitrary point inside that flat region. The one real
- * signal is a SIGN, not a size: censoring nothing wins both contaminated arms,
- * by up to 0.0161, and ties the honest ones — recorded in §8.10, not acted on.
+ * 2026-09-11 on the v2 curve) and it is not derivable: over [0.1, 0.5] the
+ * whole range moves λ₀ fit RMSE by at most 0.0185 — 13.8% of the instrument's
+ * 0.134 bracket half-width, 7.4% of σ₀ — and only in the 30%-interrupted n = 3
+ * arm; the other three move ≤ 0.0025. Most interrupted days never invert at all
+ * (25.8% / 20.6% of logged interrupted-tail / -mid days do, only 12.4% / 13.0%
+ * past 0.25), so censoring cannot reach the contamination it exists for. 0.25
+ * is LEFT as an arbitrary point in that region: one arm now moves by an
+ * instrument-visible amount, and nothing clears the half-width that would move
+ * the constant. The one real signal is a SIGN, not a size: censoring nothing
+ * wins both contaminated arms, by up to 0.0197, and ties the honest ones —
+ * measured, not acted on.
  */
 export const STOP_INVERSION_MARGIN = 0.25;
 
@@ -2399,15 +2397,15 @@ export type StopAdvice =
  * against the CURRENT freeTimeValue. Continue while some session still beats
  * an hour of leisure, stop at indifference or below.
  *
- * Sessions, not single steps, on purpose: a fresh task's first 45 min is
- * mostly warm-up ramp, so its one-step marginal sits below a λ₀ the full
- * session clears — probe 2026-08-06, re-read 2026-08-27 once its days were
- * drawn on the slider surface (ROADMAP M49): the one-step verdict cries stop
- * mid-day on 14.2% of checkpoints at λ₀ = 0.9 and 28.1% at 1.3,
- * session-lookahead on 1.3% and 0.0%, with at-stop agreement identical between
- * the two arms in every row (§8.11). The duration axis is the optimizer's
- * own move shape (grow / T*-session insert), so at a rational stop no session
- * clears λ₀ and the verdicts still agree.
+ * Sessions, not single steps, on purpose: a fresh task's first step is priced
+ * on the climb toward its peak (p(0) = p₀ < p(ϕ)), so its one-step marginal
+ * sits below a λ₀ the full session clears — probe 2026-08-06, re-read
+ * 2026-08-27 once its days were drawn on the slider surface (ROADMAP M49): the
+ * one-step verdict cries stop mid-day on 14.2% of checkpoints at λ₀ = 0.9 and
+ * 28.1% at 1.3, session-lookahead on 1.3% and 0.0%, with at-stop agreement
+ * identical between the two arms in every row (§8.11). The duration axis is
+ * the optimizer's own move shape (grow / T*-session insert), so at a rational
+ * stop no session clears λ₀ and the verdicts still agree.
  *
  * Only `openTaskIds` may be RECOMMENDED — "one more session of a task you
  * already checked off" is no advice — while every logged task still shapes the

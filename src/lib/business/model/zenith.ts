@@ -138,8 +138,6 @@ export const BLOCK_HOURS = 0.25;
  * multiplier. Use findOptimalSingleTaskTime for real values — NOT
  * TaskAllocation.optimalHours, hedged for ϕ-uncertainty and free to fall
  * below the band (§3).
- * Still consumed by the zenith-energy model, which intentionally remains on
- * the v1 curve (see MATH.md §7).
  */
 export const OPTIMAL_PHI_MULTIPLIER = 1.7933;
 

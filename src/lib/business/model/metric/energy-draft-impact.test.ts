@@ -169,7 +169,7 @@ describe('calculateEnergyDraftImpact', () => {
 	it('thins the day’s other tasks by the hours the draft takes', () => {
 		const impact = price(THREE, STRONG, 12)!;
 
-		expect(impact.displaced.hoursTaken).toBeCloseTo(4.5, 10);
+		expect(impact.displaced.hoursTaken).toBeCloseTo(3, 10);
 		expect(impact.displaced.taskCount).toBe(2);
 	});
 

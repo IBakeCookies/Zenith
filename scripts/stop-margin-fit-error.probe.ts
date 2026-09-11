@@ -34,6 +34,25 @@
  * every margin is a pure post-filter over the cached list: one `optimizeSchedule`
  * run per day, and the whole sweep is arithmetic after that.
  *
+ * WHAT THE 2026-09-11 RE-RUN CHANGED, and why every number below moved again.
+ * The energy model now runs the classic model's v2 curve `(a·k·s+p₀)·e^(−ks)`
+ * (docs/features/the-curve-nobody-chose.md), so every day generated, bracketed
+ * and fitted here is on that curve; the replica held to 0.000e+0 against the
+ * shipped fit without an edit. Two readings moved past their v1 verdicts. The
+ * honest n = 12 λ₀ fit reads RMSE 0.1700 with bias +0.0917 (0.110 on the
+ * 2026-08-25 v1 re-read), OUTSIDE the 0.134 bracket half-width this file
+ * hard-codes from the 2026-08-06 instrument and never re-measures — the spec
+ * expected the cell inside a v2 half-width read here, and no such reading
+ * exists (ROADMAP M105). And the margin sweep is flat in three arms (largest
+ * movement ≤ 0.0025) but not in the 30%-interrupted n = 3 arm: 0.2044–0.2229
+ * over [0.1, 0.5], movement 0.0185 λ₀ = 13.8% of the half-width, endpoint
+ * contrast −0.0173 with paired 95% CI [−0.0308, −0.0053], so the kill criterion
+ * fires in 3 of 4 arms where v1 fired all four. The sign is v1's: wider
+ * censors less and fits better, and censoring nothing beats 0.25 in both
+ * contaminated arms (−0.0197, −0.0116) and ties the honest ones. The scope
+ * arm's best gain over 12 arms is 0.0198, inside the half-width, so its kill
+ * line still fires.
+ *
  * WHAT THE 2026-08-25 RE-RUN CHANGED, and why every number below moved again.
  * Every task now comes from integer sliders through `toEnergyTask`, so the day
  * is on the app's own constraint surface. It was not: `difficulty` was set to
