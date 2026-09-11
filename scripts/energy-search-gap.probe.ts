@@ -24,14 +24,19 @@
  *   §8.6.
  * - FRONTIER: the same exhaustive reference at the largest task counts that
  *   still enumerate — 4, 5 and 6 tasks over the widest window each affords.
- *   ~7 min, which is most of this file's runtime.
+ *   The arm holding all three tiers and the audit below runs ~11 min of the
+ *   file's ~24-25 (v2 curve, 2026-09-11: 675 and 645 s for the arm, 1443
+ *   and 1476 s for the file).
  * - APPROX: a long random-restart hill climb, labelled APPROX because it is a
  *   LOWER bound on the true optimum — a 0 there is evidence, not proof, and a
  *   negative gap just means the product search beat the reference. It stays a
  *   lower bound: its own mismatch lines print what enumerating those days would
- *   cost, and it is 129 h for the cheapest and ~6 years for the other. The same
- *   line fires on an enumerated tier, where the prediction can be checked
- *   against the enumeration that just ran (51.7 s predicted, ~51 s taken).
+ *   cost. On the v2 curve no APPROX day mismatches its funded set, so the line
+ *   fires only on the 4-task FRONTIER day, where the reference IS that
+ *   enumeration: 5^9 = 1.95e6 plans at 27.4-29.1 µs/eval, 1.49e-2-1.58e-2 h
+ *   over three runs. The estimate was checked against the enumeration's own
+ *   clock when the tier was built (v1 curve: 51.7 s predicted, ~51 s taken);
+ *   no run since times the tier on its own.
  *
  * Every day whose funded set differs from its reference prints its signed
  * shortfall and which side is behind, so half of a mismatch is attributable
@@ -41,30 +46,38 @@
  * families `neighbors` does NOT generate. It needs no reference: `localSearch`
  * stops at a local optimum over generated candidates, so anything uphill from
  * the returned plan is a candidate the search cannot reach, and finding one is
- * a proven defect. It has found none: 0 uphill candidates over 21 days, 16 of
- * them with a fully-spent window, where CARVE-FROM-BLOCK is the only one of the
- * two families still available. Three of those 16 hold a mid-block rest anyway
- * — the split is generated while the plan still has room and the plan grows into
- * the window afterwards, so a full window does not strand that structure.
+ * a proven defect. On the v2 curve (2026-09-11) it finds two, both SHRINK-ONE
+ * + INSERT-ONE and both on a fully-spent window: the 4-task FRONTIER day whose
+ * funded set the search misses (shrink t2, insert t3: 7.812639 → 7.817403,
+ * which IS the enumerated optimum) and APPROX day 1 (shrink t4, re-insert t4
+ * after t3: 15.395319 → 15.492131, against a lower-bound reference of
+ * 15.493362). CARVE-FROM-BLOCK is uphill nowhere. 17 of the 21 days spend the
+ * window fully, where CARVE-FROM-BLOCK is the only one of the two families
+ * still available; three of those 17 hold a mid-block rest anyway — the split
+ * is generated while the plan still has room and the plan grows into the
+ * window afterwards, so a full window does not strand that structure. On the
+ * v1 curve the same audit read 0 uphill over the same 21 days (ROADMAP M104).
  *
  * The last four arms price §8.6's cap on the pair family, which no committed
  * instrument reached before: `pairSeedTasks` exists on `OptimizeOptions` for
  * them and nothing else sets it. Every timing below is a range, not a figure
  * (docs/testing.md): each cell prints the half-range of its own reps, except the
  * [app] one-solve rows, whose cell is already a distribution over 60 days and
- * prints its percentiles instead. The bands quoted here are what FOUR runs of
- * these arms read on this box with nothing else running on it, which is the
- * wider spread of the two: a run sharing the box read 2.84× on two arms that
- * are the same search, so a contended run is discarded, not averaged in.
+ * prints its percentiles instead. The bands quoted here are what THREE runs of
+ * these arms read on this box on 2026-09-11 (v2 curve) with Storybook's dev
+ * server and the editor idle beside them and nothing else; a contended run is
+ * discarded, not averaged in, and the eight identical-work cells below are how
+ * one is recognised.
  *
- * The pair seeds cost roughly 1.2×–2.5× the same search without them; the
- * shipped cap of 4 costs roughly 1.2×–1.7× the cap of 3 it replaced (per run:
- * 1.28–1.62, 1.27–1.60, 1.23–1.68, 1.26–1.58). At 3 tasks all three capped arms
- * ARE one search, and at 4 tasks C(4,2) IS the cap of 4, so eight cells per run
- * time identical work: over 32 of them they read 0.92×–1.16×, which is the
- * table's noise floor and the reason no third digit is quoted anywhere here.
- * Unbounded C(n,2) at 15 tasks costs an order of magnitude more than the shipped
- * four-task search (8.7×–11.6×) and 13.7×–14.6× the cap of 3 it replaced — every
+ * The pair seeds at the cap of 3 cost roughly 1.2×–2.4× the same search without
+ * them (per run: 1.30–2.28, 1.32–2.35, 1.25–2.23); the shipped cap of 4 costs
+ * roughly 1.2×–1.7× the cap of 3 it replaced (per run: 1.24–1.61, 1.20–1.63,
+ * 1.21–1.62). At 3 tasks all three capped arms ARE one search, and at 4 tasks
+ * C(4,2) IS the cap of 4, so eight cells per run time identical work: over 24
+ * of them they read 0.91×–1.03×, which is the table's noise floor and the
+ * reason no third digit is quoted anywhere here. Unbounded C(n,2) at 15 tasks
+ * costs an order of magnitude more than the shipped four-task search
+ * (8.8×–11.9×) and 13.4×–14.9× the cap of 3 it replaced — every
  * ratio here is quoted with the arm it is divided by, because those two are one
  * measurement a column apart. Cap 4's cost is flat in n (three more seeds at any
  * size) where C(n,2)'s is quadratic. The ratio is composition-dependent and cost
@@ -76,22 +89,26 @@
  *
  * In absolute ms on the paths the product takes, over app-shaped days (3-8
  * tasks × 6-10 h): one solve — `EnergyLabStore`'s `#plan`, once per slider
- * move — median ~55-59 ms at cap 3 against ~80-88 at cap 4 (four runs:
- * 57.1/86.5, 55.0/80.1, 56.0/82.4, 58.5/87.5), p95 ~143-156 against ~185-198;
- * `suggestBudgetCurve`'s 12 solves over an 8-task 9.25 h horizon, ~310-370 ms
- * against ~420-455. A ratio cannot say whether a change is felt, and the sweep
- * row is the one that moves most between runs (±9%, against ±5% within one).
+ * move — median ~73-76 ms at cap 3 against ~100-107 at cap 4 (three runs:
+ * 75.9/106.7, 73.3/104.4, 74.3/100.2), p95 ~157-177 against ~197-211;
+ * `suggestBudgetCurve`'s 12 solves over an 8-task 9.25 h horizon, ~346-359 ms
+ * against ~456-494. The same one-solve row read ~55-59 ms at cap 3 on the v1
+ * curve (2026-08-27 bands, box otherwise idle). A ratio cannot say whether a
+ * change is felt; between runs the sweep row moves ±4%, against ±1-2% within
+ * one.
  *
- * What a cap of 3 forfeited, over 400 seeded days: the pair family beats no
- * pairs on 4, worst 0.395580 objective, and unbounded C(n,2) beats a cap of 3
- * on 2, worst 0.208672 — 2.1865% of that day's objective — and BOTH are
- * reached by a cap of 4.
+ * What a cap of 3 forfeits, over 400 seeded days on the v2 curve: the pair
+ * family beats no pairs on 4, worst 0.275655 objective, and unbounded C(n,2)
+ * beats a cap of 3 on 3, worst 0.113066 — 0.8327% of that day's objective. A
+ * cap of 4 reaches two of the three; the third (7 tasks × 8.5 h, gap 0.028320,
+ * 0.2556%) needs a cap of 5. On the v1 curve both forfeited days were reached
+ * by a cap of 4.
  *
  * That count is one draw, so the same comparison runs on five seeds. Over 2000
- * days cap 4 beats cap 3 on 7 (2, 2, 2, 0, 1 per seed) and never once returns
+ * days cap 4 beats cap 3 on 7 (2, 1, 2, 0, 2 per seed) and never once returns
  * a different plan at an unchanged objective, so nothing pays for nothing. The
- * per-seed worst gain runs 0.2080%–2.1865%, an order of magnitude apart: the
- * RATE is the stable figure here and the magnitude is not. On 6 of those 7
+ * per-seed worst gain runs 0.3471%–2.5965%, an order of magnitude apart: the
+ * RATE is the stable figure here and the magnitude is not. On 5 of those 7
  * days the FUNDED SET changes — a task funded nowhere at cap 3, or a different
  * task entirely — which is the structural failure §8.6 calls the worse of the
  * two, and is why 0.35% of days was worth ~1.5× on the interactive path
@@ -132,10 +149,10 @@ interface Day {
 }
 
 /**
- * Days per task count in the FRONTIER tier. The committed 3 keeps that tier at
- * ~7 min of the file's ~10; the seeds are a prefix, so raising this line widens
- * the same sequence. The sweep that found both §8.6 witnesses ran 20 days at 4
- * tasks and 8 at 5 (~28 min).
+ * Days per task count in the FRONTIER tier. The committed 3 keeps the arm that
+ * holds it at ~11 min of the file's ~25 (v2 curve, 2026-09-11); the seeds are a
+ * prefix, so raising this line widens the same sequence. The sweep that found
+ * both §8.6 witnesses ran 20 days at 4 tasks and 8 at 5 (~28 min).
  */
 const FRONTIER_DAYS_PER_SIZE = 3;
 
@@ -603,9 +620,9 @@ describe('energy search gap', () => {
 		);
 
 		// The exhaustive frontier: one window per task count, the widest each can
-		// still enumerate — 5^9 = 1.95e6, 6^8 = 1.68e6, 7^7 = 8.2e5 plans, ~2 min
-		// per size. A 12 h window at 4 tasks would be 5^16 = 1.5e11, so it is the
-		// window, not the task count, that has to give here.
+		// still enumerate — 5^9 = 1.95e6, 6^8 = 1.68e6, 7^7 = 8.2e5 plans. A 12 h
+		// window at 4 tasks would be 5^16 = 1.5e11, so it is the window, not the
+		// task count, that has to give here.
 		for (const [tasks, windowHours] of [
 			[4, 6.75],
 			[5, 6],

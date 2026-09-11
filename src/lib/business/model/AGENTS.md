@@ -36,8 +36,8 @@ a constant, a bound, or a fit's conditioning:
 - The single-task optimum is **per task**: `T* = ϕ·x*(r)/(1−r)` where `x*(r)`
   solves `eˣ = 1 + x + x²/(1+r)`; the multiplier ranges over [1.5194, 1.7933] —
   1.5 is the r → 1 asymptote and `AMPLITUDE_RATIO_CAP = 0.9` forbids it.
-  `OPTIMAL_PHI_MULTIPLIER` (1.7933) is only the r→0 limit / upper bound (and
-  the energy model's seed) — use `findOptimalSingleTaskTime` for real values.
+  `OPTIMAL_PHI_MULTIPLIER` (1.7933) is only the r→0 limit / upper bound — use
+  `findOptimalSingleTaskTime` for real values.
   `TaskAllocation.optimalHours` is the ϕ-uncertainty-hedged optimum and is free
   to fall **below** that band: every user carries a posterior from day one, so
   on the zero-log posterior 23 of the 100 slider pairs land under 1.5194ϕ and 6
@@ -109,11 +109,13 @@ its allocation code, so the main page is unaffected by changes here.
   (end-of-window energy). Fatigue alone never leaves the end of the window idle
   — it only produces instrumental mid-day rest. §8.4 lists rejected satiety
   forms.
-- Warm-up `p(s)` uses a per-task session phase with **decaying carryover**:
-  leaving a task for a gap `g` and returning resumes at `s·e^(−g/τ)`
-  (`resumptionTimeConstant`), not 0. `normalizeSchedule` merges adjacent
-  same-task blocks. Fragmentation stays costly (probe-verified), just not the
-  old hard-reset cliff.
+- Warm-up `p(s)` is the classic model's §2 curve through `productivity` — a
+  cold start produces `p₀` from its first minute — over a per-task session
+  phase with **decaying carryover**: leaving a task for a gap `g` and returning
+  resumes at `s·e^(−g/τ)` (`resumptionTimeConstant`), not 0.
+  `normalizeSchedule` merges adjacent same-task blocks. Fragmentation stays
+  costly (a break below the peak loses at equal worked hours; test-verified),
+  just not the old hard-reset cliff.
 - Reservoirs follow `dC/dτ = −α·w·C + r'·g·(1−C)` with recovery gate
   `g = 1−(1−b)·w` (`b = microRecoveryFraction`, default 0.05) and
   `r' = recoveryRate·restRecoveryMultiplier` — closed-form exponential per
@@ -206,8 +208,9 @@ its allocation code, so the main page is unaffected by changes here.
   ticked reveals no indifference and is censored — and using its `λ₀ ≤ hi`
   reading instead makes the fit WORSE, measured 2026-08-21 (below).
 - `STOP_INVERSION_MARGIN = 0.25` — the inversion past which a day is censored
-  too — is **stipulated, not derived**: λ₀ fit RMSE is flat in magnitude over
-  m ∈ [0.1, 0.5] (swept 2026-08-13), so neither the constant nor the
+  too — is **stipulated, not derived**: over m ∈ [0.1, 0.5] λ₀ fit RMSE moves
+  at most 0.0185 (swept 2026-08-13; re-swept 2026-09-11 on the v2 curve, where
+  only the 30%-interrupted n = 3 arm moves), so neither the constant nor the
   inversion-censoring rule moves without evidence above the instrument's 0.134
   bracket half-width. The margin is a dead end.
 - **Obligation is not read, and neither repair pays** (2026-08-28,
@@ -643,4 +646,4 @@ against is the weighted objective.
 
 ### The productivity curve deviates from the source article on purpose
 
-MATH.md §6.
+MATH.md §2 and §6; the energy model runs the same curve (§8).

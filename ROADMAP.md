@@ -935,3 +935,30 @@ here (item 18, and the 2026-08-26 `cathedral` finding).
   [`the-subsets-that-could-not-win`](docs/features/the-subsets-that-could-not-win.md).**
   A pool-free upper bound skips the pooled solve on subsets that cannot beat the
   incumbent. The plan is unchanged against both committed falsifiers.
+
+## Findings from the 2026-09-11 curve migration
+
+The energy model moved to the classic model's v2 curve
+([`the-curve-nobody-chose`](docs/features/the-curve-nobody-chose.md)), and the
+two probes whose claims the change could falsify were re-run. Both records are
+in the feature file; two readings became findings.
+
+- **M104 — SHRINK-ONE + INSERT-ONE is uphill from the returned plan on 2 of 21
+  audited days — raised 2026-09-11, open,
+  [`the-curve-nobody-chose`](docs/features/the-curve-nobody-chose.md).** The
+  compound move `neighbors` does not generate, and the one the uphill audit was
+  built to catch; on the v1 curve the same 21 days read 0. One of the two is the
+  4-task FRONTIER day whose funded set the search now misses (0.0609%, and the
+  uphill candidate is the enumerated optimum); the other is APPROX day 1
+  (15.395319 → 15.492131). Whether the move is worth building is a later
+  change's decision, priced by `scripts/energy-search-gap.probe.ts`.
+- **M105 — the honest λ₀ fit at n = 12 reads RMSE 0.1700, bias +0.0917, outside
+  the 0.134 bracket half-width — raised 2026-09-11, open,
+  [`the-curve-nobody-chose`](docs/features/the-curve-nobody-chose.md).** The
+  spec's well-posedness claim expected the cell inside the half-width (0.110 on
+  v1) and a v2 half-width read from the run; `stop-margin-fit-error.probe.ts`
+  hard-codes 0.134 from the 2026-08-06 instrument and measures no half-width, so
+  the claim was falsified and the comparison it rests on has no v2 reading. The
+  margin decision holds (largest movement 0.0185). Reading a v2 half-width is
+  the first step, and it is `stop-inversion-margin.probe.ts`'s to take, one
+  instrument per commit.

@@ -60,24 +60,24 @@ retype a row, regenerate:
   §5.2      571-649  Recency weighting of the ϕ fit
   §5.1      651-760  Posterior-aware allocation
 §6          762-774  Summary of v1 → v2 changes
-§7          776-801  Known approximations and deliberate non-changes
-§8         803-1890  Energy model (zenith-energy.ts) — fatigue-recovery exten…
-  §8.1      815-837  Intermittent-rest recovery correction
-  §8.2      839-858  Warm-up carryover instead of binary reset
-  §8.3      860-878  Verified consequences and a calibration question, closed
-  §8.4      880-950  Per-task satiety — concave daily value
-  §8.5      952-992  Micro-recovery gate — a positive floor for full-demand t…
-  §8.6     994-1040  Optimizer reliability — compound moves and drop-one seeds
-  §8.7    1042-1137  Drain-rate calibration from end-of-session ratings
-  §8.8    1139-1174  45-minute plan granularity
-  §8.9    1176-1223  Recovery-rate calibration from pre/post-rest pairs
-  §8.10   1225-1476  Stopping-value calibration from observed stop times
-  §8.11   1478-1609  Live stop advisor — §8.10 run forward mid-day
-  §8.12   1611-1765  The budget curve — what the day's LENGTH is worth
-  §8.13   1767-1831  Capacity from the fitted drain rate
-  §8.14   1833-1890  Per-title drain rate — which task costs more than its sl…
-§9        1892-1954  Plan-adherence reading and its verdict band
-§10       1956-2003  References
+§7          776-798  Known approximations and deliberate non-changes
+§8         800-1891  Energy model (zenith-energy.ts) — fatigue-recovery exten…
+  §8.1      813-835  Intermittent-rest recovery correction
+  §8.2      837-859  Warm-up carryover instead of binary reset
+  §8.3      861-879  Verified consequences and a calibration question, closed
+  §8.4      881-951  Per-task satiety — concave daily value
+  §8.5      953-993  Micro-recovery gate — a positive floor for full-demand t…
+  §8.6     995-1041  Optimizer reliability — compound moves and drop-one seeds
+  §8.7    1043-1138  Drain-rate calibration from end-of-session ratings
+  §8.8    1140-1175  45-minute plan granularity
+  §8.9    1177-1224  Recovery-rate calibration from pre/post-rest pairs
+  §8.10   1226-1477  Stopping-value calibration from observed stop times
+  §8.11   1479-1610  Live stop advisor — §8.10 run forward mid-day
+  §8.12   1612-1766  The budget curve — what the day's LENGTH is worth
+  §8.13   1768-1832  Capacity from the fitted drain rate
+  §8.14   1834-1891  Per-title drain rate — which task costs more than its sl…
+§9        1893-1955  Plan-adherence reading and its verdict band
+§10       1957-2004  References
 ```
 
 <!-- section-index:end -->
@@ -791,9 +791,6 @@ negligible next to the subset enumeration.
 - **Forward selection for the n > 12 funded-subset search** now runs only where
   the size-bounded enumeration does not fit, and is exact everywhere else past 12.
 - **Budgets below 0.25h are left unplanned** (v1 would allocate slivers).
-- **`zenith-energy.ts` intentionally still uses the v1 curve.** It is a
-  standalone total-output model with its own fatigue dynamics (documented in
-  §8); migrating it to the v2 curve is a separate decision.
 - **`a = E·β` (peak monotone in effort) is kept from v1** — the article's
   own `β²·(1 + ln E)` is monotone in `E` too — even though flow research
   suggests an inverted-U in challenge (see references);
@@ -802,7 +799,8 @@ negligible next to the subset enumeration.
 
 ## 8. Energy model (`zenith-energy.ts`) — fatigue-recovery extensions
 
-The total-output model keeps the v1 curve (see §7) but got two
+The total-output model runs the v2 curve of §2 — one curve in the repo,
+through `productivity` and §1's parameter map — and got two
 literature-grounded corrections (§8.1–8.2), a per-task
 satiety term (§8.4), and a micro-recovery floor for
 full-demand tasks plus optimizer-reliability fixes
@@ -851,7 +849,10 @@ s_resume = s_end · e^(−g/τ),   τ = resumptionTimeConstant   (default 0.5 h)
 ```
 
 `blockOutput` integrates `p(s_resume + u)` over block-local time
-`u`; the reservoirs stay indexed by `u` since they carry their own level.
+`u`; the reservoirs stay indexed by `u` since they carry their own level. `s`
+is time on task, so a cold start integrates from `p(0) = p₀` (§2) and a
+nonzero start needs no mapping of its own — a phase offset would count `p₀`
+twice.
 `resumptionTimeConstant ≤ 0` reproduces the old hard reset. Because `p(s)` is
 hump-shaped, one decay does double duty: below the peak it prices lost warm-up
 (breaks hurt), above it prices boredom relief (a break moves you back toward
@@ -897,7 +898,7 @@ V(O) = κ_i · ln(1 + O/κ_i),      κ_i = satietyScale · O_ref,i
 ```
 
 where `O_ref,i` is task i's **reference single-session output** — one
-contiguous `T* = 1.7933·ϕ_i` run from full reservoirs — so κ auto-scales with
+contiguous run of its own `T*` (§3) from full reservoirs — so κ auto-scales with
 how much a good session on that task yields. Properties: `V(0) = 0`,
 `V′(O) = 1/(1 + O/κ)` so `V′(0) = 1` (early output counts at face value) and
 `V′(κ) = ½` — at the default `satietyScale = 1`, output beyond one good
@@ -998,9 +999,9 @@ Steepest ascent only takes single moves that are uphill on their own:
 - **Reallocation plateaus:** moving time from task A to task B requires a
   shrink and a grow, each downhill alone. Fix: a **transfer move** (shrink
   block i, grow block j, one candidate).
-- **Cold-start slivers:** inserting an unfunded task at step size (0.75 h
-  today; 0.25 h when this was written) never pays because of warm-up, even when
-  a full session would. Fixes: a **half-block reassign** (hand the second half
+- **Cold-start slivers:** inserting an unfunded task at one step can be
+  downhill where a full session is uphill — the step is priced on the climb
+  toward the peak. Fixes: a **half-block reassign** (hand the second half
   of a block to another task) and a **T\*-session insert** (insert a new task at
   its full single-task optimum length).
 - **Unreachable "fund all but X" optima:** dropping a funded task is downhill
@@ -1332,9 +1333,9 @@ term — `−log Φ((hiᵢ − λ)/σ₀)` for an upper bound, `−log Φ((λ �
 lower, σ fixed at σ₀, bisected on `J′`, scaled so a history with nothing
 censored reproduces the closed form bit for bit — was implemented and scored
 against the shipped drop-censored fit. The censored likelihood is a settled no
-and all five categories stay dropped. The bounds these days reveal are either
-loose (window edge, everything ticked) or false (sliver), and no estimator
-consuming them fixes that.
+and all five categories stay dropped. The bounds these days reveal are loose
+(window edge, everything ticked) or come from a day that logged no whole step
+(sliver), and no estimator consuming them fixes that.
 
 **The fit** (`fitStoppingValue`): treat each day's indifference point mᵢ as
 `λ₀ + noise`. The prediction is the _identity_, so the §8.7/§8.9 ridge
@@ -1521,10 +1522,10 @@ continue  ⇔  max over open tasks t, whole-step durations d ≤ room of
 
 with the argmax reported as the recommendation (task, duration, average
 value per hour). The naive candidate — §8.10's own one-step marginal, i.e.
-its `lo` bound — is deliberately NOT the verdict: a fresh task's first 45 min
-is mostly warm-up ramp, so its one-step marginal sits below a λ₀ that the
-full session clears, and the one-step advisor cries stop mid-day exactly
-when λ₀ is high.
+its `lo` bound — is deliberately NOT the verdict: a fresh task's first step
+is priced on the climb toward its peak, so its one-step marginal sits below a
+λ₀ that the full session clears, and the one-step advisor cries stop mid-day
+exactly when λ₀ is high.
 
 The duration axis is the optimizer's own move shape (grow, T\*-session
 insert), which is why at-stop agreement survives the stronger test: at a

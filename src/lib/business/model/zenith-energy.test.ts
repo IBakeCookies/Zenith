@@ -26,7 +26,14 @@ import {
 	type RestObservation,
 	type StopObservation,
 } from '$lib/business/model/zenith-energy';
-import { calculateFlowStateTime, mapEffort, mapEnjoyability } from '$lib/business/model/zenith';
+import {
+	calculateFlowStateTime,
+	calculateTaskParams,
+	findOptimalSingleTaskTime,
+	mapEffort,
+	mapEnjoyability,
+	productivity,
+} from '$lib/business/model/zenith';
 
 const MS_PER_HOUR = 3_600_000;
 /** An arbitrary fixed wall clock: the day's breaks are DELTAS between moments. */
@@ -221,7 +228,9 @@ describe('Zenith Energy Model', () => {
 		});
 
 		it('fragmentation is costly: contiguous work far outproduces confetti slicing', () => {
-			const deep = [makeTask(1, 'deep', 6, 6, 0.7, 0.1)];
+			// Hard and unloved: p₀ sits far under the peak, so every slice restarts
+			// low on the climb.
+			const deep = [makeTask(1, 'deep', 10, 2, 0.7, 0.1)];
 
 			const contiguous = evaluateSchedule(
 				[
@@ -441,6 +450,53 @@ describe('Zenith Energy Model', () => {
 			expect(resumedAfter(2) / atShare(0.0183156)).toBeCloseTo(1, 5);
 		});
 
+		it('the hump does double duty: at equal worked hours a break below the peak loses and one past it gains (MATH.md §8.2)', () => {
+			// Zero demand holds both reservoirs at 1, so only the session phase
+			// moves — off the sliders on purpose: this reads the curve, not a day.
+			const phaseOnly = [makeTask(1, 'A', 6, 6, 0, 0)];
+			const { phi } = calculateTaskParams(phaseOnly[0]);
+
+			const output = (blocks: ScheduleBlock[]) =>
+				evaluateSchedule(blocks, phaseOnly, 12).totalOutput;
+
+			const split = (before: number, after: number) =>
+				output([
+					{
+						taskId: 1,
+						hours: before,
+					},
+					{
+						taskId: null,
+						hours: 0.5,
+					},
+					{
+						taskId: 1,
+						hours: after,
+					},
+				]);
+
+			expect(phi).toBeGreaterThan(1.5);
+			expect(phi).toBeLessThan(3);
+
+			expect(split(1.5, 1.5)).toBeLessThan(
+				output([
+					{
+						taskId: 1,
+						hours: 3,
+					},
+				]),
+			);
+
+			expect(split(3, 1)).toBeGreaterThan(
+				output([
+					{
+						taskId: 1,
+						hours: 4,
+					},
+				]),
+			);
+		});
+
 		it('an empty schedule earns only leisure + terminal value', () => {
 			const ev = evaluateSchedule([], tasks, 8);
 			expect(ev.totalOutput).toBe(0);
@@ -515,6 +571,26 @@ describe('Zenith Energy Model', () => {
 				hours: 2,
 			},
 		];
+
+		it('κ is one contiguous run of the curve’s own T* from full reservoirs (MATH.md §8.4, §3)', () => {
+			const task = makeTask(1, 'A', 4, 7, 0.4, 0);
+			const tStar = findOptimalSingleTaskTime(task);
+
+			const ev = evaluateSchedule(
+				[
+					{
+						taskId: 1,
+						hours: tStar,
+					},
+				],
+				[task],
+				12,
+			);
+
+			// O = κ exactly, so V(O) = κ·ln 2 — at any other session length it is not.
+			expect(DEFAULT_ENERGY_PARAMS.satietyScale).toBe(1);
+			expect(ev.satiatedOutput).toBeCloseTo(Math.LN2 * ev.totalOutput, 12);
+		});
 
 		it('satietyScale ≤ 0 recovers the pure total-output objective exactly', () => {
 			const off = evaluateSchedule(sched, day, 8, {
@@ -772,6 +848,26 @@ describe('Zenith Energy Model', () => {
 	});
 
 	describe('optimizeSchedule', () => {
+		it('the T*-session — one map for the classic seed and the insert move — is the curve’s own optimum on the lattice (MATH.md §3, §8.6)', () => {
+			// One task, no search: the classic seed is the T*-session alone. On
+			// this task v1's 1.7933·ϕ and the curve's own T* snap to different steps.
+			const task = makeTask(1, 'A', 6, 7, 0.6, 0);
+
+			const { blocks } = optimizeSchedule([task], 12, DEFAULT_ENERGY_PARAMS, undefined, {
+				maxIterations: 0,
+			});
+
+			const snapped =
+				Math.round(findOptimalSingleTaskTime(task) / DEFAULT_STEP_HOURS) * DEFAULT_STEP_HOURS;
+
+			expect(blocks).toEqual([
+				{
+					taskId: 1,
+					hours: snapped,
+				},
+			]);
+		});
+
 		it('beats the hand-built plan that exposed a local-search failure (probe 2026-07-14)', () => {
 			// The pre-fix search dropped reading entirely on this day and scored
 			// below this plan; the compound moves + drop-one seeds must dominate it.
@@ -809,10 +905,10 @@ describe('Zenith Energy Model', () => {
 			expect(result.evaluation.objective).toBeGreaterThanOrEqual(handBuilt.objective - 1e-9);
 		}, 20_000);
 
-		// The two enumerated frontier days whose optimum funds a set two smaller
-		// than the drop-one seeds reach (probe 2026-08-13, §8.6). Both optima are
-		// pinned VALUES from that enumeration, not re-enumerated here — enumerating
-		// either day is ~1 min.
+		// Two frontier days, found by search and frozen, whose lattice optimum funds
+		// two tasks the seeds below the pair family do not reach (§8.6). Both optima
+		// are pinned VALUES from the exhaustive enumeration — the probe's own
+		// odometer — not re-enumerated here: enumerating either day is ~1 min.
 		const fundedIdsOf = (blocks: ScheduleBlock[]) =>
 			[...new Set(blocks.filter((b) => b.taskId !== null && b.hours > 0).map((b) => b.taskId))]
 				.sort((x, y) => x! - y!)
@@ -820,31 +916,31 @@ describe('Zenith Energy Model', () => {
 
 		it('funds the 2-of-4 optimum the drop-one seeds cannot reach (§8.6)', () => {
 			const day = [
-				makeTask(1, 'a', 6, 3, 0.5, 0.2),
-				makeTask(2, 'b', 5, 8, 0.9, 0.9),
-				makeTask(3, 'c', 5, 5, 0.4, 1),
-				makeTask(4, 'd', 2, 7, 0.4, 0.6),
+				makeTask(1, 'a', 8, 5, 0.5, 1),
+				makeTask(2, 'b', 4, 10, 0.9, 0.8),
+				makeTask(3, 'c', 2, 2, 0.5, 0.7),
+				makeTask(4, 'd', 6, 2, 0.7, 0.3),
 			];
 
-			const search = optimizeSchedule(day, 6.75);
+			const search = optimizeSchedule(day, 6);
 
-			expect(search.evaluation.objective).toBeGreaterThanOrEqual(6.1595663228 - 1e-9);
+			expect(search.evaluation.objective).toBeGreaterThanOrEqual(5.65510429 - 1e-9);
 			expect(fundedIdsOf(search.blocks)).toBe('1,2');
 		});
 
 		it('funds the 2-of-5 optimum the drop-one seeds cannot reach (§8.6)', () => {
 			const day = [
-				makeTask(1, 'a', 9, 3, 0.6, 0.9),
-				makeTask(2, 'b', 8, 7, 0.1, 0),
-				makeTask(3, 'c', 6, 2, 0.2, 0.5),
-				makeTask(4, 'd', 2, 2, 0.6, 0),
-				makeTask(5, 'e', 7, 5, 0.8, 0.8),
+				makeTask(1, 'a', 10, 2, 0, 0.5),
+				makeTask(2, 'b', 10, 10, 0.6, 0.1),
+				makeTask(3, 'c', 5, 8, 0, 1),
+				makeTask(4, 'd', 7, 1, 1, 0.3),
+				makeTask(5, 'e', 8, 2, 0.9, 0.7),
 			];
 
 			const search = optimizeSchedule(day, 6);
 
-			expect(search.evaluation.objective).toBeGreaterThanOrEqual(9.3923880946 - 1e-9);
-			expect(fundedIdsOf(search.blocks)).toBe('2,5');
+			expect(search.evaluation.objective).toBeGreaterThanOrEqual(11.6489474612 - 1e-9);
+			expect(fundedIdsOf(search.blocks)).toBe('2,3');
 		});
 
 		// The same day with the family switched off: the seeds below it stop short,
@@ -852,46 +948,45 @@ describe('Zenith Energy Model', () => {
 		// `pairSeedTasks` exists to let `energy-search-gap.probe.ts` price.
 		it('does not reach that optimum with the pair family removed (§8.6)', () => {
 			const day = [
-				makeTask(1, 'a', 6, 3, 0.5, 0.2),
-				makeTask(2, 'b', 5, 8, 0.9, 0.9),
-				makeTask(3, 'c', 5, 5, 0.4, 1),
-				makeTask(4, 'd', 2, 7, 0.4, 0.6),
+				makeTask(1, 'a', 8, 5, 0.5, 1),
+				makeTask(2, 'b', 4, 10, 0.9, 0.8),
+				makeTask(3, 'c', 2, 2, 0.5, 0.7),
+				makeTask(4, 'd', 6, 2, 0.7, 0.3),
 			];
 
-			const search = optimizeSchedule(day, 6.75, undefined, undefined, {
+			const search = optimizeSchedule(day, 6, undefined, undefined, {
 				pairSeedTasks: 0,
 			});
 
-			expect(search.evaluation.objective).toBeLessThan(6.1595663228 - 1e-9);
+			expect(search.evaluation.objective).toBeLessThan(5.65510429 - 1e-9);
 		});
 
-		// The cap's own step, ROADMAP M54 (2026-08-27): seed 8600's day 215 in
-		// `energy-search-gap.probe.ts`, its float dust rounded (0.30000000000000004
-		// → 0.3, which solves identically). Off the slider surface like this file's
-		// other fixtures — two of its four tasks below the difficulty their demands
-		// force and two above — and what is read off it is one seed set reaching a
-		// funded set the other cannot. A cap of three funds `b` alone here; the shipped
-		// four finds the interleave that funds `d` too — a different funded SET,
-		// which is the failure §8.6 calls the worse of the two, not a
-		// redistribution of the same hours.
+		// The cap's own step, ROADMAP M54: a day found by search and frozen, its
+		// optimum pinned from the exhaustive lattice enumeration. Off the slider
+		// surface like this file's other fixtures — two of its four tasks below the
+		// difficulty their demands force and two above — and what is read off it is
+		// one seed set reaching a funded set the other cannot. A cap of three funds
+		// `c` alone here; the shipped four finds the interleave that funds `a` too —
+		// a different funded SET, which is the failure §8.6 calls the worse of the
+		// two, not a redistribution of the same hours.
 		it('funds the 2-of-4 optimum only the fourth pair task reaches (§8.6)', () => {
 			const day = [
-				makeTask(1, 'a', 4, 10, 0.2, 1),
-				makeTask(2, 'b', 9, 9, 0.3, 0.7),
-				makeTask(3, 'c', 8, 4, 0.3, 0.7),
-				makeTask(4, 'd', 2, 7, 0.5, 0.2),
+				makeTask(1, 'a', 2, 6, 0.7, 0.4),
+				makeTask(2, 'b', 4, 3, 0.1, 0.5),
+				makeTask(3, 'c', 10, 6, 0.1, 0.3),
+				makeTask(4, 'd', 10, 1, 0.7, 0.5),
 			];
 
-			const search = optimizeSchedule(day, 6.5);
+			const search = optimizeSchedule(day, 6.75);
 
-			expect(search.evaluation.objective).toBeGreaterThanOrEqual(9.5236179002 - 1e-9);
-			expect(fundedIdsOf(search.blocks)).toBe('2,4');
+			expect(search.evaluation.objective).toBeGreaterThanOrEqual(11.6180637561 - 1e-9);
+			expect(fundedIdsOf(search.blocks)).toBe('1,3');
 
-			const narrower = optimizeSchedule(day, 6.5, undefined, undefined, {
+			const narrower = optimizeSchedule(day, 6.75, undefined, undefined, {
 				pairSeedTasks: 3,
 			});
 
-			expect(fundedIdsOf(narrower.blocks)).toBe('2');
+			expect(fundedIdsOf(narrower.blocks)).toBe('3');
 		});
 
 		it('reaches the off-midpoint interior rest on the probe’s worst enumerated day (§8.6)', () => {
@@ -1685,7 +1780,8 @@ describe('Zenith Energy Model', () => {
 			// Probe 2026-07-19: per-day brackets contain the true λ₀ = 0.9 and
 			// midpoints sit at ≈ 1.0; three days ridge-blended with the 0.5 prior
 			// land near the truth.
-			const days = [8, 10, 12].map((T) => dayFromPlan(0.9, T));
+			// An 8 h window is filled at this λ₀ and reveals one side only.
+			const days = [10, 12, 14].map((T) => dayFromPlan(0.9, T));
 			const fit = fitStoppingValue(days, prior, DEFAULT_ENERGY_PARAMS);
 			expect(fit.fitted).toBe(true);
 			expect(fit.usedCount).toBe(3);
@@ -1730,17 +1826,16 @@ describe('Zenith Energy Model', () => {
 		// the dominant, one-signed error term. The witness is the ruling's own —
 		// sliders 8/3/8 beside 0/3/2 through `toEnergyTask`, a 14 h window, and the
 		// app's own plan for it at λ₀ 0.7 (t1 3.75 / rest 0.75 / t1 2.25 / rest 0.75
-		// / t1 1.5). Pinned as the PAIR: summed reads 0.293 low and inverts its
-		// bracket (lo 0.469 > hi 0.345, kept because the gap is inside the margin),
-		// the logged reading lands 0.030 high and does not invert.
+		// / t1 1.5). Pinned as the PAIR: summed inverts its bracket past the margin
+		// and is censored, the logged reading lands 0.032 high and does not invert.
 		it('reads the day’s breaks off the 🪫 rows’ own log moments', () => {
 			const params = {
 				...DEFAULT_ENERGY_PARAMS,
 				freeTimeValue: 0.7,
 			};
 
-			expect(stopIndifferencePoint(WITNESS_LOGGED, params)!).toBeCloseTo(0.73042, 5);
-			expect(stopIndifferencePoint(summed(WITNESS_LOGGED), params)!).toBeCloseTo(0.40664, 5);
+			expect(stopIndifferencePoint(WITNESS_LOGGED, params)!).toBeCloseTo(0.73227, 5);
+			expect(stopIndifferencePoint(summed(WITNESS_LOGGED), params)).toBeNull();
 		});
 
 		// The fix cannot apply to a day whose sessions were all written down at once,
@@ -1748,19 +1843,25 @@ describe('Zenith Energy Model', () => {
 		// exactly as it did before. Same for a row whose moment is unusable — a
 		// restored backup can carry one, and the whole DAY falls back, not the row.
 		it('falls back to the summed reading when no structure is recoverable', () => {
-			const flat = stopIndifferencePoint(summed(WITNESS_LOGGED), DEFAULT_ENERGY_PARAMS);
+			// A day whose summed reading survives the censor: the witness above is
+			// censored summed, and two nulls would pass as agreement.
+			const logged = dayFromPlan(0.9, 12);
+			const flat = stopIndifferencePoint(summed(logged), DEFAULT_ENERGY_PARAMS);
+
+			expect(flat).not.toBeNull();
+			expect(stopIndifferencePoint(logged, DEFAULT_ENERGY_PARAMS)).not.toBe(flat);
 
 			const batched: StopObservation = {
-				...WITNESS_LOGGED,
-				workedHours: WITNESS_LOGGED.workedHours.map((row) => ({
+				...logged,
+				workedHours: logged.workedHours.map((row) => ({
 					...row,
 					endedAt: LOG_ORIGIN + 20 * MS_PER_HOUR,
 				})),
 			};
 
 			const oneUnusable: StopObservation = {
-				...WITNESS_LOGGED,
-				workedHours: WITNESS_LOGGED.workedHours.map((row, i) =>
+				...logged,
+				workedHours: logged.workedHours.map((row, i) =>
 					i === 1
 						? {
 								taskId: row.taskId,
@@ -1835,7 +1936,7 @@ describe('Zenith Energy Model', () => {
 			});
 
 			const fit = fitStoppingValue(
-				[batch(WITNESS_LOGGED), batch(COMPLETED_DAY)],
+				[batch(dayFromPlan(0.9, 12)), batch(COMPLETED_DAY)],
 				prior,
 				DEFAULT_ENERGY_PARAMS,
 			);
@@ -1906,10 +2007,12 @@ describe('Zenith Energy Model', () => {
 		});
 
 		it('prices the stop against OPEN work only — finished tasks are no forgone step', () => {
+			// At 1.5 h one more step of boxing is still the best next step, so
+			// closing boxing moves the point; a step later a cold start already is.
 			const worked = [
 				{
 					taskId: 1,
-					hours: 2.25,
+					hours: 1.5,
 				},
 			];
 
@@ -1965,13 +2068,13 @@ describe('Zenith Energy Model', () => {
 			).toBeNull();
 		});
 
-		// Re-pinned 2026-08-19 from `scripts/stop-inversion-margin.probe.ts`'s
-		// witness arm, on the reachable fixture above: the one day the 2026-08-12
-		// open-task correction was argued on, logged the way the app logs it (the
-		// row carries its moment, `openTaskIds` is the Set `session-history.ts`
-		// always builds). The sibling above asserts only that one is smaller, which
-		// cannot catch a change that moves both.
-		it('prices the §8.10 witness day at 1.321 over all tasks and 1.190 over the two left open', () => {
+		// The reachable fixture above is the one day the 2026-08-12 open-task
+		// correction was argued on, logged the way the app logs it (the row carries
+		// its moment, `openTaskIds` is the Set `session-history.ts` always builds).
+		// The sibling above asserts only that one is smaller, which cannot catch a
+		// change that moves both. Here the best next step is a cold start, so
+		// closing boxing moves nothing and the two readings coincide.
+		it('prices the §8.10 witness day at 1.321 over all tasks and over the two left open alike', () => {
 			const observation: StopObservation = {
 				tasks: day,
 				windowHours: 12,
@@ -1995,9 +2098,9 @@ describe('Zenith Energy Model', () => {
 				DEFAULT_ENERGY_PARAMS,
 			)!;
 
-			expect(allOpen).toBeCloseTo(1.32147, 3);
-			expect(filtered).toBeCloseTo(1.18957, 3);
-			expect(allOpen - filtered).toBeCloseTo(0.1319, 3);
+			expect(allOpen).toBeCloseTo(1.321, 3);
+			expect(filtered).toBeCloseTo(1.321, 3);
+			expect(allOpen - filtered).toBeCloseTo(0, 3);
 		});
 
 		// `lo` is a max over the open tasks, `hi` never reads them, and the censor
@@ -2129,13 +2232,13 @@ describe('Zenith Energy Model', () => {
 			expect(fitStoppingValue([grind], prior, DEFAULT_ENERGY_PARAMS).fitted).toBe(false);
 
 			// A 1-step interrupted sliver is the practical contamination case —
-			// also censored.
+			// also censored: boxing cut short on the climb, p₀ far under its peak.
 			const sliver: StopObservation = {
 				tasks: day,
 				windowHours: 12,
 				workedHours: [
 					{
-						taskId: 3,
+						taskId: 1,
 						hours: DEFAULT_STEP_HOURS,
 					},
 				],
@@ -2143,7 +2246,7 @@ describe('Zenith Energy Model', () => {
 
 			expect(stopIndifferencePoint(sliver, DEFAULT_ENERGY_PARAMS)).toBeNull();
 
-			// Mild inversion — 2.25h of reading only, inverted by less than the
+			// Mild inversion — 3 h of guitar only, inverted by less than the
 			// margin (the instrument's own slack): kept at the bracket midpoint
 			// and used by the fit. The assertions below rebuild the bracket, so
 			// the gap is checked rather than quoted.
@@ -2152,8 +2255,8 @@ describe('Zenith Energy Model', () => {
 				windowHours: 12,
 				workedHours: [
 					{
-						taskId: 3,
-						hours: 2.25,
+						taskId: 2,
+						hours: 3,
 					},
 				],
 			};
@@ -2168,19 +2271,19 @@ describe('Zenith Energy Model', () => {
 
 			const base = workValue([
 				{
-					taskId: 3,
-					hours: 2.25,
+					taskId: 2,
+					hours: 3,
 				},
 			]);
 
 			// Unlogged tasks are probed at their CANONICAL amplitude position.
-			// Boxing (10.4) and guitar (6.67) both outrank
-			// reading (4.60), so their probe block goes BEFORE it, not appended.
+			// Boxing (10.4) outranks guitar (6.67), so its probe block goes BEFORE
+			// it; reading (4.60) ranks below and is appended.
 			const lo = Math.max(
 				(workValue([
 					{
-						taskId: 3,
-						hours: 2.25 + step,
+						taskId: 2,
+						hours: 3 + step,
 					},
 				]) -
 					base) /
@@ -2191,8 +2294,8 @@ describe('Zenith Energy Model', () => {
 						hours: step,
 					},
 					{
-						taskId: 3,
-						hours: 2.25,
+						taskId: 2,
+						hours: 3,
 					},
 				]) -
 					base) /
@@ -2200,11 +2303,11 @@ describe('Zenith Energy Model', () => {
 				(workValue([
 					{
 						taskId: 2,
-						hours: step,
+						hours: 3,
 					},
 					{
 						taskId: 3,
-						hours: 2.25,
+						hours: step,
 					},
 				]) -
 					base) /
@@ -2215,8 +2318,8 @@ describe('Zenith Energy Model', () => {
 				(base -
 					workValue([
 						{
-							taskId: 3,
-							hours: 2.25 - step,
+							taskId: 2,
+							hours: 3 - step,
 						},
 					])) /
 				step;
@@ -2239,7 +2342,8 @@ describe('Zenith Energy Model', () => {
 			// all", and that is the entire argument that censoring throws away
 			// interruptions and not honest days. On a wider grid: 4 of 315
 			// optimizer days invert, and 44 of 1179 mood variants do, 6 of them
-			// past the margin. This is one of those 6, found by search and frozen.
+			// past the margin. One such day, found by search on the slider surface
+			// (sliders 3/5/10, 3/8/2 and 9/9/7 through `toEnergyTask`) and frozen.
 			//
 			// The claim is not that the margin is mis-set — it is that the
 			// population it excludes is not empty, so the cost of censoring is a
@@ -2249,40 +2353,56 @@ describe('Zenith Energy Model', () => {
 				freeTimeValue: 0.9,
 			};
 
-			const tasks = [makeTask(1, 'light', 4, 10, 0.8, 0.2), makeTask(2, 'heavy', 10, 5, 0.6, 0.4)];
+			const tasks = [
+				makeTask(1, 'light', 5.9, 10, 0.3, 0.5),
+				makeTask(2, 'chore', 8.9, 2, 0.3, 0.8),
+				makeTask(3, 'heavy', 10, 7, 0.9, 0.9),
+			];
+
 			const windowHours = 12;
+			// The optimizer's own plan for this day: two steps of heavy, six of light.
+			const planned = new Map<number, number>();
+
+			for (const b of optimizeSchedule(tasks, windowHours, params).blocks) {
+				if (b.taskId !== null) planned.set(b.taskId, (planned.get(b.taskId) ?? 0) + b.hours);
+			}
+
+			expect([...planned]).toEqual([
+				[3, 1.5],
+				[1, 4.5],
+			]);
 
 			const rational: StopObservation = {
 				tasks,
 				windowHours,
 				workedHours: [
 					{
-						taskId: 2,
-						hours: 6.75,
+						taskId: 3,
+						hours: 1.5,
 					},
 					{
 						taskId: 1,
-						hours: 1.5,
+						hours: 4.5,
 					},
 				],
 			};
 
-			// The optimizer's own plan for this day reads cleanly.
+			// That plan reads cleanly.
 			expect(stopIndifferencePoint(rational, params)).not.toBeNull();
 
-			// One lattice step of "mood" off it — 15 minutes' less on the light
-			// task — and the day is censored.
+			// One lattice step of "mood" off it — one step less on the heavy task,
+			// cut to a single step on its climb — and the day is censored.
 			const mood: StopObservation = {
 				tasks,
 				windowHours,
 				workedHours: [
 					{
-						taskId: 2,
-						hours: 6.75,
+						taskId: 3,
+						hours: 1.5 - DEFAULT_STEP_HOURS,
 					},
 					{
 						taskId: 1,
-						hours: 1.5 - DEFAULT_STEP_HOURS,
+						hours: 4.5,
 					},
 				],
 			};
@@ -2358,8 +2478,8 @@ describe('Zenith Energy Model', () => {
 			// Both ± pinned to literals: STOP_NOISE_PRIOR_STD and
 			// CALIBRATION_NOISE_PRIOR_WEIGHT reach the Energy page through them and
 			// the shrinkage above holds whatever either is set to.
-			expect(two.valueStd!).toBeCloseTo(0.12588, 5);
-			expect(eight.valueStd!).toBeCloseTo(0.049596, 6);
+			expect(two.valueStd!).toBeCloseTo(0.12813, 5);
+			expect(eight.valueStd!).toBeCloseTo(0.050022, 6);
 		});
 
 		it('W*(λ₀) is monotone with a graded response — §8.3’s bang-bang is gone (satiety fixed it)', () => {
@@ -2380,15 +2500,6 @@ describe('Zenith Energy Model', () => {
 		});
 
 		/**
-		 * The SHIPPED default, which nothing measured until 2026-08-20: the ladder
-		 * above samples λ₀ ∈ {0.4, 0.8, 1.2, 1.5} and §8.3's probe
-		 * {0.2, 0.4, 0.8, 1.0, 1.2, 1.5}, so 0.5 — the value the app runs on — was
-		 * in neither. Pinned to the literal, not to
-		 * `DEFAULT_ENERGY_PARAMS.freeTimeValue`, so that moving the default shows
-		 * up here as the product decision it is. Both declarations of this day
-		 * (M44) give 11.25 h, so the figure does not depend on that ambiguity.
-		 */
-		/**
 		 * §8.10 feasibility 2: V_T is conditioned on, not fitted, BECAUSE it moves
 		 * the stop. The 300-day sweep behind that (2026-08-21) reports a median
 		 * 1-step span and 5 steps at worst; this pins the cheapest witness of the
@@ -2405,19 +2516,27 @@ describe('Zenith Energy Model', () => {
 					terminalEnergyValue,
 				}).evaluation.workHours;
 
-			expect(stop(0)).toBeCloseTo(6.75, 9);
-			expect(stop(6)).toBeCloseTo(6, 9);
+			expect(stop(0)).toBeCloseTo(7.5, 9);
+			expect(stop(6)).toBeCloseTo(6.75, 9);
 		});
 
-		it('plans 11.25 h of a 12-hour window at the shipped default λ₀', () => {
+		/**
+		 * The SHIPPED default, which nothing measured until 2026-08-20: the ladder
+		 * above samples λ₀ ∈ {0.4, 0.8, 1.2, 1.5} and §8.3's probe
+		 * {0.2, 0.4, 0.8, 1.0, 1.2, 1.5}, so 0.5 — the value the app runs on — was
+		 * in neither. Pinned to the literal, not to
+		 * `DEFAULT_ENERGY_PARAMS.freeTimeValue`, so that moving the default shows
+		 * up here as the product decision it is.
+		 */
+		it('plans all 12 h of a 12-hour window at the shipped default λ₀', () => {
 			const { evaluation } = optimizeSchedule(day, 12, DEFAULT_ENERGY_PARAMS);
 			expect(DEFAULT_ENERGY_PARAMS.freeTimeValue).toBe(0.5);
-			expect(evaluation.workHours).toBeCloseTo(11.25, 9);
+			expect(evaluation.workHours).toBeCloseTo(12, 9);
 		});
 
 		/**
 		 * …and what that default means is a property of the DAY, not of λ₀: the
-		 * same 0.5 fills 94% of the window above and 38% here. That is why the
+		 * same 0.5 fills the whole window above and 38% here. That is why the
 		 * default cannot be read off one probe day, and why raising it is not a
 		 * free tuning move — one slider notch to λ₀ = 1 (the Lab's range is
 		 * [0, 3] step 0.1) empties the plan on this portfolio entirely, and that
@@ -2550,7 +2669,7 @@ describe('Zenith Energy Model', () => {
 			// was priced on had to pay 2.25 h out of the break to fit.
 			expect(advice.taskId).toBe(2);
 			expect(advice.sessionHours).toBe(1.5);
-			expect(advice.marginalValue).toBeCloseTo(1.29167, 5);
+			expect(advice.marginalValue).toBeCloseTo(1.42501, 5);
 		});
 
 		it('looks ahead past the warm-up ramp: continues when only a longer session clears λ₀ (probe 2026-08-03)', () => {
@@ -2615,9 +2734,10 @@ describe('Zenith Energy Model', () => {
 			// optimizer's own plan under λ₀ = 0.9 walked chronologically, and the
 			// advisor sees only the composition worked so far.
 			//
-			// Measured here: the one-step arm's best is 0.6157 (one more step of A,
-			// well past A's ramp) or 0.5490 (B's first step, almost all ramp), both
-			// under λ₀; the session arm prices 3 h of B at 1.0761 and continues.
+			// Measured here: the one-step arm's best is 0.6924 (B's first step,
+			// priced on the climb from p₀) or 0.6374 (one more step of A, well past
+			// A's peak), both under λ₀; the session arm prices 3 h of B at 1.1164
+			// and continues.
 			const lambda = 0.9;
 
 			const params = {
@@ -3122,12 +3242,15 @@ describe('Zenith Energy Model', () => {
 				constants,
 			);
 
-			// Independent replica of the integrand p(s)·C_cog^wc·C_phys^wp.
+			// Independent replica of the integrand p(s)·C_cog^wc·C_phys^wp, p in
+			// its v2 form with §1's cap written out — difficulty 1 puts r = 1/E² at
+			// 1, so this fixture exercises the cap as well as the ϕ floor.
 			const E = mapEffort(1);
 			const beta = mapEnjoyability(10);
 			const phi = calculateFlowStateTime(E, beta, constants);
-			const amp = E * beta + beta / E;
-			const k = 1 / phi;
+			const a = E * beta;
+			const p0 = Math.min(beta / E, 0.9 * a);
+			const k = (1 - p0 / a) / phi;
 			const rec = p.recoveryRate * p.restRecoveryMultiplier;
 
 			const law = (w: number, alpha: number) => {
@@ -3153,7 +3276,10 @@ describe('Zenith Energy Model', () => {
 				const u = ((i + 0.5) * hours) / n;
 
 				sum +=
-					amp * k * u * Math.exp(-k * u) * Math.pow(cAt(lc, u), 0.9) * Math.pow(cAt(lp, u), 0.1);
+					(a * k * u + p0) *
+					Math.exp(-k * u) *
+					Math.pow(cAt(lc, u), 0.9) *
+					Math.pow(cAt(lp, u), 0.1);
 			}
 
 			const numeric = (sum * hours) / n;
@@ -3230,7 +3356,7 @@ describe('Zenith Energy Model', () => {
 		});
 
 		it('a high price on free time recommends a short day', () => {
-			// λ₀ = 0.75 is where this fixture's knee comes inside a 6 h cap. Pinned
+			// λ₀ = 0.93 is where this fixture's knee comes inside a 6 h cap. Pinned
 			// with the work and the marginal AT the recommendation, not just the
 			// hours: a recommendation that books nothing is the failure mode this
 			// test exists to catch, and `recommendedHours < 6` alone passes on it.
@@ -3238,7 +3364,7 @@ describe('Zenith Energy Model', () => {
 				tasks,
 				{
 					...DEFAULT_ENERGY_PARAMS,
-					freeTimeValue: 0.75,
+					freeTimeValue: 0.93,
 				},
 				undefined,
 				{
@@ -3246,7 +3372,7 @@ describe('Zenith Energy Model', () => {
 				},
 			);
 
-			expect(curve.recommendedHours).toBe(4.5);
+			expect(curve.recommendedHours).toBe(3.75);
 
 			const at = curve.points.find((p) => p.budgetHours === curve.recommendedHours)!;
 
@@ -3280,11 +3406,11 @@ describe('Zenith Energy Model', () => {
 		it('day value never falls as the budget grows — the running max', () => {
 			// A fixture that ACTUALLY dips, found by search: `plan(b)` maximizes the
 			// objective at its own window rather than this score, so the raw
-			// common-horizon sweep falls 8.4906 → 8.4508 between 8.25 h and 9 h here.
+			// common-horizon sweep falls 9.7947 → 9.7130 between 8.25 h and 9 h here.
 			// Most fixtures never dip at all (§8.12 measures 0.4% of steps) and pass this
 			// assertion with the running max deleted — mutation-verified, so keep THIS
 			// fixture: it is the one that fails when the floor goes.
-			const dipping = [makeTask(1, 'A', 6, 8, 0.9, 0.7), makeTask(2, 'B', 7, 6, 0.1, 0.8)];
+			const dipping = [makeTask(1, 'A', 5, 9, 0.2, 0.2), makeTask(2, 'B', 5, 5, 0.3, 0.7)];
 
 			const curve = suggestBudgetCurve(dipping, DEFAULT_ENERGY_PARAMS, undefined, {
 				maxBudgetHours: 9,
@@ -3367,6 +3493,32 @@ describe('Zenith Energy Model', () => {
 	});
 
 	describe('sampleTrajectory', () => {
+		it('a cold start produces from the first minute: the first sample is p₀, every sample the classic curve behind the gate (MATH.md §8.2, §2)', () => {
+			const task = makeTask(1, 'A', 7, 5, 0.7, 0);
+			const { a, p0, k } = calculateTaskParams(task);
+
+			const traj = sampleTrajectory(
+				[
+					{
+						taskId: 1,
+						hours: 1,
+					},
+				],
+				[task],
+				8,
+			);
+
+			expect(p0).toBeGreaterThan(0);
+			expect(traj[0].rate).toBeCloseTo(p0, 12);
+
+			for (const point of traj.filter((q) => q.taskId === 1)) {
+				expect(point.rate).toBeCloseTo(
+					productivity(point.t, a, p0, k) * Math.pow(point.cog, 0.7),
+					12,
+				);
+			}
+		});
+
 		it('stays in [0,1] energy bounds, is time-ordered, and spans the window', () => {
 			const tasks = [makeTask(1, 'A', 7, 5, 0.8, 0.2), makeTask(2, 'B', 4, 7, 0.2, 0.8)];
 			const { blocks } = optimizeSchedule(tasks, 8);
