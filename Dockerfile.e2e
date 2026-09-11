@@ -1,0 +1,19 @@
+# syntax=docker/dockerfile:1
+# The browser image: vitest's browser-mode projects (client, storybook) and the
+# Playwright e2e suite. Its tag has to match @playwright/test in package.json or
+# the browsers are missing — the RUN below fails the build when it drifts.
+ARG PLAYWRIGHT_VERSION=1.61.1
+FROM mcr.microsoft.com/playwright:v${PLAYWRIGHT_VERSION}-noble
+ARG PLAYWRIGHT_VERSION
+WORKDIR /app
+# uid 1000 (`ubuntu` here; `pwuser` is 1001): what lands in the mounted
+# test-result/ stays writable for the host user and the node-user test image.
+RUN chown ubuntu:ubuntu /app
+USER ubuntu
+RUN --mount=type=cache,target=/npm,mode=0777 \
+    --mount=type=bind,source=package.json,target=package.json \
+    --mount=type=bind,source=package-lock.json,target=package-lock.json \
+    npm ci --ignore-scripts --cache /npm \
+    && test "$(node -p "require('@playwright/test/package.json').version")" = "$PLAYWRIGHT_VERSION"
+COPY . .
+CMD ["npm", "test"]
