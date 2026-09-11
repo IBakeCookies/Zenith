@@ -4,12 +4,14 @@
 	import type { ChartPoint } from '$lib/presentation/utils/completion-chart-points';
 	import CompletionYieldChart from '$lib/presentation/component/completion-yield-chart.svelte';
 
+	// The axis prints the date and the tooltip names the weekday, as
+	// `completionChartPoints` builds them.
 	const WEEKDAYS = ['Sat', 'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
 
 	/** `null` is an unrecorded slot; 0 is a day that was planned and went nowhere. */
 	const week = (rates: (number | null)[], yields?: (number | null)[]): ChartPoint[] =>
 		rates.map((value, i) => ({
-			label: WEEKDAYS[i],
+			label: `Jul ${25 + i}`,
 			full: `${WEEKDAYS[i]}, Jul ${25 + i}`,
 			value,
 			line: yields ? yields[i] : null,

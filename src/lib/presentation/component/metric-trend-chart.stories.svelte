@@ -68,15 +68,27 @@
 		await expect(styleOf('stroke-mind')).toBe(DASH.dotted);
 		await expect(styleOf('stroke-body')).toBe(DASH.dashed);
 
-		// Each line is cut out of the ones under it, so a crossing shows which is in
-		// front. The plot draws the legend's order in reverse, so Burnout Risk — the
-		// reading the card is named for — is the line in front, cut by nothing and
-		// needing no mask. Physical, drawn first, is cut by the two over it.
+		// Draw order is the legend's, which puts the SOLID line at the BOTTOM. A solid
+		// line in front hides whatever it crosses outright; the dotted and dashed ones
+		// over it cut only where their own strokes land, so the reading underneath
+		// shows through the gaps. `completion-yield-chart` draws its dashed rate over
+		// its solid yield for the same reason.
+		const drawOrder = [...canvasElement.querySelectorAll('svg > g')].map((group) =>
+			group.querySelector('path[stroke-width]')?.getAttribute('class'),
+		);
+
+		await expect(drawOrder).toEqual(['stroke-danger', 'stroke-mind', 'stroke-body']);
+
+		// Each line is cut out of the ones over it, so a crossing shows which is in
+		// front. The dashed Physical line is drawn last, cut by nothing and needing no
+		// mask; Burnout, drawn first, is cut by the two above it.
 		const cutsPerMask = [...canvasElement.querySelectorAll('mask')].map(
 			(mask) => mask.querySelectorAll('path[stroke=black]').length,
 		);
 
 		await expect(cutsPerMask).toEqual([2, 1]);
+
+		await expect([...canvasElement.querySelectorAll('svg > g')].at(-1)).not.toHaveAttribute('mask');
 
 		// Each plot's masks are its own — `$props.id()` per instance, which is what
 		// lets the autodocs page hold every story of this file at once.
@@ -89,13 +101,13 @@
 		).toEqual(maskIds.map((id) => `url(#${id})`));
 
 		// The cut repeats its own line's dasharray, or a coinciding line underneath is
-		// cut away whole rather than showing through the gaps. Burnout is solid, so
-		// two of the three cuts carry no dasharray at all.
+		// cut away whole rather than showing through the gaps. With the solid line at
+		// the bottom, NO cut is solid — so no crossing can hide a reading completely.
 		await expect(
 			[...canvasElement.querySelectorAll('mask path[stroke=black]')].map((cut) =>
 				cut.getAttribute('stroke-dasharray'),
 			),
-		).toEqual([DASH.dotted, null, null]);
+		).toEqual([DASH.dotted, DASH.dashed, DASH.dashed]);
 
 		// The legend swatch is the line, not a bar in its colour — same stroke, same
 		// dasharray, so a dotted series cannot show up solid in the key.

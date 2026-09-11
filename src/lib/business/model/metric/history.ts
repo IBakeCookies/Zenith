@@ -337,10 +337,12 @@ export function countQuadrants(summaries: DaySummary[]): Record<DailyQuadrant, n
 	return counts;
 }
 
-export type MonthlyRollup = {
-	/** YYYY-MM */
-	month: string;
-	/** Mean completion rate of the days recorded in the month; null = no data */
+export type WeeklyRollup = {
+	/** ISO date of the block's first day */
+	start: string;
+	/** Whether this block opens a calendar month — the year axis labels those */
+	isMonthStart: boolean;
+	/** Mean completion rate of the days recorded in the block; null = no data */
 	average: number | null;
 	/** Mean yield of the days that completed something; null = no such day */
 	yieldAverage: number | null;
@@ -348,63 +350,110 @@ export type MonthlyRollup = {
 };
 
 /**
- * The year chart's two readings per calendar month — completion rate and yield
- * — from `rangeStart`'s month through `today`'s month INCLUSIVE. Months with no
- * recorded day still get an entry so the chart keeps a slot for them rather
- * than silently closing the gap. Yield averages only the days that completed
+ * The year chart's two readings per 7-day block — completion rate and yield —
+ * over `bucketByWeek`'s blocks. Yield averages only the days that completed
  * something: `yieldIndex` is 0 on a day that finished nothing, and averaging
- * those in reads as a bad month rather than an idle one.
+ * those in reads as a bad week rather than an idle one.
  */
-export function monthlyRollups(
+export function weeklyRollups(
 	summaries: DaySummary[],
 	rangeStart: string,
-	today: string,
-): MonthlyRollup[] {
-	const buckets = new Map<string, DaySummary[]>();
+	rangeDays: number,
+): WeeklyRollup[] {
+	return bucketByWeek(summaries, rangeStart, rangeDays).map((block) => {
+		const completingDays = block.rows.filter((day) => day.completedTasks > 0);
 
-	for (const summary of summaries) {
-		const key = summary.date.slice(0, 7);
-		const bucket = buckets.get(key);
-
-		if (bucket) {
-			bucket.push(summary);
-			continue;
-		}
-
-		buckets.set(key, [summary]);
-	}
-
-	const months: MonthlyRollup[] = [];
-	const lastMonth = today.slice(0, 7);
-	let month = rangeStart.slice(0, 7);
-
-	while (month <= lastMonth) {
-		const daysIn = buckets.get(month) ?? [];
-		const completingDays = daysIn.filter((day) => day.completedTasks > 0);
-
-		months.push({
-			month,
-			average: daysIn.length > 0 ? averageCompletionRate(daysIn) : null,
+		return {
+			start: block.start,
+			isMonthStart: block.isMonthStart,
+			average: block.rows.length > 0 ? averageCompletionRate(block.rows) : null,
 			yieldAverage:
 				completingDays.length > 0
 					? Math.round(
 							completingDays.reduce((sum, day) => sum + day.yieldIndex, 0) / completingDays.length,
 						)
 					: null,
-			dayCount: daysIn.length,
-		});
-
-		month = nextMonth(month);
-	}
-
-	return months;
+			dayCount: block.rows.length,
+		};
+	});
 }
 
-// YYYY-MM + 1 month. String math, not Date: the chart only ever needs the key.
-function nextMonth(month: string): string {
-	const [year, index] = month.split('-').map(Number);
+export type WeeklyMetricTrend = {
+	/** ISO date of the block's first day */
+	start: string;
+	isMonthStart: boolean;
+	/** Mean over the days recorded in the block; null = no such day */
+	burnoutRisk: number | null;
+	cognitiveLoad: number | null;
+	physicalLoad: number | null;
+};
 
-	if (index === 12) return `${year + 1}-01`;
+/**
+ * The year chart's three load readings per 7-day block, over the same blocks
+ * `weeklyRollups` walks so the page's two year charts line up slot for slot.
+ * A block with no recorded day has no reading rather than a zero: the chart
+ * breaks its line there, and 365 daily points read as noise at this width.
+ */
+export function rollUpMetricTrendByWeek(
+	trend: MetricTrendPoint[],
+	rangeStart: string,
+	rangeDays: number,
+): WeeklyMetricTrend[] {
+	return bucketByWeek(trend, rangeStart, rangeDays).map((block) => ({
+		start: block.start,
+		isMonthStart: block.isMonthStart,
+		burnoutRisk: meanOf(block.rows, (point) => point.burnoutRisk),
+		cognitiveLoad: meanOf(block.rows, (point) => point.cognitiveLoad),
+		physicalLoad: meanOf(block.rows, (point) => point.physicalLoad),
+	}));
+}
 
-	return `${year}-${String(index + 1).padStart(2, '0')}`;
+function meanOf<T>(rows: T[], read: (row: T) => number): number | null {
+	if (rows.length === 0) return null;
+
+	return Math.round(rows.reduce((sum, row) => sum + read(row), 0) / rows.length);
+}
+
+/**
+ * The range cut into 7-day blocks, each with the rows dated in it. A contiguous
+ * range chunks by index, so a block with nothing recorded keeps its slot without
+ * any gap-filling. The REMAINDER goes to the oldest block, so the last one ends
+ * on the range's final day and the most recent point is a full week.
+ *
+ * `isMonthStart` marks the block that opens a calendar month: 52 labels do not
+ * fit the axis, and one per month is the density the year view already read at.
+ */
+function bucketByWeek<T extends { date: string }>(
+	rows: T[],
+	rangeStart: string,
+	rangeDays: number,
+): { start: string; isMonthStart: boolean; rows: T[] }[] {
+	const byDate = new Map(rows.map((row) => [row.date, row]));
+	const blocks: { start: string; rows: T[] }[] = [];
+	let index = 0;
+	let span = rangeDays % 7 || 7;
+
+	while (index < rangeDays) {
+		const start = addDays(rangeStart, index);
+		const inBlock: T[] = [];
+
+		for (let day = 0; day < span; day++) {
+			const row = byDate.get(addDays(start, day));
+
+			if (row) inBlock.push(row);
+		}
+
+		blocks.push({
+			start,
+			rows: inBlock,
+		});
+
+		index += span;
+		span = 7;
+	}
+
+	return blocks.map((block, at) => ({
+		...block,
+		isMonthStart: at === 0 || block.start.slice(0, 7) !== blocks[at - 1].start.slice(0, 7),
+	}));
 }

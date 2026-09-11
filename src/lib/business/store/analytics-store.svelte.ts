@@ -28,11 +28,13 @@ import {
 	findBestDay,
 	loggedHours,
 	longestStreak,
-	monthlyRollups,
+	rollUpMetricTrendByWeek,
+	weeklyRollups,
 	restSummary,
 	type DaySummary,
 	type MetricTrendPoint,
-	type MonthlyRollup,
+	type WeeklyMetricTrend,
+	type WeeklyRollup,
 	type RestSummary,
 } from '$lib/business/model/metric/history';
 import type { EnergyParams } from '$lib/business/model/zenith-energy';
@@ -358,12 +360,19 @@ export class AnalyticsStore {
 	get quadrantCounts(): Record<DailyQuadrant, number> {
 		return countQuadrants(this.#summaries);
 	}
-	/** Per-calendar-month averages for the year chart; empty months keep a slot. */
-	get monthlyRollups(): MonthlyRollup[] {
-		return monthlyRollups(this.#summaries, this.#rangeStart, this.#today);
+	/** Per-7-day-block averages for the year chart; empty blocks keep a slot. */
+	get weeklyRollups(): WeeklyRollup[] {
+		return weeklyRollups(this.#summaries, this.#rangeStart, this.#rangeDays);
 	}
 	get metricTrend(): MetricTrendPoint[] | null {
 		return this.#metricTrend;
+	}
+	/** The same series rolled up for the year chart; empty while `metricTrend` is
+	 *  `null`, which is the state the card already renders as pending. */
+	get weeklyMetricTrend(): WeeklyMetricTrend[] {
+		return this.#metricTrend === null
+			? []
+			: rollUpMetricTrendByWeek(this.#metricTrend, this.#rangeStart, this.#rangeDays);
 	}
 
 	// ----- The model cards -----

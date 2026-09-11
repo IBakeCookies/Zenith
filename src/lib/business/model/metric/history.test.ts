@@ -14,10 +14,12 @@ import {
 	findBestDay,
 	loggedHours,
 	longestStreak,
-	monthlyRollups,
 	restSummary,
+	rollUpMetricTrendByWeek,
 	summarizeSession,
+	weeklyRollups,
 	type DaySummary,
+	type MetricTrendPoint,
 } from '$lib/business/model/metric/history';
 import { DEFAULT_ENERGY_PARAMS } from '$lib/business/model/zenith-energy';
 import {
@@ -495,64 +497,112 @@ describe('countQuadrants', () => {
 	});
 });
 
-describe('monthlyRollups', () => {
-	it('keeps a slot for months with no recorded day', () => {
-		const months = monthlyRollups(
-			[day('2026-05-04', 40), day('2026-07-02', 80)],
-			'2026-05-01',
-			'2026-07-26',
-		);
+describe('weeklyRollups', () => {
+	it('chunks the range into 7-day blocks, the last ending on the range final day', () => {
+		const weeks = weeklyRollups([], '2026-07-01', 14);
 
-		expect(months.map((month) => month.month)).toEqual(['2026-05', '2026-06', '2026-07']);
-
-		expect(months[1]).toEqual({
-			month: '2026-06',
-			average: null,
-			yieldAverage: null,
-			dayCount: 0,
-		});
+		expect(weeks.map((week) => week.start)).toEqual(['2026-07-01', '2026-07-08']);
 	});
 
-	it('averages only the days recorded in each month', () => {
-		const months = monthlyRollups(
-			[day('2026-07-02', 80), day('2026-07-03', 50), day('2026-07-04', 20)],
+	// The remainder goes to the OLDEST block, so the most recent point is a full
+	// week rather than however many days the range happens to leave over.
+	it('gives the remainder to the oldest block', () => {
+		const weeks = weeklyRollups([], '2026-07-01', 16);
+
+		expect(weeks.map((week) => week.start)).toEqual(['2026-07-01', '2026-07-03', '2026-07-10']);
+	});
+
+	it('averages only the days recorded in each block', () => {
+		const weeks = weeklyRollups(
+			[day('2026-07-02', 80), day('2026-07-03', 20), day('2026-07-09', 50)],
 			'2026-07-01',
-			'2026-07-26',
+			14,
 		);
 
-		expect(months).toEqual([
+		expect(weeks[0].average).toBe(50);
+		expect(weeks[0].dayCount).toBe(2);
+		expect(weeks[1].average).toBe(50);
+		expect(weeks[1].dayCount).toBe(1);
+	});
+
+	it('keeps a slot for a block with no recorded day, with no reading', () => {
+		const weeks = weeklyRollups([day('2026-07-02', 80)], '2026-07-01', 14);
+
+		// The slot the chart breaks its line at, never a 0.
+		expect(weeks[1].average).toBeNull();
+		expect(weeks[1].yieldAverage).toBeNull();
+		expect(weeks[1].dayCount).toBe(0);
+	});
+
+	// 52 labels do not fit the axis, so the year view prints one per calendar
+	// month — the block that opens one carries it.
+	it('marks the block that opens a calendar month', () => {
+		const weeks = weeklyRollups([], '2026-06-24', 21);
+
+		expect(weeks.map((week) => week.start)).toEqual(['2026-06-24', '2026-07-01', '2026-07-08']);
+		expect(weeks.map((week) => week.isMonthStart)).toEqual([true, true, false]);
+	});
+
+	// The same gate the daily line holds: `yieldIndex` is 0 on a day that finished
+	// nothing, and averaging those zeroes in reads as a bad week, not an idle one.
+	it('averages yield over the days that completed something', () => {
+		const weeks = weeklyRollups(
+			[day('2026-07-02', 80, 1, 90), day('2026-07-03', 0, 0, 0)],
+			'2026-07-01',
+			7,
+		);
+
+		expect(weeks[0].yieldAverage).toBe(90);
+	});
+
+	it('reads no blocks from an empty range', () => {
+		expect(weeklyRollups([], '2026-07-01', 0)).toEqual([]);
+	});
+});
+
+describe('rollUpMetricTrendByWeek', () => {
+	const trendPoint = (date: string, burnoutRisk: number): MetricTrendPoint => ({
+		date,
+		burnoutRisk,
+		cognitiveLoad: burnoutRisk + 1,
+		physicalLoad: burnoutRisk + 2,
+	});
+
+	it('averages each reading over the days recorded in the block', () => {
+		const weeks = rollUpMetricTrendByWeek(
+			[trendPoint('2026-07-02', 80), trendPoint('2026-07-03', 20)],
+			'2026-07-01',
+			7,
+		);
+
+		expect(weeks).toEqual([
 			{
-				month: '2026-07',
-				average: 50,
-				yieldAverage: 80,
-				dayCount: 3,
+				start: '2026-07-01',
+				isMonthStart: true,
+				burnoutRisk: 50,
+				cognitiveLoad: 51,
+				physicalLoad: 52,
 			},
 		]);
 	});
 
-	it('crosses the year boundary', () => {
-		const months = monthlyRollups([day('2026-01-05', 60)], '2025-11-14', '2026-01-05');
-		expect(months.map((month) => month.month)).toEqual(['2025-11', '2025-12', '2026-01']);
-		expect(months[2].average).toBe(60);
-	});
+	// The same blocks `weeklyRollups` walks, so the two year charts line up slot
+	// for slot.
+	it('keeps a slot for a block with no recorded day, with no reading', () => {
+		const weeks = rollUpMetricTrendByWeek([trendPoint('2026-07-02', 80)], '2026-07-01', 14);
 
-	// The same gate the daily line holds: `yieldIndex` is 0 on a day that finished
-	// nothing, and averaging those zeroes in reads as a bad month, not an idle one.
-	it('averages yield over the days that completed something', () => {
-		const months = monthlyRollups(
-			[day('2026-07-02', 80, 1, 90), day('2026-07-03', 0, 0, 0)],
-			'2026-07-01',
-			'2026-07-26',
-		);
-
-		expect(months[0].yieldAverage).toBe(90);
-	});
-
-	it('leaves a month with no completing day without a yield reading', () => {
-		const months = monthlyRollups([day('2026-06-02', 0, 0, 0)], '2026-06-01', '2026-07-26');
-
+		expect(weeks).toHaveLength(2);
 		// The slot the chart breaks its line at, never a 0.
-		expect(months[0].yieldAverage).toBeNull();
-		expect(months[1].yieldAverage).toBeNull();
+		expect(weeks[1].burnoutRisk).toBeNull();
+		expect(weeks[1].cognitiveLoad).toBeNull();
+		expect(weeks[1].physicalLoad).toBeNull();
+	});
+
+	it('lines its blocks up with the completion chart', () => {
+		const starts = (rows: { start: string }[]) => rows.map((row) => row.start);
+
+		expect(starts(rollUpMetricTrendByWeek([], '2025-09-12', 365))).toEqual(
+			starts(weeklyRollups([], '2025-09-12', 365)),
+		);
 	});
 });

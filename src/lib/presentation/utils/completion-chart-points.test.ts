@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { DaySummary, MonthlyRollup } from '$lib/business/model/metric/history';
+import type { DaySummary, WeeklyRollup } from '$lib/business/model/metric/history';
 import {
 	completionChartPoints,
 	type CompletionChartInput,
@@ -21,7 +21,7 @@ const summary = (date: string, completionRate: number, completedTasks = 1): DayS
 const input = (over: Partial<CompletionChartInput> = {}): CompletionChartInput => ({
 	range: 'week',
 	summaries: [],
-	monthlyRollups: [],
+	weeklyRollups: [],
 	rangeStart: '2026-07-25',
 	rangeDays: 7,
 	today: '2026-07-31',
@@ -30,11 +30,22 @@ const input = (over: Partial<CompletionChartInput> = {}): CompletionChartInput =
 });
 
 describe('completionChartPoints', () => {
-	it('gives the week view one slot per day, weekday-labelled', () => {
+	// Date-labelled, like the month view and like the Load chart under it: three
+	// axes reading three ways made the same range look like three ranges.
+	it('gives the week view one slot per day, date-labelled', () => {
 		const points = completionChartPoints(input());
 
 		expect(points).toHaveLength(7);
-		expect(points.map((p) => p.label)).toEqual(['Sat', 'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri']);
+
+		expect(points.map((p) => p.label)).toEqual([
+			'Jul 25',
+			'Jul 26',
+			'Jul 27',
+			'Jul 28',
+			'Jul 29',
+			'Jul 30',
+			'Jul 31',
+		]);
 	});
 
 	// The chart draws these two differently — a 0% day gets a stub, an unrecorded
@@ -81,48 +92,60 @@ describe('completionChartPoints', () => {
 			}),
 		);
 
-		expect(points[0].label).toBe('Sa');
+		expect(points[0].label).toBe('25. Juli');
 	});
 
-	it('gives the year view one slot per month, always labelled', () => {
-		const monthlyRollups: MonthlyRollup[] = [
+	it('gives the year view one slot per 7-day block, labelled once a month', () => {
+		const weeklyRollups: WeeklyRollup[] = [
 			{
-				month: '2026-06',
+				start: '2026-06-24',
+				isMonthStart: true,
 				average: 72,
 				yieldAverage: null,
-				dayCount: 12,
+				dayCount: 5,
 			},
 			{
-				month: '2026-07',
+				start: '2026-07-01',
+				isMonthStart: true,
 				average: null,
 				yieldAverage: null,
 				dayCount: 0,
+			},
+			{
+				start: '2026-07-08',
+				isMonthStart: false,
+				average: 40,
+				yieldAverage: 60,
+				dayCount: 7,
 			},
 		];
 
 		const points = completionChartPoints(
 			input({
 				range: 'year',
-				monthlyRollups,
+				weeklyRollups,
 			}),
 		);
 
-		expect(points.map((p) => p.label)).toEqual(['Jun', 'Jul']);
-		expect(points.map((p) => p.showLabel)).toEqual([true, true]);
-		expect(points[0].full).toBe('June 2026');
+		expect(points.map((p) => p.label)).toEqual(['Jun', 'Jul', '']);
+		// 52 labels do not fit the axis; only the block opening a month prints one.
+		expect(points.map((p) => p.showLabel)).toEqual([true, true, false]);
+		expect(points[0].full).toBe('Week of Jun 24');
 		expect(points[0].value).toBe(72);
-		expect(points[0].sub).toBe('12 active days');
+		expect(points[0].sub).toBe('5 active days');
 		expect(points[1].value).toBeNull();
 		expect(points[1].sub).toBe('no data');
+		expect(points[2].line).toBe(60);
 	});
 
-	it('spells a single active month in the singular', () => {
+	it('spells a single active day in the block in the singular', () => {
 		const points = completionChartPoints(
 			input({
 				range: 'year',
-				monthlyRollups: [
+				weeklyRollups: [
 					{
-						month: '2026-07',
+						start: '2026-07-01',
+						isMonthStart: true,
 						average: 40,
 						yieldAverage: null,
 						dayCount: 1,

@@ -147,7 +147,9 @@
 		analytics.metricTrend === null
 			? null
 			: metricTrendSeries({
+					range: analytics.range,
 					trend: analytics.metricTrend,
+					weeklyTrend: analytics.weeklyMetricTrend,
 					rangeStart: analytics.rangeStart,
 					rangeDays: analytics.rangeDays,
 					locale: getDateLocale(),
@@ -236,7 +238,7 @@
 		completionChartPoints({
 			range: analytics.range,
 			summaries: analytics.summaries,
-			monthlyRollups: analytics.monthlyRollups,
+			weeklyRollups: analytics.weeklyRollups,
 			rangeStart: analytics.rangeStart,
 			rangeDays: analytics.rangeDays,
 			today: analytics.today,
@@ -439,7 +441,9 @@
 	<!-- Load and burnout over the range -->
 	<div class="card-shell mt-grid-xl rounded-xl p-box-lg">
 		<h2 class="text-sm font-medium text-ty-primary">{m.ana_load_trend()}</h2>
-		<p class="mt-text-3xs text-xs text-ty-silent">{m.ana_load_trend_hint()}</p>
+		<p class="mt-text-3xs text-xs text-ty-silent">
+			{analytics.range === 'year' ? m.ana_load_trend_hint_year() : m.ana_load_trend_hint()}
+		</p>
 
 		{#if analytics.hasModelReportFailed}
 			{@render reportFailed()}
