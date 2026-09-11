@@ -102,7 +102,7 @@ export interface UserConstants {
 export const DEFAULT_USER_CONSTANTS: UserConstants = {
 	c1: 0.56, // Higher effort → longer time to flow
 	c2: -0.24, // Higher enjoyability → shorter time to flow
-	c3: 0.5, // Prior offset; the article uses 0 and ϕ stays positive either way (MATH.md §1)
+	c3: 0.5, // Unmeasured prior, not a floor; the article uses 0 (MATH.md §1)
 };
 
 // Default context-switching cost in hours (15 minutes). Empirically defensible:

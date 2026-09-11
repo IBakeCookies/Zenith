@@ -52,32 +52,32 @@ retype a row, regenerate:
 
 ```text
 §0           85-126  Objective
-§1          128-162  Inputs and parameter mappings
-§2          164-280  Productivity curve — v2 change
-§3          282-374  Optimal stopping — v2 change: per-task, no longer a univ…
-§4          376-465  Allocation — v2 change: discrete blocks, exact greedy, e…
-§5          467-755  Personalization — v2 change: full Bayesian posterior
-  §5.2      566-644  Recency weighting of the ϕ fit
-  §5.1      646-755  Posterior-aware allocation
-§6          757-769  Summary of v1 → v2 changes
-§7          771-796  Known approximations and deliberate non-changes
-§8         798-1885  Energy model (zenith-energy.ts) — fatigue-recovery exten…
-  §8.1      810-832  Intermittent-rest recovery correction
-  §8.2      834-853  Warm-up carryover instead of binary reset
-  §8.3      855-873  Verified consequences and a calibration question, closed
-  §8.4      875-945  Per-task satiety — concave daily value
-  §8.5      947-987  Micro-recovery gate — a positive floor for full-demand t…
-  §8.6     989-1035  Optimizer reliability — compound moves and drop-one seeds
-  §8.7    1037-1132  Drain-rate calibration from end-of-session ratings
-  §8.8    1134-1169  45-minute plan granularity
-  §8.9    1171-1218  Recovery-rate calibration from pre/post-rest pairs
-  §8.10   1220-1471  Stopping-value calibration from observed stop times
-  §8.11   1473-1604  Live stop advisor — §8.10 run forward mid-day
-  §8.12   1606-1760  The budget curve — what the day's LENGTH is worth
-  §8.13   1762-1826  Capacity from the fitted drain rate
-  §8.14   1828-1885  Per-title drain rate — which task costs more than its sl…
-§9        1887-1949  Plan-adherence reading and its verdict band
-§10       1951-1998  References
+§1          128-167  Inputs and parameter mappings
+§2          169-285  Productivity curve — v2 change
+§3          287-379  Optimal stopping — v2 change: per-task, no longer a univ…
+§4          381-470  Allocation — v2 change: discrete blocks, exact greedy, e…
+§5          472-760  Personalization — v2 change: full Bayesian posterior
+  §5.2      571-649  Recency weighting of the ϕ fit
+  §5.1      651-760  Posterior-aware allocation
+§6          762-774  Summary of v1 → v2 changes
+§7          776-801  Known approximations and deliberate non-changes
+§8         803-1890  Energy model (zenith-energy.ts) — fatigue-recovery exten…
+  §8.1      815-837  Intermittent-rest recovery correction
+  §8.2      839-858  Warm-up carryover instead of binary reset
+  §8.3      860-878  Verified consequences and a calibration question, closed
+  §8.4      880-950  Per-task satiety — concave daily value
+  §8.5      952-992  Micro-recovery gate — a positive floor for full-demand t…
+  §8.6     994-1040  Optimizer reliability — compound moves and drop-one seeds
+  §8.7    1042-1137  Drain-rate calibration from end-of-session ratings
+  §8.8    1139-1174  45-minute plan granularity
+  §8.9    1176-1223  Recovery-rate calibration from pre/post-rest pairs
+  §8.10   1225-1476  Stopping-value calibration from observed stop times
+  §8.11   1478-1609  Live stop advisor — §8.10 run forward mid-day
+  §8.12   1611-1765  The budget curve — what the day's LENGTH is worth
+  §8.13   1767-1831  Capacity from the fitted drain rate
+  §8.14   1833-1890  Per-title drain rate — which task costs more than its sl…
+§9        1892-1954  Plan-adherence reading and its verdict band
+§10       1956-2003  References
 ```
 
 <!-- section-index:end -->
@@ -141,14 +141,19 @@ a  = E·β                            (peak productivity scale)
 Defaults `c₁ = 0.56, c₂ = −0.24, c₃ = 0.5`; ϕ is floored at 0.1h because a
 fitted plane can extrapolate to ≤ 0 far from the measured tasks.
 
-The `Eᵤ`, `βᵤ` maps and the ϕ plane with `c₁ = 0.56, c₂ = −0.24` are the
-article's. The rest is ours: the article's worked examples run `c₃ = 0`;
-our 0.5 is a prior, not a floor — on the input ranges ϕ stays ≥ 0.08 h at
-`c₃ = 0`, and it adds half an hour to every fresh user's time-to-flow (about
-0.75–0.9 h to every T*) until logs fit it away. The article's own
-mappings are `p₀ = β²/E²` and `a = β²·(1 + ln E)`. We kept `β/E` and `E·β`
-from v1 (§2 explains what the curve needs from them; §7 records why `a`
-monotone in `E` stays).
+The `Eᵤ`, `βᵤ` maps and the ϕ plane with `c₁, c₂` are the article's. `c₃`
+is not: the article runs `c₃ = 0`, and our 0.5 is an unmeasured prior, not
+the positivity guard it was long documented as — at `c₃ = 0` the default
+plane bottoms out at `0.56 − 0.48 = 0.08` h (difficulty 1, enjoyment 10),
+so it never needs the floor. Being also the prior mean of the constants
+fit, the 0.5 adds half an hour to every fresh user's time-to-flow (0.75–0.9
+h to every T*) until logs fit it away, hardest on easy tasks in relative
+terms. It stays for now because 43 tests across the model, energy and
+metric suites pin numbers read at 0.5, and because a fitted `c₃` from real
+⚡ logs, not an argument, should choose between the two. The mappings are
+ours too: the article's are `p₀ = β²/E²` and `a = β²·(1 + ln E)`, we kept
+`β/E` and `E·β` from v1 (§2 explains what the curve needs from them; §7
+records why `a` monotone in `E` stays).
 
 **v2 amplitude cap.** The v2 curve (§2) requires `p₀ < a`. With the mappings
 above, `p₀/a = 1/E²`, which reaches exactly 1 at `E = 1` (user difficulty 1) —
