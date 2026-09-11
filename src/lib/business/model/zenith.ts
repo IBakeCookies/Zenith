@@ -11,10 +11,12 @@
  * the reasoning behind every deviation live in /MATH.md. Summary of v2:
  *
  * 1. NEW PRODUCTIVITY CURVE  p(t) = (a·k·t + p₀)·e^(−kt), k = (1 − p₀/a)/ϕ.
- *    The article's curve p(t) = (a+p₀)·k·t·e^(−kt) had p(0) = 0, so its
- *    "initial productivity" p₀ was really just an amplitude term. The v2
- *    curve actually starts at p(0) = p₀, still peaks exactly at t = ϕ
- *    (with value a·e^(p₀/a − 1)), and still has closed-form integrals.
+ *    Our v1 curve p(t) = (a+p₀)·k·t·e^(−kt) had p(0) = 0, so its "initial
+ *    productivity" p₀ was really just an amplitude term. The v2 curve starts
+ *    at p(0) = p₀, still peaks exactly at t = ϕ (with value a·e^(p₀/a − 1)),
+ *    and still has closed-form integrals. The article's own curve is
+ *    p₀ + a·t·e^(−t/ϕ) with p₀ = β²/E², a = β²(1+ln E); MATH.md §2 says why
+ *    we did not return to it.
  *
  * 2. PER-TASK OPTIMAL STOPPING. The optimal-stopping equation becomes
  *    eˣ = 1 + x + x²/(1+r) with r = p₀/a and x = k·t — the article's
@@ -100,7 +102,7 @@ export interface UserConstants {
 export const DEFAULT_USER_CONSTANTS: UserConstants = {
 	c1: 0.56, // Higher effort → longer time to flow
 	c2: -0.24, // Higher enjoyability → shorter time to flow
-	c3: 0.5, // Base offset to keep ϕ positive
+	c3: 0.5, // Prior offset; the article uses 0 and ϕ stays positive either way (MATH.md §1)
 };
 
 // Default context-switching cost in hours (15 minutes). Empirically defensible:
@@ -194,7 +196,7 @@ export function calculateFlowStateTime(E: number, beta: number, constants: UserC
 }
 
 /**
- * Initial productivity p₀ = β/E (MATH.md §1).
+ * Initial productivity p₀ = β/E (MATH.md §1; the article's is β²/E²).
  *
  * v2: with the new curve this genuinely IS the productivity at t = 0
  * (p(0) = p₀), fixing the v1 mismatch where the curve forced p(0) = 0 and p₀
