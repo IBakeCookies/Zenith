@@ -70,7 +70,7 @@
 	<!-- Four across, each behind a rule in its own band colour — the rule is what
 	     makes an out-of-the-ordinary reading findable without reading any of the
 	     numbers. -->
-	<div class="grid grid-cols-1 gap-grid-sm sm:grid-cols-2 lg:grid-cols-4">
+	<div class="grid grid-cols-2 gap-grid-sm lg:grid-cols-4">
 		{#each headline as item (item.label)}
 			<div class="border-l-2 pl-box-xs {BAND_BORDER_CLASS[item.band]}">
 				<MetricLabel text={item.label} description={item.description} />

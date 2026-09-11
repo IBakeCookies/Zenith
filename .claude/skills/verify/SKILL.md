@@ -18,10 +18,11 @@ plus its open theme-dropdown into `screenshots/`, then Read them.
 
 ## README hero shot
 
-`BASE_URL=http://localhost:4173 node scripts/readme-screenshot.mjs` — seeds a
-fixed three-task day through the app's import and writes
-`static/fallow-daily-time-allocation.png`. Run it against the production
-preview (`npm run build && npm run preview`), not the dev server.
+`npm run screenshot:readme` — builds, starts `vite preview`, seeds a fixed
+three-task day through the app's import and writes
+`static/fallow-daily-time-allocation.png`. `BASE_URL=http://localhost:5173
+node scripts/readme-screenshot.mjs` shoots a running dev server instead, but
+the README should show production styling.
 
 ## Drive (Playwright)
 

@@ -24,7 +24,7 @@
      so its dashes paint over the switch fill they share the track with. -->
 <div
 	class={cn(
-		'relative h-3 overflow-hidden rounded-lg bg-surface-inset',
+		'relative h-2 lg:h-3 overflow-hidden rounded-lg bg-surface-inset',
 		block.isCompleted && 'opacity-60',
 		className,
 	)}
