@@ -135,6 +135,33 @@ describe('latestRatingsByTitle', () => {
 
 		expect(ratings.get('gym session')?.title).toBe('Gym Session');
 	});
+
+	it('carries the tags of the latest use', () => {
+		const ratings = latestRatingsByTitle([
+			session('2026-08-01', [
+				task('Gym', 8, 2, 3, {
+					tags: ['errand'],
+				}),
+			]),
+			session('2026-08-03', [
+				task('Gym', 8, 2, 3, {
+					tags: ['strength', 'morning'],
+				}),
+			]),
+		]);
+
+		expect(ratings.get('gym')).toMatchObject({
+			tags: ['strength', 'morning'],
+		});
+	});
+
+	it('reports an untagged task as untagged rather than as absent', () => {
+		const ratings = latestRatingsByTitle([session('2026-08-01', [task('Gym', 8, 2, 3)])]);
+
+		expect(ratings.get('gym')).toMatchObject({
+			tags: [],
+		});
+	});
 });
 
 describe('suggestTitles', () => {
