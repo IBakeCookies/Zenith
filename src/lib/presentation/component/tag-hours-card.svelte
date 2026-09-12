@@ -109,7 +109,7 @@
 	}
 </script>
 
-<div class={cn('card-shell mt-grid-xl rounded-xl p-box-lg', className)}>
+<div class={cn('card-shell rounded-xl p-box-lg', className)}>
 	<h2 class="text-sm font-medium text-ty-primary">{m.ana_tag_hours()}</h2>
 	<p class="mt-text-3xs text-xs text-ty-silent">{m.ana_tag_hours_hint()}</p>
 
