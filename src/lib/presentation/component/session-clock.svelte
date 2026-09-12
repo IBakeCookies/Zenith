@@ -141,7 +141,7 @@
 	class={cn(
 		'overflow-hidden relative flex shrink-0 rounded-lg border transition-colors has-focus-visible:ring-2 has-focus-visible:ring-ring',
 		isStopped ? 'bg-surface-inset' : 'bg-input',
-		!isStopped && hasRung ? 'border-flow-line' : 'border-transparent',
+		!isStopped && hasRung ? 'border-flow-line' : 'border-border',
 		className,
 	)}
 >
