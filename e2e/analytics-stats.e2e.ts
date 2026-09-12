@@ -152,7 +152,7 @@ test('the merged card names both series', async ({ page }) => {
 	).toBeVisible();
 });
 
-test('the year view keeps both series on monthly slots', async ({ page }) => {
+test('the year view keeps both series on weekly slots', async ({ page }) => {
 	await seedCompletedDay(page);
 
 	await page
@@ -161,9 +161,9 @@ test('the year view keeps both series on monthly slots', async ({ page }) => {
 		})
 		.click();
 
-	await expect(page.getByText(/Monthly average of the priority-weighted/)).toBeVisible();
+	await expect(page.getByText(/Weekly average of the priority-weighted/)).toBeVisible();
 
-	// Drawn, not merely legended. One recorded month has no neighbour to draw a
+	// Drawn, not merely legended. One recorded week has no neighbour to draw a
 	// line to, so the run of one is a dot — the same reading the trend chart plots.
 	await expect(
 		page.locator('svg path.stroke-brand-counter, svg circle.fill-brand-counter'),
@@ -193,8 +193,8 @@ test('the range toggle reslices the stats', async ({ page }) => {
 
 	await expect(activeDays).toContainText('/ 365');
 
-	// The year view switches the chart from days to monthly averages
-	await expect(page.getByText(/Monthly average of the priority-weighted/)).toBeVisible();
+	// The year view switches the chart from days to weekly averages
+	await expect(page.getByText(/Weekly average of the priority-weighted/)).toBeVisible();
 
 	await page
 		.getByRole('button', {
