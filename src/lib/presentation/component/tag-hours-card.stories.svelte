@@ -73,6 +73,17 @@
 		RANGE_START,
 	);
 
+	// A tag long enough to outgrow the label column, beside a short one.
+	const longTag = tagHours(
+		[drain(1, 2), drain(2, 1)],
+		[day([task(1, ['adjhwjkahdajkhdwjkahd-and-then-some']), task(2, ['gym'])])],
+		RANGE_START,
+	);
+
+	/** Where a row's bar starts, rounded — rows line up when they all report one x. */
+	const trackLeft = (row: HTMLElement) =>
+		Math.round(row.querySelector('.band-track')!.getBoundingClientRect().left);
+
 	/** A row's bar, as a whole percentage — the share the reader actually sees. */
 	const fillPercent = (row: HTMLElement) =>
 		Math.round(parseFloat(row.querySelector<HTMLElement>('.band-track > div')!.style.width));
@@ -109,9 +120,23 @@
 		expect(fillPercent(rows[1])).toBe(33);
 		expect(fillPercent(rows[2])).toBe(13);
 
-		// The bar takes the width the label and the hours leave, rather than a fixed
-		// one that leaves half the card empty.
-		expect(rows[0].querySelector('.band-track')).toHaveClass('flex-1');
+		// One column for every row: the untagged row carries no ✎ ✕ pair, and without
+		// a shared grid its bar would start where theirs do not.
+		expect(new Set(rows.map(trackLeft)).size).toBe(1);
+	}}
+/>
+
+<Story
+	name="A long tag keeps the bars in line"
+	args={{
+		breakdown: longTag,
+	}}
+	play={async ({ canvas }) => {
+		// The label column sizes to the longest label the card holds, capped — so a tag
+		// nobody would shorten still leaves every bar starting at the same x.
+		const rows = canvas.getAllByRole('listitem');
+
+		expect(new Set(rows.map(trackLeft)).size).toBe(1);
 	}}
 />
 

@@ -69,6 +69,8 @@
 			onimportdate: fn(() => Promise.resolve(0)),
 			onsaveroutine: fn(),
 			ondeleteroutine: fn(),
+			carryCount: 0,
+			oncarry: fn(),
 		},
 	});
 </script>
@@ -371,5 +373,36 @@
 		await expect(args.onsaveroutine).toHaveBeenCalledTimes(1);
 		await expect(args.onsaveroutine).toHaveBeenCalledWith('Deep work');
 		await waitFor(() => expect(body.queryByRole('menu')).not.toBeInTheDocument());
+	}}
+/>
+
+<Story
+	name="Nothing to carry"
+	args={{
+		currentTasks: [
+			{
+				...task(1, 'boxing'),
+				completed: true,
+			},
+			{
+				...task(2, 'writing'),
+				completed: true,
+			},
+		],
+	}}
+	play={async ({ canvas }) => {
+		// Every task done: a completed task is history, so there is nothing to send on and
+		// the control is not drawn — Save still reads the day.
+		await expect(
+			canvas.queryByRole('button', {
+				name: /Carry \d+ to tomorrow/,
+			}),
+		).not.toBeInTheDocument();
+
+		await expect(
+			canvas.getByRole('button', {
+				name: 'Save',
+			}),
+		).toBeInTheDocument();
 	}}
 />

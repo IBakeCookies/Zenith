@@ -120,86 +120,91 @@
 	{:else if rows.length === 0}
 		<p class="mt-text-md text-sm text-ty-secondary">{m.ana_tag_hours_empty()}</p>
 	{:else}
-		<ul class="mt-text-md grid gap-text-xs">
+		<!-- A grid, not a row of flex boxes: the label column has to be one width for
+		     every row, or a long tag — or the ✎ ✕ pair a tag row has and the untagged row
+		     has not — starts that row's bar at its own x. The list owns the three
+		     columns and each row takes them by subgrid, so the column sizes to the
+		     longest label the card actually holds rather than to a guess. -->
+		<ul class="mt-text-md grid grid-cols-[auto_1fr_auto] items-center gap-x-grid-xs gap-y-text-xs">
 			<!-- Keyed on the tag, never the label: a locale whose untagged label is a legal
 			     tag (zh's 无标签) collides, and a duplicate key crashes the card. -->
 			{#each rows as row (row.tag ?? null)}
-				<li>
-					<div class="flex flex-wrap items-center justify-between gap-x-grid-xs">
-						<div class="flex items-center gap-grid-2xs">
-							<div class="text-xs text-ty-silent">{row.label}</div>
+				<li class="col-span-3 grid grid-cols-subgrid items-center">
+					<div class="flex items-center gap-grid-2xs">
+						<!-- Capped and wrapping: an unbroken 40-character tag would otherwise push
+						     the column past the track it is supposed to leave room for. -->
+						<div class="max-w-40 text-xs break-words text-ty-silent">{row.label}</div>
 
-							{#if row.tag !== undefined}
-								{@const tag = row.tag}
-								<!-- A tag comes off every day it was ever put on and nothing hands it
-								     back, so the ✕ only arms; the confirm focuses cancel, so a stray
-								     Enter cannot drop one. -->
-								{#if confirmingTag === tag}
-									<button
-										type="button"
-										aria-label={m.ana_tag_hours_delete_confirm({
-											tag,
-										})}
-										class="row-action text-xs font-medium text-danger hover:text-danger-strong"
-										onclick={() => remove(tag)}
-									>
-										{m.ana_tag_hours_delete_prompt()}
-									</button>
-									<button
-										type="button"
-										class="row-action text-xs text-ty-silent hover:text-ty-secondary"
-										{@attach (node: HTMLElement) => node.focus()}
-										onclick={() => (confirmingTag = null)}
-									>
-										{m.common_cancel()}
-									</button>
-								{:else}
-									<button
-										type="button"
-										aria-label={m.ana_tag_hours_rename({
-											tag,
-										})}
-										class="row-action text-ty-silent hover:text-ty-secondary"
-										onclick={() => toggleEditor(tag)}
-									>
-										<Pencil />
-									</button>
-									<button
-										type="button"
-										aria-label={m.ana_tag_hours_delete({
-											tag,
-										})}
-										class="row-action text-ty-silent hover:text-danger"
-										onclick={() => (confirmingTag = tag)}
-									>
-										<X />
-									</button>
-								{/if}
+						{#if row.tag !== undefined}
+							{@const tag = row.tag}
+							<!-- A tag comes off every day it was ever put on and nothing hands it
+							     back, so the ✕ only arms; the confirm focuses cancel, so a stray
+							     Enter cannot drop one. -->
+							{#if confirmingTag === tag}
+								<button
+									type="button"
+									aria-label={m.ana_tag_hours_delete_confirm({
+										tag,
+									})}
+									class="row-action text-xs font-medium text-danger hover:text-danger-strong"
+									onclick={() => remove(tag)}
+								>
+									{m.ana_tag_hours_delete_prompt()}
+								</button>
+								<button
+									type="button"
+									class="row-action text-xs text-ty-silent hover:text-ty-secondary"
+									{@attach (node: HTMLElement) => node.focus()}
+									onclick={() => (confirmingTag = null)}
+								>
+									{m.common_cancel()}
+								</button>
+							{:else}
+								<button
+									type="button"
+									aria-label={m.ana_tag_hours_rename({
+										tag,
+									})}
+									class="row-action text-ty-silent hover:text-ty-secondary"
+									onclick={() => toggleEditor(tag)}
+								>
+									<Pencil />
+								</button>
+								<button
+									type="button"
+									aria-label={m.ana_tag_hours_delete({
+										tag,
+									})}
+									class="row-action text-ty-silent hover:text-danger"
+									onclick={() => (confirmingTag = tag)}
+								>
+									<X />
+								</button>
 							{/if}
-						</div>
-
-						<!-- Between the label group and the hours, so the row reads
-						     label · share · hours. Unbanded: nothing here judges a tag. -->
-						<MetricTrack
-							track={{
-								kind: 'bar',
-								filled: row.hours,
-								total,
-							}}
-							band="neutral"
-							class="flex-1"
-						/>
-
-						<span class="text-sm font-medium text-ty-primary">
-							<span class="tabular-nums">{hours(row.hours)}</span>
-							{m.unit_hours()}
-						</span>
+						{/if}
 					</div>
+
+					<!-- Between the label column and the hours, so the row reads
+					     label · share · hours. Unbanded: nothing here judges a tag. -->
+					<MetricTrack
+						track={{
+							kind: 'bar',
+							filled: row.hours,
+							total,
+						}}
+						band="neutral"
+						class="min-w-0"
+					/>
+
+					<span class="text-sm font-medium text-ty-primary">
+						<span class="tabular-nums">{hours(row.hours)}</span>
+						{m.unit_hours()}
+					</span>
 
 					{#if row.tag !== undefined && editingTag === row.tag}
 						{@const tag = row.tag}
 						<form
-							class="mt-text-xs flex flex-wrap items-end gap-grid-2xs rounded-lg border border-line-soft bg-surface-wash p-box-lg"
+							class="col-span-3 flex flex-wrap items-end gap-grid-2xs rounded-lg border border-line-soft bg-surface-wash p-box-lg"
 							onsubmit={(e) => (e.preventDefault(), save(tag))}
 						>
 							<label class="flex-1 text-2xs text-ty-silent">
