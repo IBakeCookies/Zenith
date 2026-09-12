@@ -16,10 +16,9 @@ import {
  *  the same field and slider labels. */
 const addForm = (page: Page) => page.getByRole('dialog').locator('form');
 
-/* Two rated titles on a past day. Written straight into IndexedDB because past
-   days are read-only in the UI, and today's own titles are the ones the ranking
-   deliberately filters out — so there is no path through the app to a history
-   this feature can rank at all. */
+/* Two rated titles on a past day, written straight into IndexedDB: today's own
+   titles are the ones the ranking deliberately filters out, and typing them onto
+   a past day is slower than seeding the record. */
 async function seedRatedPastDay(page: Page) {
 	await page.evaluate(
 		(date) =>

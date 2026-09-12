@@ -962,3 +962,19 @@ in the feature file; two readings became findings.
   margin decision holds (largest movement 0.0185). Reading a v2 half-width is
   the first step, and it is `stop-inversion-margin.probe.ts`'s to take, one
   instrument per commit.
+
+## Findings from the 2026-09-12 past-day build
+
+Noticed while building
+[`the-day-you-could-not-correct`](docs/features/the-day-you-could-not-correct.md);
+the **S** series continues from the 2026-08-25 review above.
+
+- **S7 — a stored day is written back once on every load.** The autosave
+  `$effect` re-runs when `#loadSession` assigns the day it read, and its dirty
+  test is true for any stored day, so opening one schedules a write of identical
+  content with a fresh `updatedAt`. Pre-existing on today and future days; since
+  past days became correctable it reaches them too, so every visit to a stored
+  past day bumps `pastWriteGeneration` and the Lab re-folds its stop
+  observations. Benign — `updatedAt` has no reader beyond the sanitizer — and one
+  redundant put per visit. The fix is a "changed since load" notion in the dirty
+  test, which is a change of its own.

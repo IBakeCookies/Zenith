@@ -46,9 +46,7 @@
 		/** Under the list — `/`'s legend; threaded to the card like `strip`. */
 		foot?: Snippet;
 		/** The day's Load and Save, rendered on the card's header row — the page owns the
-		 *  callbacks behind them. Passed on every day, unlike `form`:
-		 *  what a past day withholds is inside `day-actions.svelte`, since both menus
-		 *  read the same guard. */
+		 *  callbacks behind them. */
 		actions?: Snippet;
 		/** Passed straight to the card: the empty state's way into the example day. */
 		exampleDayHref?: string;

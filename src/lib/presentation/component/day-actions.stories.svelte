@@ -257,18 +257,19 @@
 		currentTasks: [task(3, 'now')],
 	}}
 	play={async ({ canvas }) => {
-		// A past day hides both import menus — even with things to load and save
+		// A past day is corrected like today, so both menus stay: Load is how tasks get
+		// into a day being corrected, and Save reads the day rather than rewriting it.
 		await expect(
-			canvas.queryByRole('button', {
+			canvas.getByRole('button', {
 				name: 'Load',
 			}),
-		).not.toBeInTheDocument();
+		).toBeInTheDocument();
 
 		await expect(
-			canvas.queryByRole('button', {
+			canvas.getByRole('button', {
 				name: 'Save',
 			}),
-		).not.toBeInTheDocument();
+		).toBeInTheDocument();
 	}}
 />
 

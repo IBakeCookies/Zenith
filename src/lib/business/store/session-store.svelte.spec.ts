@@ -391,7 +391,7 @@ describe('SessionStore persistence', () => {
 
 	/* ⚡ became correctable on a past day on 2026-08-10. It could not be before, because
 	   the badge read a `flowMinutes` field stamped on the day's session and the auto-save
-	   deliberately never rewrites a past day — an amended one came back on the next load.
+	   then never rewrote a past day — an amended one came back on the next load.
 	   The badge now reads the day's own observation, which is the only record a correction
 	   has to touch, and these three tests are that rule from its three sides. */
 	const pastDay = (date: string): DailySession => ({
@@ -485,6 +485,38 @@ describe('SessionStore persistence', () => {
 				phiHours: 25 / 60,
 			}),
 		);
+	});
+
+	// The same freeze, reached from the task's side: a past task is correctable now
+	// (docs/features/the-day-you-could-not-correct.md), and the record it was measured
+	// under must not follow the correction.
+	it('keeps a ⚡ record’s frozen covariates when the past task is corrected', async () => {
+		const past = '2000-01-01';
+
+		readAllFlowObservationsMock.mockResolvedValue([
+			{
+				...flowLog(past),
+				taskId: 3,
+				difficulty: 3,
+				E: 2,
+			},
+		]);
+
+		const store = await viewing(past);
+
+		store.updateTask(3, {
+			mentalDifficulty: 10,
+		});
+
+		flushSync();
+		expect(store.tasks[0].mentalDifficulty).toBe(10);
+
+		expect(store.flowObservations[0]).toMatchObject({
+			difficulty: 3,
+			E: 2,
+		});
+
+		expect(createOrUpdateFlowObservationMock).not.toHaveBeenCalled();
 	});
 
 	// The other side: a FIRST measurement has no record to read covariates off, so it is
@@ -1036,8 +1068,9 @@ describe('SessionStore persistence', () => {
 
 	/* The λ₀ fit reads EVERY finished day at once, so it cannot key on one date's
 	   count: any write to a day already past is a reason to re-read it. Ticking a
-	   task off a past day is the only such write, and it shrinks that day's open
-	   scope (`EnergyLabStore`'s stop-observation effect). */
+	   task off a past day is one such write, and it shrinks that day's open
+	   scope (`EnergyLabStore`'s stop-observation effect). Exactly one write per
+	   toggle — the autosave carries it, and nothing else may. */
 	it('counts a past-day completion toggle on the whole-past generation', async () => {
 		const { store } = await setup();
 		const lastWeek = addDays(store.today, -7);
@@ -1068,10 +1101,13 @@ describe('SessionStore persistence', () => {
 
 		await vi.waitFor(() => expect(store.loadedDate).toBe(lastWeek));
 		expect(store.pastWriteGeneration).toBe(0);
+		useFakeTimers();
 
 		await store.toggleTask(1);
+		vi.advanceTimersByTime(AUTOSAVE_DEBOUNCE_MS);
 
-		expect(store.pastWriteGeneration).toBe(1);
+		await vi.waitFor(() => expect(store.pastWriteGeneration).toBe(1));
+		expect(updateSessionMock).toHaveBeenCalledTimes(1);
 	});
 
 	it('leaves the whole-past generation alone when today is written', async () => {
@@ -1116,6 +1152,39 @@ describe('SessionStore persistence', () => {
 
 		expect(store.tasks).toHaveLength(2);
 		expect(updateSessionMock).not.toHaveBeenCalled();
+	});
+
+	/** Load `date` as the viewed day, stored as `pastDay(date)` and nothing else stored. */
+	const viewingStored = async (date: string) => {
+		const { store } = await setup();
+
+		readSessionByDateMock.mockImplementation(async (read: string) =>
+			read === date ? pastDay(date) : null,
+		);
+
+		mockPage.url = new URL(`http://localhost/?date=${date}`);
+		await vi.waitFor(() => expect(store.loadedDate).toBe(date));
+
+		return store;
+	};
+
+	/* The defer path refuses a past day for a reason of its own — its destination is
+	   another finished day — and not as a side effect of the edit guard, which no
+	   longer refuses one. */
+	it('refuses to move a task off a past day', async () => {
+		const lastWeek = addDays(toISODate(), -7);
+		const store = await viewingStored(lastWeek);
+
+		expect(await store.moveTaskToTomorrow(3)).toBe(false);
+		expect(store.tasks).toHaveLength(1);
+
+		expect(updateSessionMock).not.toHaveBeenCalledWith(
+			expect.objectContaining({
+				date: addDays(lastWeek, 1),
+			}),
+		);
+
+		expect(await store.readDeferDestination()).toBeNull();
 	});
 
 	it('puts an undone removal back where it was, with its id', async () => {
@@ -1183,51 +1252,28 @@ describe('SessionStore persistence', () => {
 		);
 	});
 
-	/* The other half of the invariant the toggle tests above pin: completion is the
-	   truth about any day, but add/edit/remove/import rewrite a plan, and a past
-	   day's plan is history. */
-	it('refuses a structural edit on a past day', async () => {
-		const { store } = await setup();
-		const lastWeek = addDays(store.today, -7);
-
-		readSessionByDateMock.mockImplementation(async (date: string) =>
-			date === lastWeek
-				? {
-						date,
-						tasks: [
-							{
-								id: 1,
-								title: 'what happened',
-								physicalDifficulty: 3,
-								mentalDifficulty: 3,
-								enjoyment: 5,
-								createdAt: lastWeek,
-								completed: false,
-							},
-						],
-						availableHours: 5,
-						switchCost: 0.25,
-						updatedAt: 1,
-					}
-				: null,
-		);
-
-		mockPage.url = new URL(`http://localhost/?date=${lastWeek}`);
-
-		await vi.waitFor(() => expect(store.loadedDate).toBe(lastWeek));
+	/* A past day is an ordinary day to correct (docs/features/the-day-you-could-not-correct.md):
+	   the four structural writers land there as they do on today. Completion was
+	   always the truth about any day; now so is the plan the user got wrong. */
+	it('lands the four structural writers on a past day', async () => {
+		const lastWeek = addDays(toISODate(), -7);
+		const store = await viewingStored(lastWeek);
 
 		store.addTask({
-			title: 'rewrite history',
+			title: 'what I forgot',
 			physicalDifficulty: 1,
 			mentalDifficulty: 1,
 			enjoyment: 1,
 		});
 
-		store.updateTask(1, {
+		store.updateTask(3, {
 			title: 'renamed',
 		});
 
-		expect(store.removeTask(1)).toBeUndefined();
+		flushSync();
+		expect(store.tasks.map((t) => t.title)).toEqual(['what I forgot', 'renamed']);
+
+		expect(store.removeTask(3)).toBeDefined();
 
 		store.importTasks([
 			{
@@ -1239,7 +1285,51 @@ describe('SessionStore persistence', () => {
 		]);
 
 		flushSync();
-		expect(store.tasks.map((t) => t.title)).toEqual(['what happened']);
+		expect(store.tasks.map((t) => t.title)).toEqual(['imported', 'what I forgot']);
+	});
+
+	// The autosave reaches a past day now, under that day's key.
+	it('saves an edit to a past day under that day', async () => {
+		const lastWeek = addDays(toISODate(), -7);
+		const store = await viewingStored(lastWeek);
+		useFakeTimers();
+
+		store.addTask({
+			title: 'what I forgot',
+			physicalDifficulty: 1,
+			mentalDifficulty: 1,
+			enjoyment: 1,
+		});
+
+		flushSync();
+		vi.advanceTimersByTime(AUTOSAVE_DEBOUNCE_MS);
+
+		expect(updateSessionMock).toHaveBeenCalledTimes(1);
+
+		expect(updateSessionMock.mock.calls[0][0]).toMatchObject({
+			date: lastWeek,
+			tasks: [
+				{
+					title: 'what I forgot',
+				},
+				{
+					title: 'a slow one',
+				},
+			],
+		});
+	});
+
+	// Its pristine half holds there too: a past day nobody planned stays unrecorded.
+	it('writes nothing for a past day with no record that the user only looked at', async () => {
+		const { store } = await setup();
+		const lastWeek = addDays(store.today, -7);
+		useFakeTimers();
+
+		mockPage.url = new URL(`http://localhost/?date=${lastWeek}`);
+		await vi.waitFor(() => expect(store.loadedDate).toBe(lastWeek));
+		vi.advanceTimersByTime(AUTOSAVE_DEBOUNCE_MS);
+
+		expect(updateSessionMock).not.toHaveBeenCalled();
 	});
 
 	/* A FUTURE day, so only the loaded-date half of the guard can refuse: the edit

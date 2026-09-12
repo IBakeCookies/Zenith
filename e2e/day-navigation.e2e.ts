@@ -2,26 +2,28 @@ import { expect, test } from '@playwright/test';
 import {
 	addTask,
 	AUTOSAVE_MS,
+	expectTaskInputs,
+	flushAutosaveOnFakedClock,
 	isoDate,
 	logFlow,
+	openTimeBudget,
 	seedDay,
 	seedPastDay,
 	setBudget,
+	setSlider,
+	taskCard,
 	taskRow,
 } from './helpers';
 
-test('past day is read-only with a banner', async ({ page }) => {
+test('a past day keeps its banner, and the banner no longer calls it read-only', async ({
+	page,
+}) => {
 	await page.goto(`/?date=${isoDate(-3)}`);
 	await expect(page.getByText('Viewing a past day:')).toBeVisible();
 
-	// No `form` reaches the card on a past day, so there is no way IN to assert
-	// against — not a closed form, no `+` at all.
-	await expect(
-		page.getByRole('button', {
-			name: 'Add task',
-			exact: true,
-		}),
-	).toHaveCount(0);
+	// The body used to end "adding or editing tasks is only possible on today",
+	// which stopped being true (docs/features/the-day-you-could-not-correct.md).
+	await expect(page.getByText(/only possible on today/)).toHaveCount(0);
 
 	// nav label switches from "Today" to the viewed date
 	await expect(
@@ -37,23 +39,8 @@ test('past day is read-only with a banner', async ({ page }) => {
 		}),
 	).toBeVisible();
 
-	// Neither day-action reads on a day that cannot be changed
-	await expect(
-		page.getByRole('button', {
-			name: 'Load',
-			exact: true,
-		}),
-	).toHaveCount(0);
-
-	await expect(
-		page.getByRole('button', {
-			name: 'Save',
-			exact: true,
-		}),
-	).toHaveCount(0);
-
-	// Nor the timer that fills a 🪫 editor: minutes are counted on today alone, even
-	// though a 🪫 may now be typed onto a past day.
+	// The timer that fills a 🪫 editor stays today's: minutes are counted on today
+	// alone, even though a 🪫 may be typed onto a past day.
 	await expect(
 		page.getByRole('button', {
 			name: 'Start timer',
@@ -216,6 +203,127 @@ test('ticking a task done on a past day asks both questions', async ({ page }) =
 	).toBeVisible();
 });
 
+/* A past day is an ordinary day to correct: the ✎, ✕, `+` and hours today has, on the
+   day the user got wrong. Only acting on a future stays withheld — the defer and the
+   advice card — because a past day's tomorrow is another day that already happened
+   (docs/features/the-day-you-could-not-correct.md). Every write here is the debounced
+   autosave, on the page's faked clock. */
+test('a past task’s ratings can be corrected', async ({ page }) => {
+	await seedPastDay(page, 7, ['Deep work']);
+	await expectTaskInputs(page, 'Deep work', [5, 5, 5]);
+
+	await taskRow(page, 'Deep work')
+		.getByRole('button', {
+			name: 'Edit task',
+		})
+		.click();
+
+	const editor = page.locator('form').filter({
+		has: page.getByLabel('Title'),
+	});
+
+	await setSlider(editor.getByLabel('Mental Diff'), 8);
+
+	await editor
+		.getByRole('button', {
+			name: 'Save',
+		})
+		.click();
+
+	await expectTaskInputs(page, 'Deep work', [5, 8, 5]);
+
+	await flushAutosaveOnFakedClock(page);
+	await page.reload();
+
+	await expectTaskInputs(page, 'Deep work', [5, 8, 5]);
+});
+
+test('a past task can be deleted', async ({ page }) => {
+	await seedPastDay(page, 7, ['Deep work', 'Inbox']);
+
+	await taskRow(page, 'Deep work')
+		.getByRole('button', {
+			name: 'Delete task',
+		})
+		.click();
+
+	await expect(taskRow(page, 'Deep work')).toHaveCount(0);
+
+	await flushAutosaveOnFakedClock(page);
+	await page.reload();
+
+	await expect(taskRow(page, 'Inbox')).toBeVisible();
+	await expect(taskRow(page, 'Deep work')).toHaveCount(0);
+});
+
+/* The house rule for every delete but a routine's: no confirm step, the toast is the
+   way back — on a past day as on today. */
+test('a past deletion is undone from its toast', async ({ page }) => {
+	await seedPastDay(page, 7, ['Deep work', 'Inbox']);
+
+	// Two tied rows draw newest-first; whatever the order, the undo must keep it.
+	const rows = taskCard(page).getByRole('listitem');
+
+	await expect(rows).toContainText(['Inbox', 'Deep work']);
+
+	await taskRow(page, 'Deep work')
+		.getByRole('button', {
+			name: 'Delete task',
+		})
+		.click();
+
+	await expect(page.getByText('Deleted “Deep work”.')).toBeVisible();
+
+	await page
+		.getByRole('button', {
+			name: 'Undo',
+		})
+		.click();
+
+	await expect(rows).toContainText(['Inbox', 'Deep work']);
+});
+
+test('a task can be added to a past day', async ({ page }) => {
+	await seedPastDay(page, 7, ['Deep work']);
+
+	await addTask(page, 'what I forgot to write down');
+	await expect(taskRow(page, 'what I forgot to write down')).toBeVisible();
+
+	await flushAutosaveOnFakedClock(page);
+	await page.reload();
+
+	await expect(taskRow(page, 'what I forgot to write down')).toBeVisible();
+});
+
+/* The case that motivated the whole change: a budget declared wrong, noticed the
+   morning after. */
+test('a past day’s declared hours can be corrected', async ({ page }) => {
+	await seedPastDay(page, 7, ['Deep work'], 3);
+
+	await openTimeBudget(page, /3h budget/);
+	await setBudget(page, 2);
+
+	await flushAutosaveOnFakedClock(page);
+	await page.reload();
+
+	await expect(page.getByText(/2h budget/)).toBeVisible();
+});
+
+/* The one asymmetry with today, and it is deliberate. The defer's only home is the
+   advice card, so one test pins both absences. */
+test('a past day offers neither the defer nor the plan advice', async ({ page }) => {
+	await seedPastDay(page, 7, ['Deep work'], 3);
+	await expect(taskRow(page, 'Deep work')).toBeVisible();
+
+	await expect(page.getByText('Adjust the plan')).toHaveCount(0);
+
+	await expect(
+		page.getByRole('button', {
+			name: /to tomorrow/i,
+		}),
+	).toHaveCount(0);
+});
+
 test('a day ahead offers neither measurement', async ({ page }) => {
 	await seedDay(page, 3, ['Deep work']);
 
@@ -235,8 +343,7 @@ test('a day ahead offers neither measurement', async ({ page }) => {
 });
 
 /* The rails are not a today-only reading — a past day draws the plan it was made
-   under. Seeded through the clock, since the only way onto a read-only day is to
-   plan it while it is today. */
+   under. Seeded through the clock, so the plan was made on the day itself. */
 test('a past day draws the rails it was planned under', async ({ page }) => {
 	await page.clock.install();
 	await page.goto('/');

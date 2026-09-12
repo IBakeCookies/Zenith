@@ -113,7 +113,7 @@ async function fillPercent(page: Page, label: string) {
    of them done, 20.8 declared hours, one 🪫 session of 1.5 h — and a five-day run of
    completed days a fortnight back, which is the streak's own denominator. Written
    straight into IndexedDB, the way `task-tags.e2e.ts` seeds its days: a plan this size
-   is not typeable through the UI and a past day is read-only either way. */
+   is not typeable through the UI. */
 const RANGE_DAYS = [
 	{
 		offset: -6,

@@ -173,7 +173,7 @@
 	"banner_future_title": "Vorausplanung:",
 	"banner_future_body": "Aufgaben und Budget, die du hier festlegst, werden für den {date} gespeichert — öffne den Tag dann, um den Plan abzuarbeiten.",
 	"banner_past_title": "Vergangener Tag:",
-	"banner_past_body": "du kannst Aufgaben weiterhin abhaken und ein ⚡ oder 🪫 für eine vergessene Sitzung nachtragen (Änderungen werden gespeichert), aber Hinzufügen oder Bearbeiten ist nur am heutigen Tag möglich.",
+	"banner_past_body": "du kannst Aufgaben abhaken, ein ⚡ oder 🪫 für eine vergessene Sitzung nachtragen und die eingetragenen Aufgaben oder Stunden korrigieren — Änderungen werden gespeichert.",
 	"metric_group_fit": "Passt der Tag?",
 	"metric_group_worth": "Ist die Zeit gut investiert?",
 	"metric_group_cost": "Was kostet es?",

@@ -281,25 +281,23 @@
 		<MetricHeadlineStrip {metrics} momentum={daily.totalTasks > 0 ? daily.momentum : null} />
 	{/if}
 
-	{#if !isViewingPast}
-		<!-- Keyed so each day asks once whether it needs its constraints open: the hours
-		     read 0 until a day lands (forever on the server, which has no IndexedDB), so
-		     asking any earlier opens the panel for every visitor. -->
-		{#key session.loadedDate}
-			<DayConstraintsBar
-				bind:availableHours={session.availableHours}
-				bind:switchCost={session.switchCost}
-				bind:cognitivePool={session.cognitivePool}
-				bind:physicalPool={session.physicalPool}
-				fittedCognitivePool={plan.fittedPools.cognitiveHours}
-				fittedPhysicalPool={plan.fittedPools.physicalHours}
-				{remainingSuggestedHours}
-				planSlackHours={daily.planSlackHours}
-				planSwitchHours={daily.planSwitchHours}
-				isOpen={session.loadedDate !== null && session.availableHours <= 0}
-			/>
-		{/key}
-	{/if}
+	<!-- Keyed so each day asks once whether it needs its constraints open: the hours
+	     read 0 until a day lands (forever on the server, which has no IndexedDB), so
+	     asking any earlier opens the panel for every visitor. -->
+	{#key session.loadedDate}
+		<DayConstraintsBar
+			bind:availableHours={session.availableHours}
+			bind:switchCost={session.switchCost}
+			bind:cognitivePool={session.cognitivePool}
+			bind:physicalPool={session.physicalPool}
+			fittedCognitivePool={plan.fittedPools.cognitiveHours}
+			fittedPhysicalPool={plan.fittedPools.physicalHours}
+			{remainingSuggestedHours}
+			planSlackHours={daily.planSlackHours}
+			planSwitchHours={daily.planSwitchHours}
+			isOpen={session.loadedDate !== null && session.availableHours <= 0}
+		/>
+	{/key}
 
 	<!-- The ledger takes the whole width and the full readings sit under it: they
 	     are what you read after the plan, not beside it. Only the verdict strip
@@ -316,7 +314,7 @@
 				remainingDay={plan.remainingDay}
 				nextTaskId={plan.remainingDay?.nextTask?.id}
 				ontoggle={(id) => session.toggleTask(id)}
-				onremove={isViewingPast ? undefined : removeTask}
+				onremove={removeTask}
 				{flowDrafts}
 				{flowLogs}
 				onflowopen={canLog ? openFlowLog : undefined}
@@ -331,10 +329,8 @@
 				ondrainsave={saveDrainLog}
 				ondrainedit={editDrainLog}
 				ondraindelete={deleteDrainLog}
-				onupdate={isViewingPast
-					? undefined
-					: (taskId, changes) => session.updateTask(taskId, changes)}
-				form={isViewingPast ? undefined : addTaskForm}
+				onupdate={(taskId, changes) => session.updateTask(taskId, changes)}
+				form={addTaskForm}
 				strip={daily.suggestedTasks.length ? dayStrip : undefined}
 				{timeline}
 				foot={timeline.blocks.length ? dayFoot : undefined}

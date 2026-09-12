@@ -402,7 +402,7 @@ export const calibrationCard = (page: Page, title: string) =>
 		}),
 	});
 
-/** Plan a day: today or a day ahead — a past day's plan is read-only, so see `seedPastDay`. */
+/** Plan a day by typing into it. For a day that was planned WHEN it was today, see `seedPastDay`. */
 export async function seedDay(page: Page, offset: number, titles: string[]) {
 	await page.goto(offset === 0 ? '/' : `/?date=${isoDate(offset)}`);
 
@@ -413,11 +413,18 @@ export async function seedDay(page: Page, offset: number, titles: string[]) {
 	await page.waitForTimeout(AUTOSAVE_MS);
 }
 
-/** Plan a day `daysAgo` back and open it. A past day cannot be planned, so it is planned
- *  as today and the page's clock is run past it; the runner's own clock stands still, so
- *  the returned date is `isoDate(0)` — the day the app now sees `daysAgo` behind. Leaves
+/** Flush the autosave on a page whose clock is installed: the debounce runs on the
+ *  page's faked clock, the IndexedDB write it fires on the real one. */
+export async function flushAutosaveOnFakedClock(page: Page) {
+	await page.clock.runFor(AUTOSAVE_MS);
+	await page.waitForTimeout(AUTOSAVE_MS);
+}
+
+/** Plan a day `daysAgo` back the way a real one comes to exist — as today, with the
+ *  page's clock then run past it — and open it. The runner's own clock stands still, so
+ *  the returned date is `isoDate(0)`: the day the app now sees `daysAgo` behind. Leaves
  *  the page's clock installed. */
-export async function seedPastDay(page: Page, daysAgo: number, titles: string[]) {
+export async function seedPastDay(page: Page, daysAgo: number, titles: string[], hours?: number) {
 	await page.clock.install();
 	await page.goto('/');
 
@@ -425,10 +432,9 @@ export async function seedPastDay(page: Page, daysAgo: number, titles: string[])
 		await addTask(page, title);
 	}
 
-	// The autosave debounce runs on the page's own clock, which is now faked.
-	await page.clock.runFor(AUTOSAVE_MS);
-	await page.waitForTimeout(AUTOSAVE_MS);
+	if (hours !== undefined) await setBudget(page, hours);
 
+	await flushAutosaveOnFakedClock(page);
 	await page.clock.fastForward(daysAgo * 24 * 60 * 60 * 1000);
 
 	const date = isoDate(0);

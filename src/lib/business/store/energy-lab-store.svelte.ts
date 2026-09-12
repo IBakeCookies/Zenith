@@ -250,7 +250,7 @@ export class EnergyLabStore {
 		$effect(() => {
 			void this.#observations.drainObservations;
 			// A finished day's stored session carries its open scope and its window into
-			// `toStopObservations`, and `toggleTask` reaches back into past days — so the
+			// `toStopObservations`, and any write to a past day moves them — so the
 			// logs alone do not say when this reading is out of date.
 			void this.#session.pastWriteGeneration;
 			const version = ++this.#stopLoadVersion;
@@ -867,8 +867,8 @@ export class EnergyLabStore {
  * route does not re-read the params it already holds — a ~120ms skeleton on
  * every visit to a page the user tabs in and out of is what that cost. What
  * makes the long lifetime safe is who writes the data: the params are the Lab's
- * alone, and the stopping observations — which a completion toggle on a past day
- * DOES move from outside — are re-read by an effect keyed on the session store's
+ * alone, and the stopping observations — which any write to a past day DOES
+ * move from outside — are re-read by an effect keyed on the session store's
  * past-write generation, so neither needs a refresh on the way back in.
  * Affordable there for the second reason — the constructor's work is two small
  * reads, and the optimizer behind `plan` is a `$derived` that stays unrun until

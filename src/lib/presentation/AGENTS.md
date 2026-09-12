@@ -242,8 +242,8 @@ Six components hold what the two screens say the same way:
   every editor it opens beneath, including the completion prompt that
   opens both measurements at once. Each screen adds only its readings, through
   `lead` / `badges` / `meta` / `planned` / `readings` — all inline, none a cell.
-  **An action is present when its callback is**, so a read-only row passes no ✎ or
-  ✕ and a past day none of the **logging** ones.
+  **An action is present when its callback is**: a day ahead passes none of the
+  **logging** ones, and no row carries a read-only flag.
 - **`measurement-form-actions.svelte`** — the ✓/✕/🗑 that closes ⚡, 🪫 and ☕, on
   `row-action`. It exists because those three editors were written separately
   and drifted into two button sizes, one with a hover surface and one without;
@@ -685,7 +685,7 @@ the by-id path is a real `$updateFlowObservation` and not
 `SessionStore.flowMinutesOn(date)` is what the row reads, the field is gone from
 `Task`, and `sanitizeTask` reads a stored one past rather than repairing it. It
 could not be corrected before, because the badge was ALSO a `flowMinutes` field
-on the day's task and the autosave never rewrites a past day, so an amended one
+on the day's task and the autosave did not then reach a past day, so an amended one
 came back on the next load. Hence two callbacks on the row and not one:
 `onflowopen` is the ⚡ BUTTON (a first measurement, any day up to today) and
 `onflowedit` is the badge (a correction, any day) — a day ahead passes the
