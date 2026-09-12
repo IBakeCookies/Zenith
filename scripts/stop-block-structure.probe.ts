@@ -87,7 +87,13 @@ const ORIGIN = Date.parse('2026-08-19T08:00:00.000Z');
 const LAMBDAS = [0.1, 0.3, 0.5, 0.7, 0.9, 1.1];
 const DAY_COUNT = 120;
 const SEED = 0x8_1019;
-/** The instrument's own resolution — `stop-inversion-margin`'s measured median. */
+/**
+ * The instrument's own resolution — `stop-inversion-margin`'s median as it read
+ * 2026-08-19, which is what the figures below were priced against. That probe
+ * has since read 0.129, then 0.125, and 0.125 again on the v2 curve
+ * (2026-09-12); moving this one moves a threshold two arms assert on, so it is
+ * this probe's own re-run to make.
+ */
 const BRACKET_HALF_WIDTH = 0.134;
 
 type Rows = StopObservation['workedHours'];

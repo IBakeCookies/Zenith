@@ -959,11 +959,23 @@ in the feature file; two readings became findings.
   [`the-curve-nobody-chose`](docs/features/the-curve-nobody-chose.md).** The
   spec's well-posedness claim expected the cell inside the half-width (0.110 on
   v1) and a v2 half-width read from the run; `stop-margin-fit-error.probe.ts`
-  hard-codes 0.134 from the 2026-08-06 instrument and measures no half-width, so
-  the claim was falsified and the comparison it rests on has no v2 reading. The
+  hard-codes 0.134 from the 2026-08-19 instrument (this finding as raised said
+  2026-08-06; 0.134 entered both probes on 2026-08-19, and 2026-08-06 read
+  0.110) and measures no half-width, so the claim was falsified and the
+  comparison it rests on has no v2 reading. The
   margin decision holds (largest movement 0.0185). Reading a v2 half-width is
   the first step, and it is `stop-inversion-margin.probe.ts`'s to take, one
-  instrument per commit.
+  instrument per commit. **That reading is in: 2026-09-12, 0.125 median over 197
+  non-inverted days — the same 0.125 read 2026-08-21 over 175.** Several model
+  changes land between those two runs (the round-robin seed cap, the importance
+  weight, the pair seeds), so the pair is two readings and not a statement about
+  the curve. The falsification stands against a TIGHTER bound than the record
+  used: 0.1700 is outside 0.125, where this finding as raised compared it
+  against 0.134. What is
+  left is that probe's own re-read against 0.125 — every verdict it prints
+  survives the move, since the kill threshold is half-width/10 and the four arms
+  move 0.0185 and ≤ 0.0025 — and then whether §8.10's feasibility finding 1
+  still says what it says.
 
 ## Findings from the 2026-09-12 past-day build
 
