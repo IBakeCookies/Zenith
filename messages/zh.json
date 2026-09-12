@@ -125,6 +125,7 @@
 	"task_remove_aria": "删除任务",
 	"task_remove_toast": "已删除“{title}”。",
 	"carry_toast": "已把 {count} 项移到明天。",
+	"move_toast": "已把“{title}”移到明天。",
 	"task_title_label": "标题",
 	"budget_title": "当日设置",
 	"budget_figure_budget": "预算",

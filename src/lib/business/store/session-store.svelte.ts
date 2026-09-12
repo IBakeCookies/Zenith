@@ -521,6 +521,18 @@ export class SessionStore {
 		if (session.date < this.#today) this.#pastWriteGeneration += 1;
 	}
 
+	// The one session delete: the undo of a move that CREATED its destination, so a
+	// day the user never opened is not left stored at a budget they never declared
+	// (it would stand in the history every later prefill reads). Bumps the day's
+	// generation like a write — the preview keyed on it must refresh — and never
+	// meets a past day: the moves refuse there.
+	async #deleteSession(date: string) {
+		if (this.#isShowingDemo) return;
+
+		await sessionRepository.$deleteSession(date);
+		this.#writeGenerations.set(date, this.writeGenerationFor(date) + 1);
+	}
+
 	/**
 	 * The destination day as it stands, with the fallbacks the destination write
 	 * uses — ONE definition for the move and for the preview it is shown under
@@ -544,6 +556,9 @@ export class SessionStore {
 				: pools;
 
 		return {
+			// Stored at all? A move into a day that is not creates it, and that day's
+			// undo deletes it again rather than leave a record the user never made.
+			exists: session !== null,
 			tasks: session?.tasks ?? [],
 			// A day this write creates is a day saved for a reason of its own, so it
 			// records the hours it will open on — the rule the auto-save payload
@@ -956,7 +971,8 @@ export class SessionStore {
 	 * write in this store that does not target the viewed day
 	 * (business/AGENTS.md). Ordered so the failure mode is a visible duplicate,
 	 * never a vanished task: the local mark (persisted by auto-save) happens only
-	 * after the destination write lands.
+	 * after the destination write lands. Stashes its way back in `undoCarry`, as
+	 * the carry does — the lever's toast reads it.
 	 */
 	async moveTaskToTomorrow(id: number): Promise<boolean> {
 		if (!this.#canEditPlan) return false;
@@ -978,6 +994,7 @@ export class SessionStore {
 		this.#moving = true;
 
 		const tomorrow = this.#deferDestinationDate;
+		const date = this.#selectedDate;
 
 		try {
 			const dest = await this.#readDestination(tomorrow);
@@ -1001,6 +1018,8 @@ export class SessionStore {
 						}
 					: t,
 			);
+
+			this.#undoCarry = () => this.#undoCarryOf(date, tomorrow, [id], [moved.id], !dest.exists);
 
 			return true;
 		} catch (e) {
@@ -1061,7 +1080,7 @@ export class SessionStore {
 
 			const copyIds = carried.map((t) => t.id);
 
-			this.#undoCarry = () => this.#undoCarryOf(date, tomorrow, sourceIds, copyIds);
+			this.#undoCarry = () => this.#undoCarryOf(date, tomorrow, sourceIds, copyIds, !dest.exists);
 
 			return true;
 		} catch (e) {
@@ -1077,9 +1096,17 @@ export class SessionStore {
 		}
 	}
 
-	// Takes the copies back out of tomorrow, then lifts the marks — the carry's two
-	// writes in reverse, so the failure mode is again a visible duplicate.
-	async #undoCarryOf(date: string, tomorrow: string, sourceIds: number[], copyIds: number[]) {
+	// Takes the copies back out of tomorrow, then lifts the marks — the move's two
+	// writes in reverse, so the failure mode is again a visible duplicate. A
+	// destination the move CREATED and nothing else has reached since is deleted
+	// whole (`#deleteSession`, on why); one that holds anything else is rewritten.
+	async #undoCarryOf(
+		date: string,
+		tomorrow: string,
+		sourceIds: number[],
+		copyIds: number[],
+		created: boolean,
+	) {
 		// `removeTask`'s undo guard, for its reason: the toast outlives a click on
 		// another day, and the marks would come off the tasks now on screen.
 		if (this.#loadedDate !== this.#selectedDate || this.#selectedDate !== date) return;
@@ -1091,16 +1118,21 @@ export class SessionStore {
 
 		try {
 			const dest = await this.#readDestination(tomorrow);
+			const kept = dest.tasks.filter((t) => !copyIds.includes(t.id));
 
-			await this.#persistSession({
-				date: tomorrow,
-				tasks: dest.tasks.filter((t) => !copyIds.includes(t.id)),
-				availableHours: dest.availableHours,
-				switchCost: dest.switchCost,
-				cognitivePool: dest.declaredPools.cognitiveHours,
-				physicalPool: dest.declaredPools.physicalHours,
-				updatedAt: Date.now(),
-			});
+			if (created && kept.length === 0) {
+				await this.#deleteSession(tomorrow);
+			} else {
+				await this.#persistSession({
+					date: tomorrow,
+					tasks: kept,
+					availableHours: dest.availableHours,
+					switchCost: dest.switchCost,
+					cognitivePool: dest.declaredPools.cognitiveHours,
+					physicalPool: dest.declaredPools.physicalHours,
+					updatedAt: Date.now(),
+				});
+			}
 
 			// Rebuilt without the key, as `updateTask` clears `tags`: a spread
 			// `deferredTo: undefined` autosaves a key holding undefined.

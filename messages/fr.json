@@ -125,6 +125,7 @@
 	"task_remove_aria": "Supprimer la tâche",
 	"task_remove_toast": "« {title} » supprimée.",
 	"carry_toast": "{count} reportées à demain.",
+	"move_toast": "« {title} » reportée à demain.",
 	"task_title_label": "Titre",
 	"budget_title": "Réglages du jour",
 	"budget_figure_budget": "de budget",

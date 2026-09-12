@@ -25,6 +25,7 @@ import {
 	calculateInterleavedOrder,
 	calculatePoolSaturation,
 	getTaskNature,
+	isDeferred,
 	toPooledInputs,
 } from '$lib/business/model/metric/calculation';
 import type { Task } from '$lib/data/type';
@@ -99,6 +100,7 @@ export function calculateRemainingDay(input: RemainingDayInput): RemainingDay | 
 		},
 	);
 
+	const started = (task: Task) => (workedHours.get(task.id) ?? 0) > 0;
 	// Only a task that is BOTH finished and logged leaves the candidate set: its
 	// hours are known, they come off the budget below, and it cannot take more.
 	//
@@ -110,13 +112,17 @@ export function calculateRemainingDay(input: RemainingDayInput): RemainingDay | 
 	// inputs-identical to not ticking it, so no other task's number can move.
 	// Its own share is solved but never reported: the presumption is an
 	// accounting device, not a recommendation to work a finished task.
-	const isSpent = (task: Task) => task.completed && (workedHours.get(task.id) ?? 0) > 0;
-	const candidates = tasks.filter((task) => !isSpent(task));
+	//
+	// A task moved to tomorrow (`isDeferred`) left this day's plan, and this is
+	// that plan continued from the hours worked: no candidate, logged or not.
+	const isSpent = (task: Task) => task.completed && started(task);
+	const candidates = tasks.filter((task) => !isSpent(task) && !isDeferred(task));
 	// The day's switch bill is over the tasks the DAY funds — every task with
 	// hours on it, plus whatever the remainder newly starts.
 	// `calculatePooledAllocations` charges for the started tasks it can see; a
-	// spent task never reaches it, so its switch is charged off the budget here.
-	const finishedStarted = tasks.length - candidates.length;
+	// started task outside the candidate set never reaches it, so its switch is
+	// charged off the budget here.
+	const startedOutside = tasks.filter((task) => started(task) && !candidates.includes(task)).length;
 	// The pool those hours load hardest, on the same call Human Capacity names its
 	// axis with — the burn-down reads it and the solve below spends
 	// against it, so the two cannot disagree about the day (AGENTS.md R3).
@@ -130,7 +136,7 @@ export function calculateRemainingDay(input: RemainingDayInput): RemainingDay | 
 
 	const allocations = calculatePooledAllocations(
 		toPooledInputs(candidates),
-		Math.max(0, budget - workedTotal - finishedStarted * input.switchCost),
+		Math.max(0, budget - workedTotal - startedOutside * input.switchCost),
 		poolsLeft,
 		input.constants,
 		input.switchCost,

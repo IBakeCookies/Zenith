@@ -56,6 +56,46 @@ test('every task row reports the hours the plan gave it', async ({ page }) => {
 	await expect(page.getByText('no hours')).toHaveCount(2);
 });
 
+/* A task moved to tomorrow left the day's plan, and the Lab plans the same day: its row
+   stays in the list, marked as it is on `/`, and the plan gives it no block and no hours. */
+test('a task moved to tomorrow keeps its row on the Lab, marked and unfunded', async ({ page }) => {
+	await page.goto('/');
+	await addTask(page, 'Deep work');
+	await addTask(page, 'Boxing');
+
+	await page
+		.getByRole('checkbox', {
+			name: 'Mark Deep work complete',
+		})
+		.check();
+
+	await page.waitForTimeout(AUTOSAVE_MS);
+
+	await taskCard(page)
+		.getByRole('button', {
+			name: 'Carry 1 to tomorrow',
+		})
+		.click();
+
+	await expect(
+		taskCard(page).getByRole('button', {
+			name: /Carry \d+ to tomorrow/,
+		}),
+	).toHaveCount(0);
+
+	// The mark is a debounced autosave; let it land before the Lab reloads the day.
+	await page.waitForTimeout(AUTOSAVE_MS);
+	await page.goto('/energy');
+
+	await page.getByLabel('Day window').fill('8');
+	await page.getByLabel('Day window').blur();
+
+	await expect(page.getByTitle(/^Deep work/).first()).toBeVisible();
+	await expect(page.getByText('Moved to tomorrow')).toBeVisible();
+	await expect(page.getByText('no hours')).toHaveCount(1);
+	await expect(page.getByTitle(/^Boxing/)).toHaveCount(0);
+});
+
 // Ticking a task off is the one edit that must mark the plan without moving it: the
 // allocator never sees `completed`.
 test('ticking a task off marks its block in the plan', async ({ page }) => {

@@ -125,6 +125,7 @@
 	"task_remove_aria": "Eliminar tarea",
 	"task_remove_toast": "«{title}» eliminada.",
 	"carry_toast": "{count} movidas a mañana.",
+	"move_toast": "«{title}» movida a mañana.",
 	"task_title_label": "Título",
 	"budget_title": "Ajustes del día",
 	"budget_figure_budget": "de presupuesto",
