@@ -59,14 +59,15 @@
 		>
 	</p>
 
-	<ul class="mt-text-md grid gap-text-xs">
+	<!-- label · bar · figure on one line, the reading `tag-hours-card.svelte` gives
+	     its rows beside this card. Subgrid for the same reason: one label column for
+	     both rows, sized to the longer of the two rather than to a guess. -->
+	<ul class="mt-text-md grid grid-cols-[auto_1fr_auto] items-center gap-x-grid-xs gap-y-text-xs">
 		{#each matches as { label, track } (label)}
-			<li>
-				<div class="flex items-baseline justify-between gap-grid-xs text-xs">
-					<span class="text-ty-silent">{label}</span>
-					<span class="text-sm font-medium tabular-nums text-ty-primary">{track.filled}%</span>
-				</div>
-				<MetricTrack {track} band="neutral" class="mt-text-3xs" />
+			<li class="col-span-3 grid grid-cols-subgrid items-center">
+				<span class="max-w-40 text-xs text-ty-silent">{label}</span>
+				<MetricTrack {track} band="neutral" class="min-w-0" />
+				<span class="text-sm font-medium tabular-nums text-ty-primary">{track.filled}%</span>
 			</li>
 		{/each}
 	</ul>
