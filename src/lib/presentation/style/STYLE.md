@@ -260,8 +260,9 @@ Read this before touching markup, classes, or anything under
 - **A repeated cluster becomes an `@utility`, not a wrapper component** —
   `field-input` (every text and date field), `range-track` (every slider, its
   `accent-*` left to the call site), `band-track`/`band-fill` (a reading's scale
-  and the bar on it — the band and the width left to the call site; a pip is a
-  bare `band-fill`, because a track behind pips fills their gaps),
+  and the bar on it — the band and the width left to the call site, which for a
+  `MetricTrack` is `metric-track.svelte`; a pip is a bare `band-fill`, because a
+  track behind pips fills their gaps),
   `row-action` (a row's right-edge controls),
   `input-overlay` (the carve-outs above) and `hatch` (the rail's warm-up segment
   and its legend swatch — a `repeating-linear-gradient` no class expresses,

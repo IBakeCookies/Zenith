@@ -6,7 +6,8 @@
 	import { Badge } from '$lib/presentation/component/ui/badge';
 	import MetricBandText from '$lib/presentation/component/metric-band-text.svelte';
 	import MetricLabel from '$lib/presentation/component/metric-label.svelte';
-	import { BAND_BAR_CLASS, BAND_TEXT_CLASS } from '$lib/presentation/utils/band';
+	import MetricTrack from '$lib/presentation/component/metric-track.svelte';
+	import { BAND_TEXT_CLASS } from '$lib/presentation/utils/band';
 
 	interface Props {
 		metrics: Metric[];
@@ -83,32 +84,7 @@
 				</p>
 				<MetricBandText band={item.band} />
 				{#if item.track}
-					{@const track = item.track}
-					<!-- The scale the number sits on, in the band it reads in — which is
-					     what makes an out-of-the-ordinary reading findable without reading
-					     any of the numbers. The fill stops at the end of its track; the
-					     value does not, because over 100% is the reading. -->
-					{#if track.kind === 'pips'}
-						<!-- Not `band-track`: its fill would show through the gaps in the
-						     colour an unfilled pip already is, and the pips would read as one
-						     bar. Each pip is its own track. -->
-						<div class="mt-text-2xs flex h-1 gap-grid-2xs">
-							{#each Array(track.total), index}
-								<span
-									class="band-fill flex-1 {index < track.filled
-										? BAND_BAR_CLASS[item.band]
-										: 'bg-surface-inset'}"
-								></span>
-							{/each}
-						</div>
-					{:else}
-						<div class="band-track mt-text-2xs">
-							<div
-								class="band-fill {BAND_BAR_CLASS[item.band]}"
-								style="width: {Math.min(100, Math.max(0, (track.filled / track.total) * 100))}%"
-							></div>
-						</div>
-					{/if}
+					<MetricTrack track={item.track} band={item.band} class="mt-text-2xs" />
 				{/if}
 			</div>
 		{/each}

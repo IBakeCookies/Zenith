@@ -70,7 +70,11 @@ export function collectTags(sessions: DailySession[]): string[] {
  * row it was told to fix standing, and one left beside `to` would have the task's
  * hours counted under it twice.
  */
-export function renameTagInTasks(tasks: Task[], from: string, to: string): Task[] {
+export function renameTagInTasks<T extends { tags?: string[] }>(
+	tasks: T[],
+	from: string,
+	to: string,
+): T[] {
 	const oldTag = normalizeTag(from);
 	const newTag = normalizeTag(to);
 	let hasChanged = false;
@@ -103,7 +107,7 @@ export function renameTagInTasks(tasks: Task[], from: string, to: string): Task[
  * A task left with no tag loses the field rather than keeping `[]`, which is the
  * shape `toStoredTags` says a stored task has.
  */
-export function removeTagFromTasks(tasks: Task[], tag: string): Task[] {
+export function removeTagFromTasks<T extends { tags?: string[] }>(tasks: T[], tag: string): T[] {
 	const dropped = normalizeTag(tag);
 	let hasChanged = false;
 
@@ -114,7 +118,7 @@ export function removeTagFromTasks(tasks: Task[], tag: string): Task[] {
 
 		const tags = task.tags.filter((held) => normalizeTag(held) !== dropped);
 
-		const kept: Task = {
+		const kept: T = {
 			...task,
 			tags,
 		};

@@ -5,23 +5,14 @@ import {
 	drainChips,
 	isoDate,
 	logDrain,
+	openRenameEditor,
 	openTaskForm,
+	tagRows,
 	taskRow,
 } from './helpers';
 
 /* Tags are typed on the task and read on /analytics, which is two stores and a join
    apart — nothing below the browser exercises the whole path. */
-
-/** The tag rows of the breakdown card, in the order the card lists them. */
-const tagRows = (page: Page) =>
-	page
-		.locator('.card-shell')
-		.filter({
-			has: page.getByRole('heading', {
-				name: 'Logged hours by tag',
-			}),
-		})
-		.getByRole('listitem');
 
 /** A stored day carrying one tagged task, and the 🪫 session logged against it. No UI
  *  path dates either in the past — past days are read-only — so both are written
@@ -163,20 +154,6 @@ async function openEmptyPlanner(page: Page) {
 	// The empty state paints before the service worker has finished registering, and
 	// the reload that follows one destroys the seeding evaluate's execution context.
 	await page.waitForLoadState('networkidle');
-}
-
-/** The rename editor on one tag's row: the ✎ opens it, and the field is the row's. */
-async function openRenameEditor(page: Page, tag: string) {
-	await tagRows(page)
-		.filter({
-			hasText: tag,
-		})
-		.getByRole('button', {
-			name: `Rename ${tag}`,
-		})
-		.click();
-
-	return page.getByLabel('New tag name');
 }
 
 /** Both stored days in view: `week` is 7 days and the fixtures are further apart. */

@@ -8,6 +8,8 @@
 	   would have forced either `{@html}` or a second "note colour" prop. */
 
 	import type { Snippet } from 'svelte';
+	import type { MetricTrack as Track } from '$lib/presentation/type';
+	import MetricTrack from '$lib/presentation/component/metric-track.svelte';
 	import { cn } from '$lib/presentation/utils';
 
 	interface Props {
@@ -19,10 +21,12 @@
 		/** There is no reading — the value is a placeholder, so it is not ink-loud */
 		muted?: boolean;
 		note: Snippet;
+		/** The scale the reading sits on — the note is the sentence it is evidence for */
+		track?: Track;
 		class?: string;
 	}
 
-	let { label, value, suffix, muted = false, note, class: className }: Props = $props();
+	let { label, value, suffix, muted = false, note, track, class: className }: Props = $props();
 </script>
 
 <div class={cn(className)}>
@@ -34,4 +38,8 @@
 		{/if}
 	</p>
 	<p class="mt-text-3xs text-xs text-ty-silent">{@render note()}</p>
+	<!-- `neutral`: none of the range's readings is judged, so the bar carries no verdict. -->
+	{#if track}
+		<MetricTrack {track} band="neutral" class="mt-text-2xs" />
+	{/if}
 </div>

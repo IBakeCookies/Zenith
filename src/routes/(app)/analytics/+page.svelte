@@ -21,6 +21,7 @@
 	import { adherenceVerdict } from '$lib/presentation/utils/plan-audit-descriptor';
 	import { completionChartPoints } from '$lib/presentation/utils/completion-chart-points';
 	import { metricTrendSeries } from '$lib/presentation/utils/metric-trend-series';
+	import { buildMetricTrack } from '$lib/presentation/utils/metric-descriptor';
 	import { logHistory, type LogKind } from '$lib/presentation/utils/log-history';
 	import { removeLogWithUndo } from '$lib/presentation/utils/remove-log-with-undo';
 	import { fromISO } from '$lib/business/utils/date';
@@ -118,23 +119,14 @@
 		});
 	}
 
-	// The five reference readings, folded under the headline four: label, value and
-	// suffix, no note line — a note is what makes a reading read as headline.
-	const foldedReadings = $derived([
+	// The three reference readings under the headline four: label, value and
+	// suffix, no note line — a note is what makes a reading read as headline. The
+	// other two became the streak's and the logged hours' denominators.
+	const referenceReadings = $derived([
 		{
 			label: m.ana_active_days(),
 			value: analytics.summaries.length,
 			suffix: `/ ${analytics.rangeDays}`,
-		},
-		{
-			label: m.ana_longest_streak(),
-			value: analytics.longestStreak,
-			suffix: analytics.longestStreak === 1 ? m.ana_day_one() : m.ana_day_other(),
-		},
-		{
-			label: m.ana_planned_hours(),
-			value: analytics.plannedHours.toLocaleString(getDateLocale()),
-			suffix: m.unit_hours(),
 		},
 		{
 			label: m.ana_rest_hours(),
@@ -305,12 +297,17 @@
 					<div class="skeleton-block h-4 w-20"></div>
 					<div class="skeleton-block mt-text-2xs h-8 w-24"></div>
 					<div class="skeleton-block mt-text-3xs h-4 w-28"></div>
+					<div class="skeleton-block mt-text-2xs h-1 w-full"></div>
 				</div>
 			{/each}
 		</div>
-		<!-- The fold's summary line, on the rule it sits under when the readings land. -->
-		<div class="mt-grid-lg border-t border-line-soft pt-grid-sm">
-			<div class="skeleton-block h-4 w-28"></div>
+		<!-- The three reference readings, on the rule they sit under when they land. -->
+		<div class="mt-grid-lg columns-1 gap-grid-lg border-t border-line-soft pt-grid-sm sm:columns-3">
+			{#each Array(3), i (i)}
+				<div class="border-b border-line-soft py-text-2xs">
+					<div class="skeleton-block h-4 w-full"></div>
+				</div>
+			{/each}
 		</div>
 	</div>
 	<!-- Bodies, in the order of the six full-width GATED cards that always render — the
@@ -337,7 +334,7 @@
 	</div>
 {:else}
 	<!-- One card holding every reading, as on `/`: four answer a question the range
-	     asks — volume, trend, consistency, load — and the other five sit under the
+	     asks — volume, trend, consistency, load — and the other three sit under the
 	     rule. A card each said the four were four independent facts. -->
 	<div class="card-shell rounded-xl p-box-lg">
 		<div class="grid gap-grid-sm sm:grid-cols-2 lg:grid-cols-4">
@@ -345,6 +342,7 @@
 				label={m.ana_tasks_completed()}
 				value={analytics.completedTasks}
 				suffix="/ {analytics.totalTasks}"
+				track={buildMetricTrack(analytics.completedTasks, analytics.totalTasks)}
 			>
 				{#snippet note()}
 					{m.ana_of_planned({
@@ -353,7 +351,11 @@
 				{/snippet}
 			</StatTile>
 
-			<StatTile label={m.ana_avg_rate()} value="{analytics.averageCompletionRate}%">
+			<StatTile
+				label={m.ana_avg_rate()}
+				value="{analytics.averageCompletionRate}%"
+				track={buildMetricTrack(analytics.averageCompletionRate, 100)}
+			>
 				{#snippet note()}
 					{#if rateDelta !== null}
 						<span class={rateDelta >= 0 ? 'text-success' : 'text-danger'}>
@@ -372,8 +374,15 @@
 				label={m.ana_current_streak()}
 				value={analytics.streak}
 				suffix={analytics.streak === 1 ? m.ana_day_one() : m.ana_day_other()}
+				track={buildMetricTrack(analytics.streak, analytics.longestStreak)}
 			>
-				{#snippet note()}{m.ana_streak_note()}{/snippet}
+				{#snippet note()}{analytics.longestStreak === 1
+						? m.ana_streak_longest_one({
+								days: analytics.longestStreak,
+							})
+						: m.ana_streak_longest_other({
+								days: analytics.longestStreak,
+							})}{/snippet}
 			</StatTile>
 
 			<StatTile
@@ -381,6 +390,9 @@
 				value={loggedHours === null ? '—' : loggedHours.toLocaleString(getDateLocale())}
 				suffix={loggedHours === null ? undefined : m.unit_hours()}
 				muted={loggedHours === null}
+				track={loggedHours === null
+					? undefined
+					: buildMetricTrack(loggedHours, analytics.plannedHours)}
 			>
 				{#snippet note()}
 					{#if loggedHours === null}
@@ -394,31 +406,22 @@
 			</StatTile>
 		</div>
 
-		<!-- The same fold as `metrics-dashboard.svelte`'s, minus the colour: none of these
-		     readings is judged, so there is no band to carry. -->
-		<details class="mt-grid-lg border-t border-line-soft pt-grid-sm">
-			<summary
-				class="cursor-pointer text-xs text-ty-secondary transition hover:text-ty-primary marker:text-ty-silent"
-			>
-				{m.metrics_more({
-					count: foldedReadings.length,
-				})}
-			</summary>
-			<div class="mt-grid-sm columns-1 gap-grid-lg sm:columns-2 lg:columns-4">
-				{#each foldedReadings as reading (reading.label)}
-					<div
-						class="flex break-inside-avoid items-baseline justify-between gap-text-xs border-b border-line-soft py-text-2xs"
-					>
-						<span class="text-xs text-ty-silent">{reading.label}</span>
-						<span class="text-right text-sm font-semibold tabular-nums text-ty-primary">
-							{reading.value}
-							{#if reading.suffix}<span class="font-normal text-ty-silent">{reading.suffix}</span
-								>{/if}
-						</span>
-					</div>
-				{/each}
-			</div>
-		</details>
+		<!-- Always open, under the rule the disclosure used to sit on: three lines cost
+		     more to hide than to show. No colour either — none of these is judged. -->
+		<div class="mt-grid-lg columns-1 gap-grid-lg border-t border-line-soft pt-grid-sm sm:columns-3">
+			{#each referenceReadings as reading (reading.label)}
+				<div
+					class="flex break-inside-avoid items-baseline justify-between gap-text-xs border-b border-line-soft py-text-2xs"
+				>
+					<span class="text-xs text-ty-silent">{reading.label}</span>
+					<span class="text-right text-sm font-semibold tabular-nums text-ty-primary">
+						{reading.value}
+						{#if reading.suffix}<span class="font-normal text-ty-silent">{reading.suffix}</span
+							>{/if}
+					</span>
+				</div>
+			{/each}
+		</div>
 	</div>
 
 	<!-- Directly under the tile it breaks down, and ranged like it. -->

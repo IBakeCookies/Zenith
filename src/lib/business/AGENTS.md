@@ -244,7 +244,10 @@ The destination write also reads its OWN day's values through `#readDestination`
 and defaults nothing: a fallback there stamps a value onto a day that never
 chose one. `#rewriteTagInHistory` is the one that carries every field for free,
 and only because it spreads the record it read RAW — a tag rewrite taken off
-`sanitizeSessions`' output would drop whatever a future field adds.
+`sanitizeSessions`' output would drop whatever a future field adds. The same
+argument in a second store: it rewrites the saved **routines** in that one
+write, read raw past `sanitizeRoutines` for that reason, then re-reads
+`#routines` so the menu and `importRoutine` are not a reload behind.
 
 ### `SessionStore` has a second day source, and it reaches no storage
 

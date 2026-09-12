@@ -283,3 +283,30 @@ describe('removeTagFromTasks', () => {
 		expect(removeTagFromTasks([task(1, ['  Errand '])], 'errand')[0].tags).toBeUndefined();
 	});
 });
+
+/* `Task.tags` is carried by two stores, and a routine's tasks are `Task` minus
+   `id`, `createdAt` and `completed` — a shape the folds only take because they read
+   and write the one field. Identity on both is what tells the rewrite not to write
+   that routine, which is the whole of the skip. */
+describe('the folds over a routine’s tasks', () => {
+	const routineTasks = [
+		{
+			title: 'Post the parcel',
+			physicalDifficulty: 3,
+			mentalDifficulty: 2,
+			enjoyment: 5,
+			tags: ['school'],
+		},
+		{
+			title: 'Write the report',
+			physicalDifficulty: 1,
+			mentalDifficulty: 8,
+			enjoyment: 4,
+		},
+	];
+
+	it('returns a list that never carried the tag by identity', () => {
+		expect(renameTagInTasks(routineTasks, 'dep work', 'deep work')).toBe(routineTasks);
+		expect(removeTagFromTasks(routineTasks, 'errand')).toBe(routineTasks);
+	});
+});

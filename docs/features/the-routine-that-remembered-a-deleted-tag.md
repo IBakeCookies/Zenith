@@ -1,6 +1,6 @@
 # The routine that remembered a deleted tag
 
-**Kind:** feature · **Status:** planning 2026-09-07 · **Roadmap:** item `none`
+**Kind:** feature · **Status:** landed 2026-09-12 · **Roadmap:** item `none`
 
 Frozen at land: this file says what was decided on the date it carries, never
 how the code works today — that is MATH.md and the area `AGENTS.md`. When later
