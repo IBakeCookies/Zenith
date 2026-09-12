@@ -155,12 +155,17 @@ describe('calibrationRows', () => {
 		expect(rows[4].value).toBe('≈ 0.60 ± 0.00 out/h');
 	});
 
-	it('anchors each row to its default and the count that moved it', () => {
+	// Two cells, not one sentence: the default is what the fitted cell beside it is
+	// compared against, and the evidence is why the reader should trust the fit.
+	it('carries each row its default and its evidence separately', () => {
 		const rows = calibrationRows(unfitted, 'en-US');
 
-		expect(rows[0].note).toBe('default 45 min · 0.0 ⚡ logs, recency-weighted');
-		expect(rows[1].note).toBe('default 0.10 · 0 ratings');
-		expect(rows[4].note).toBe('default 0.40 · 0 days');
+		expect(rows[0].defaultValue).toBe('45 min');
+		expect(rows[0].evidence).toBe('0.0 ⚡ logs, recency-weighted');
+		expect(rows[1].defaultValue).toBe('0.10');
+		expect(rows[1].evidence).toBe('0 ratings');
+		expect(rows[4].defaultValue).toBe('0.40');
+		expect(rows[4].evidence).toBe('0 days');
 	});
 
 	/* The prequential skill sentence (MATH.md §5): whether trusting the fit has
@@ -186,8 +191,8 @@ describe('calibrationRows', () => {
 			'en-US',
 		);
 
-		expect(rows[0].note).toBe(
-			'default 45 min · 14.0 ⚡ logs, recency-weighted · fit 6.0 min closer than default over 12 predicted logs',
+		expect(rows[0].evidence).toBe(
+			'14.0 ⚡ logs, recency-weighted · fit 6.0 min closer than default over 12 predicted logs',
 		);
 	});
 
@@ -211,8 +216,8 @@ describe('calibrationRows', () => {
 			'en-US',
 		);
 
-		expect(rows[0].note).toBe(
-			'default 45 min · 14.0 ⚡ logs, recency-weighted · fit 3.0 min further than default over 8 predicted logs',
+		expect(rows[0].evidence).toBe(
+			'14.0 ⚡ logs, recency-weighted · fit 3.0 min further than default over 8 predicted logs',
 		);
 	});
 
@@ -234,11 +239,11 @@ describe('calibrationRows', () => {
 			'en-US',
 		);
 
-		expect(young[0].note).toBe('default 45 min · 3.5 ⚡ logs, recency-weighted');
+		expect(young[0].evidence).toBe('3.5 ⚡ logs, recency-weighted');
 
 		const fresh = calibrationRows(unfitted, 'en-US');
 
-		expect(fresh[0].note).toBe('default 45 min · 0.0 ⚡ logs, recency-weighted');
+		expect(fresh[0].evidence).toBe('0.0 ⚡ logs, recency-weighted');
 	});
 
 	// The ϕ row alone is recency-weighted (MATH.md §5.2), so its count is an
@@ -260,8 +265,8 @@ describe('calibrationRows', () => {
 			'en-US',
 		);
 
-		expect(rows[0].note).toBe('default 45 min · 3.5 ⚡ logs, recency-weighted');
-		expect(rows[1].note).toBe('default 0.10 · 0 ratings');
+		expect(rows[0].evidence).toBe('3.5 ⚡ logs, recency-weighted');
+		expect(rows[1].evidence).toBe('0 ratings');
 	});
 
 	// A log made today is in neither count — Σw is what the fit read,
@@ -283,12 +288,12 @@ describe('calibrationRows', () => {
 			'en-US',
 		);
 
-		expect(rows[0].note).toBe(
-			'default 45 min · 3.5 ⚡ logs, recency-weighted · 2 logged today, counted from tomorrow',
+		expect(rows[0].evidence).toBe(
+			'3.5 ⚡ logs, recency-weighted · 2 logged today, counted from tomorrow',
 		);
 
 		// One row's concern only — the other four count whole observations.
-		expect(rows[1].note).toBe('default 0.10 · 0 ratings');
+		expect(rows[1].evidence).toBe('0 ratings');
 	});
 
 	// The other four rows defer their logs on the same rule the ϕ row does, and
@@ -306,9 +311,7 @@ describe('calibrationRows', () => {
 			'en-US',
 		);
 
-		expect(rows[1].note).toBe(
-			'default 0.10 · 0 ratings · 1 ☕ logged today, counted from tomorrow',
-		);
+		expect(rows[1].evidence).toBe('0 ratings · 1 ☕ logged today, counted from tomorrow');
 	});
 
 	// Both α fits read the same 🪫 rows, so both rows name the same number.
@@ -324,13 +327,9 @@ describe('calibrationRows', () => {
 			'en-US',
 		);
 
-		expect(rows[2].note).toBe(
-			'default 0.20 · 0 ratings · 2 🪫 logged today, counted from tomorrow',
-		);
+		expect(rows[2].evidence).toBe('0 ratings · 2 🪫 logged today, counted from tomorrow');
 
-		expect(rows[3].note).toBe(
-			'default 0.30 · 0 ratings · 2 🪫 logged today, counted from tomorrow',
-		);
+		expect(rows[3].evidence).toBe('0 ratings · 2 🪫 logged today, counted from tomorrow');
 	});
 
 	// λ₀ reads whole DAYS, and the only date that can be deferred is today — so
@@ -347,18 +346,18 @@ describe('calibrationRows', () => {
 			'en-US',
 		);
 
-		expect(rows[4].note).toBe('default 0.40 · 0 days · today counts from tomorrow');
+		expect(rows[4].evidence).toBe('0 days · today counts from tomorrow');
 	});
 
-	// A pin: with nothing deferred the four notes are the strings the card
+	// A pin: with nothing deferred the four evidence cells are the strings the card
 	// already prints, so the clause cannot leak onto a row that has nothing to say.
-	it('leaves a row with nothing deferred printing the note it prints today', () => {
+	it('leaves a row with nothing deferred printing the evidence it prints today', () => {
 		const rows = calibrationRows(unfitted, 'en-US');
 
-		expect(rows[1].note).toBe('default 0.10 · 0 ratings');
-		expect(rows[2].note).toBe('default 0.20 · 0 ratings');
-		expect(rows[3].note).toBe('default 0.30 · 0 ratings');
-		expect(rows[4].note).toBe('default 0.40 · 0 days');
+		expect(rows[1].evidence).toBe('0 ratings');
+		expect(rows[2].evidence).toBe('0 ratings');
+		expect(rows[3].evidence).toBe('0 ratings');
+		expect(rows[4].evidence).toBe('0 days');
 	});
 
 	it('renders the numbers in the reader locale', () => {

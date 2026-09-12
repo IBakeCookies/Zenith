@@ -29,8 +29,10 @@ export interface ModelRow {
 	label: string;
 	/** The fit with its ± posterior std, or the bare default when not fitted */
 	value: string;
-	/** The default the fit is anchored to, and how many observations moved it */
-	note: string;
+	/** The default the fit is anchored to — minutes for ϕ, a bare two-decimal rate otherwise */
+	defaultValue: string;
+	/** How many observations moved the fit, and what it has not read yet */
+	evidence: string;
 	/** Its recorded history, or null while there is not yet a line to draw */
 	trend: RowTrend | null;
 }
@@ -49,10 +51,10 @@ export function calibrationRows(
 
 	// The §5 prequential skill reading arrives in signed hours (positive when the
 	// fit was closer); the spelling is one decimal of minutes, direction out loud.
-	const noteWithSkill = (note: string, skill: CalibrationSnapshot['flow']['skill']) =>
+	const evidenceWithSkill = (evidence: string, skill: CalibrationSnapshot['flow']['skill']) =>
 		!skill
-			? note
-			: `${note} · ${(skill.gapHours >= 0
+			? evidence
+			: `${evidence} · ${(skill.gapHours >= 0
 					? m.ana_model_note_flow_closer
 					: m.ana_model_note_flow_further)({
 					value: `${formatDecimals(Math.abs(skill.gapHours) * 60, 1, locale)} ${m.unit_minutes()}`,
@@ -92,15 +94,13 @@ export function calibrationRows(
 	const { flow, energy, stopping, defaults } = calibration;
 
 	// Both α fits read the same 🪫 rows, so the two drain rows name one count.
-	const drainNote = (value: number, count: number) =>
+	const drainEvidence = (count: number) =>
 		energy.pendingDrainCount > 0
 			? m.ana_model_note_drain_pending({
-					value: f2(value),
 					count,
 					pending: energy.pendingDrainCount,
 				})
 			: m.ana_model_note_ratings({
-					value: f2(value),
 					count,
 				});
 
@@ -115,6 +115,7 @@ export function calibrationRows(
 		{
 			label: flowLabel,
 			value: flow.fitted ? `≈ ${minutes(flow.phiHours)}` : minutes(flow.phiHours),
+			defaultValue: minutes(flow.defaultPhiHours),
 			// Σw, what the history is worth in FRESH logs (MATH.md §5.2) — a
 			// year-old log counts half. Printing the raw count beside a discounted
 			// fit would overstate what moved it. Today's logs are in neither number:
@@ -122,15 +123,13 @@ export function calibrationRows(
 			// row would otherwise read as though the ⚡ just logged had done nothing.
 			// The skill sentence's predicted-log count DOES include them — a fit
 			// predicted them even though none has read them (MATH.md §5).
-			note: noteWithSkill(
+			evidence: evidenceWithSkill(
 				flow.pendingCount > 0
 					? m.ana_model_note_flow_pending({
-							value: minutes(flow.defaultPhiHours),
 							count: formatDecimals(flow.usedCount, 1, locale),
 							pending: flow.pendingCount,
 						})
 					: m.ana_model_note_flow({
-							value: minutes(flow.defaultPhiHours),
 							count: formatDecimals(flow.usedCount, 1, locale),
 						}),
 				flow.skill,
@@ -145,15 +144,14 @@ export function calibrationRows(
 				energy.recovery.rateStd,
 				m.unit_per_hour(),
 			),
-			note:
+			defaultValue: f2(defaults.recoveryRate),
+			evidence:
 				energy.pendingRestCount > 0
 					? m.ana_model_note_recovery_pending({
-							value: f2(defaults.recoveryRate),
 							count: energy.recovery.usedCount,
 							pending: energy.pendingRestCount,
 						})
 					: m.ana_model_note_ratings({
-							value: f2(defaults.recoveryRate),
 							count: energy.recovery.usedCount,
 						}),
 			trend: trend(recoveryLabel, series.recoveryRate, defaults.recoveryRate, perHour),
@@ -166,7 +164,8 @@ export function calibrationRows(
 				energy.cognitiveDrain.alphaStd,
 				m.unit_per_hour(),
 			),
-			note: drainNote(defaults.alphaCog, energy.cognitiveDrain.usedCount),
+			defaultValue: f2(defaults.alphaCog),
+			evidence: drainEvidence(energy.cognitiveDrain.usedCount),
 			trend: trend(cognitiveLabel, series.alphaCog, defaults.alphaCog, perHour),
 		},
 		{
@@ -177,19 +176,19 @@ export function calibrationRows(
 				energy.physicalDrain.alphaStd,
 				m.unit_per_hour(),
 			),
-			note: drainNote(defaults.alphaPhys, energy.physicalDrain.usedCount),
+			defaultValue: f2(defaults.alphaPhys),
+			evidence: drainEvidence(energy.physicalDrain.usedCount),
 			trend: trend(physicalLabel, series.alphaPhys, defaults.alphaPhys, perHour),
 		},
 		{
 			label: stopLabel,
 			value: rate(stopping, stopping.value, stopping.valueStd, m.unit_output_per_hour()),
-			note: stopping.todayPending
+			defaultValue: f2(defaults.freeTimeValue),
+			evidence: stopping.todayPending
 				? m.ana_model_note_days_pending({
-						value: f2(defaults.freeTimeValue),
 						count: stopping.usedCount,
 					})
 				: m.ana_model_note_days({
-						value: f2(defaults.freeTimeValue),
 						count: stopping.usedCount,
 					}),
 			trend: trend(stopLabel, series.stoppingValue, defaults.freeTimeValue, outputPerHour),

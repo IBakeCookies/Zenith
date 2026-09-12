@@ -506,8 +506,12 @@ test('plan adherence and the model card resolve without calibration logs', async
 		timeout: 15000,
 	});
 
-	// Every model row shows its fitted value next to the default it is anchored to
-	await expect(page.getByText(/default \d/).first()).toBeVisible({
+	// The model table resolved: its Default column is headed, so the rows landed
+	await expect(
+		page.getByText('Default', {
+			exact: true,
+		}),
+	).toBeVisible({
 		timeout: 15000,
 	});
 
@@ -527,7 +531,11 @@ test("visiting analytics records today's fitted params", async ({ page }) => {
 	await seedDay(page, 0, ['write the calibration section']);
 	await page.goto('/analytics');
 
-	await expect(page.getByText(/default \d/).first()).toBeVisible({
+	await expect(
+		page.getByText('Default', {
+			exact: true,
+		}),
+	).toBeVisible({
 		timeout: 15000,
 	});
 

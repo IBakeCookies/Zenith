@@ -447,3 +447,76 @@ test.describe('server-rendered, before the logs are read', () => {
 		await expect(page.getByText('Loading…').first()).toBeVisible();
 	});
 });
+
+/* The model table on a phone: five columns folded to three lines per row, none of
+   them dropped. Width-dependent, so a browser at 390px is the only level that can
+   assert it — the same pin `task-list.e2e.ts` holds for the day's list. */
+test.describe('the model table on a phone', () => {
+	test.beforeEach(async ({ page }) => {
+		await page.setViewportSize({
+			width: 390,
+			height: 900,
+		});
+
+		await seedDay(page, 0, ['write the calibration section']);
+		await page.goto('/analytics');
+	});
+
+	/** The Recovery rate row: the head is not a list item, so this is the row alone. */
+	const recoveryRow = (page: Page) =>
+		page.locator('li').filter({
+			hasText: 'Recovery rate',
+		});
+
+	test('keeps every column, the evidence included', async ({ page }) => {
+		await expect(recoveryRow(page).getByText('0 ratings')).toBeVisible({
+			timeout: 15000,
+		});
+	});
+
+	test('stacks the fit over the default it is anchored to', async ({ page }) => {
+		const row = recoveryRow(page);
+
+		// Nothing logged, so the fitted cell prints the default itself, bare.
+		const fitted = row.getByText('0.70 /h', {
+			exact: true,
+		});
+
+		await expect(fitted).toBeVisible({
+			timeout: 15000,
+		});
+
+		const fallback = row.getByText(/^default 0\.70$/);
+
+		await expect(fallback).toBeVisible();
+
+		const [fittedBox, fallbackBox] = await Promise.all([
+			fitted.boundingBox(),
+			fallback.boundingBox(),
+		]);
+
+		expect(fallbackBox!.y).toBeGreaterThanOrEqual(fittedBox!.y + fittedBox!.height);
+
+		expect(
+			Math.abs(fallbackBox!.x + fallbackBox!.width - (fittedBox!.x + fittedBox!.width)),
+		).toBeLessThan(1);
+	});
+
+	test('names the default the head no longer can', async ({ page }) => {
+		// Below `sm` there is no head over the column, so the cell names itself:
+		// the word, then the number.
+		await expect(recoveryRow(page).getByText(/^default 0\.70$/)).toBeVisible({
+			timeout: 15000,
+		});
+	});
+
+	test('does not drag the page sideways', async ({ page }) => {
+		await expect(recoveryRow(page).getByText('0 ratings')).toBeVisible({
+			timeout: 15000,
+		});
+
+		expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+			390,
+		);
+	});
+});
