@@ -872,8 +872,8 @@ else. The fitted numbers read on the parameter rows they fit
 no action slot: ☕ is typed on the ledger's heading row with the day's
 other logs, which is also what makes it reachable on a day with no tasks. What
 is left is still four different things — ⚡ has a headline count and a status
-sentence, 🪫 has the same headline and a pending line, r has a pending line and
-a fit summary, λ₀ has a censored state and a day count and no log store at all.
+sentence, 🪫 the same headline, an α status and a pending line, r a pending
+line and a fit summary, λ₀ a censored state and a day count and no log store.
 ⚡ and 🪫 stand side by side on `/analytics` and still do not share a body: they
 look alike there, which is exactly when a mode flag is tempting. No flag and no
 folding the bodies in — the same argument as the two task rows' shell: a
