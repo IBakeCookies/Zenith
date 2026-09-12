@@ -34,19 +34,37 @@
  * every margin is a pure post-filter over the cached list: one `optimizeSchedule`
  * run per day, and the whole sweep is arithmetic after that.
  *
+ * WHAT THE 2026-09-12 RE-RUN CHANGED, and what it did not. The half-width is
+ * MEASURED here now instead of transcribed from `stop-inversion-margin.probe.ts`
+ * — see `bracketHalfWidth`. On this probe's own population it reads 0.122 over
+ * 721 non-inverted rational logged days, against the 0.125 the sister probe
+ * reads over 197 optimizer days and the 0.134 this file had carried since
+ * 2026-08-19 (ROADMAP M105). Six printed lines move against the 2026-09-11 run
+ * and no others: the new `[§8.10 resolution]` line, the four per-arm
+ * `[§8.10 verdict]` lines and the `[§8.10 scope]` kill line. On those, only the
+ * half-width literal and the percentages taken of it change — three values
+ * move, 0.2% → 0.3%, 13.8% → 15.2% and 1.8% → 2.0%, while the honest n = 12 arm
+ * stays 0.0%. Every RMSE, bias, kept share, endpoint contrast, confidence
+ * interval and censor-nothing delta, and the whole scope table, reproduce
+ * byte-for-byte, and every CONCLUSION holds: the kill criterion still does not
+ * fire in the 30%-interrupted n = 3 arm (0.0185 clears a tenth of the
+ * half-width at any of the three values), and the scope kill line still fires.
+ * The comparison ROADMAP M105 asked for therefore lands on a resolution this
+ * probe measured over the days it actually judges: the honest n = 12 RMSE of
+ * 0.1700 is outside it.
+ *
  * WHAT THE 2026-09-11 RE-RUN CHANGED, and why every number below moved again.
  * The energy model now runs the classic model's v2 curve `(a·k·s+p₀)·e^(−ks)`
  * (docs/features/the-curve-nobody-chose.md), so every day generated, bracketed
  * and fitted here is on that curve; the replica held to 0.000e+0 against the
  * shipped fit without an edit. Two readings moved past their v1 verdicts. The
  * honest n = 12 λ₀ fit reads RMSE 0.1700 with bias +0.0917 (0.110 on the
- * 2026-08-25 v1 re-read), OUTSIDE the 0.134 bracket half-width this file
- * hard-codes from the 2026-08-06 instrument and never re-measures — the spec
- * expected the cell inside a v2 half-width read here, and no such reading
- * exists (ROADMAP M105). And the margin sweep is flat in three arms (largest
+ * 2026-08-25 v1 re-read), OUTSIDE the bracket half-width — the spec expected
+ * the cell inside a v2 half-width, and this file measured none until
+ * 2026-09-12 (ROADMAP M105). And the margin sweep is flat in three arms (largest
  * movement ≤ 0.0025) but not in the 30%-interrupted n = 3 arm: 0.2044–0.2229
- * over [0.1, 0.5], movement 0.0185 λ₀ = 13.8% of the half-width, endpoint
- * contrast −0.0173 with paired 95% CI [−0.0308, −0.0053], so the kill criterion
+ * over [0.1, 0.5], movement 0.0185 λ₀, endpoint contrast −0.0173 with paired
+ * 95% CI [−0.0308, −0.0053], so the kill criterion
  * fires in 3 of 4 arms where v1 fired all four. The sign is v1's: wider
  * censors less and fits better, and censoring nothing beats 0.25 in both
  * contaminated arms (−0.0197, −0.0116) and ties the honest ones. The scope
@@ -618,8 +636,35 @@ const IN_RANGE = MARGINS.map((m, i) => ({
 
 /** n = 3 matters because §8.10's prior gives ONE day 50% of the fit — the only regime where the margin has leverage. */
 const DAY_COUNTS = [3, 12];
-/** The instrument's own resolution: median bracket half-width, `stop-inversion-margin.probe.ts` 2026-08-19. */
-const BRACKET_HALF_WIDTH = 0.134;
+let cachedHalfWidth: number | null = null;
+
+/**
+ * The instrument's own resolution, measured HERE: the median half-width of this
+ * probe's own non-inverted rational days, on the logged reading the fit uses.
+ * It used to be a literal copied from `stop-inversion-margin.probe.ts`, which
+ * measures the same quantity over a DIFFERENT population — its optimizer days
+ * on a 4-value λ₀ grid, against the mixed arms on a 6-value grid judged here —
+ * and the copy went three readings stale while every verdict below priced
+ * against it (ROADMAP M105). A number two probes must agree on is measured by
+ * each of them or exported by one; it cannot be transcribed.
+ */
+function halfWidths(): number[] {
+	return fixture()
+		.population.flatMap((user) => user.days.map((day) => day.rational.bracket))
+		.filter((bracket): bracket is Bracket => bracket !== null)
+		.filter((bracket) => bracket.stopBound <= bracket.hi)
+		.map((bracket) => (bracket.hi - bracket.stopBound) / 2);
+}
+
+function halfWidthDayCount(): number {
+	return halfWidths().length;
+}
+
+function bracketHalfWidth(): number {
+	if (cachedHalfWidth === null) cachedHalfWidth = quantile(halfWidths(), 0.5);
+
+	return cachedHalfWidth;
+}
 
 interface Arm {
 	mix: MixName;
@@ -903,6 +948,11 @@ describe('MATH.md §8.10 — λ₀ fit error as a function of STOP_INVERSION_MAR
 	});
 
 	it('sweeps the margin against λ₀ fit RMSE', () => {
+		console.log(
+			`[§8.10 resolution] median bracket half-width over ${halfWidthDayCount()} non-inverted ` +
+				`rational logged days, this probe's own population: ${fmt(bracketHalfWidth())}`,
+		);
+
 		for (const arm of fixture().arms) {
 			const rows = MARGINS.map((margin, i) => {
 				const control = margin === 0 || !Number.isFinite(margin) ? ' (control)' : '';
@@ -947,12 +997,12 @@ describe('MATH.md §8.10 — λ₀ fit error as a function of STOP_INVERSION_MAR
 
 			// Flat = an effect an order of magnitude below the instrument's own
 			// resolution, in λ₀ units. Not "smaller than the sampling noise".
-			const fired = movement < BRACKET_HALF_WIDTH / 10;
+			const fired = movement < bracketHalfWidth() / 10;
 
 			console.log(
 				`[§8.10 verdict] ${label(arm)}  RMSE over [0.1,0.5] ${fmt(Math.min(...inRange), 4)}–${fmt(Math.max(...inRange), 4)}  ` +
-					`largest movement ${fmt(movement, 4)} λ₀ = ${fmt((100 * movement) / BRACKET_HALF_WIDTH, 1)}% of the ` +
-					`${BRACKET_HALF_WIDTH} bracket half-width, ${fmt((100 * movement) / STOP_NOISE_PRIOR_STD, 1)}% of σ₀=${STOP_NOISE_PRIOR_STD}  ` +
+					`largest movement ${fmt(movement, 4)} λ₀ = ${fmt((100 * movement) / bracketHalfWidth(), 1)}% of the ` +
+					`${fmt(bracketHalfWidth())} bracket half-width, ${fmt((100 * movement) / STOP_NOISE_PRIOR_STD, 1)}% of σ₀=${STOP_NOISE_PRIOR_STD}  ` +
 					`endpoint RMSE(0.5)−RMSE(0.1) ${fmt(endpoint, 4)} ` +
 					`[paired 95% CI ${fmt(quantile(differences, 0.025), 4)}, ${fmt(quantile(differences, 0.975), 4)}]  ` +
 					`censor-nothing vs 0.25 ${fmt(arm.rmse[MARGINS.indexOf(Infinity)] - arm.rmse[MARGINS.indexOf(0.25)], 4)}`,
@@ -965,7 +1015,7 @@ describe('MATH.md §8.10 — λ₀ fit error as a function of STOP_INVERSION_MAR
 			verdicts.every(Boolean)
 				? `[§8.10 verdict] KILL CRITERION FIRED in ${verdicts.length}/${verdicts.length} arms — ` +
 						`the whole margin range moves λ₀ fit RMSE by less than a tenth of the ` +
-						`${BRACKET_HALF_WIDTH} bracket half-width the instrument already concedes, so the constant ` +
+						`${fmt(bracketHalfWidth())} bracket half-width the instrument already concedes, so the constant ` +
 						'does not matter over [0.1, 0.5] and §8.10 must say so. Read the per-arm endpoint ' +
 						'contrasts above for the sign: it was negative in all four arms while the ' +
 						"reconstruction discarded the days' breaks, and only the contaminated arms still say " +
@@ -997,11 +1047,11 @@ describe('MATH.md §8.10 — λ₀ fit error as a function of STOP_INVERSION_MAR
 		const best = Math.max(...live.map((arm) => arm.allTasks.rmse - arm.corrected.rmse));
 
 		console.log(
-			best > BRACKET_HALF_WIDTH
+			best > bracketHalfWidth()
 				? `[§8.10 scope] the corrected scope beats the all-tasks scope by up to ${fmt(best, 4)} λ₀ RMSE, ` +
-						`past the ${BRACKET_HALF_WIDTH} bracket half-width — §8.10's "biased λ₀ up" is a measured bias`
+						`past the ${fmt(bracketHalfWidth())} bracket half-width — §8.10's "biased λ₀ up" is a measured bias`
 				: `[§8.10 scope] KILL LINE: the corrected scope's best RMSE gain over ${live.length} arms is ` +
-						`${fmt(best, 4)} λ₀, inside the ${BRACKET_HALF_WIDTH} bracket half-width, so §8.10's "biased ` +
+						`${fmt(best, 4)} λ₀, inside the ${fmt(bracketHalfWidth())} bracket half-width, so §8.10's "biased ` +
 						'λ₀ up by the whole marginal of work that no longer existed" is a one-day witness and not a ' +
 						'measured bias. The scope rule does not move on it — it is settled behaviour and this is a ' +
 						'measurement.',

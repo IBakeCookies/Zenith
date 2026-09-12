@@ -954,28 +954,24 @@ in the feature file; two readings became findings.
   uphill candidate is the enumerated optimum); the other is APPROX day 1
   (15.395319 → 15.492131). Whether the move is worth building is a later
   change's decision, priced by `scripts/energy-search-gap.probe.ts`.
-- **M105 — the honest λ₀ fit at n = 12 reads RMSE 0.1700, bias +0.0917, outside
-  the 0.134 bracket half-width — raised 2026-09-11, open,
-  [`the-curve-nobody-chose`](docs/features/the-curve-nobody-chose.md).** The
-  spec's well-posedness claim expected the cell inside the half-width (0.110 on
-  v1) and a v2 half-width read from the run; `stop-margin-fit-error.probe.ts`
-  hard-codes 0.134 from the 2026-08-19 instrument (this finding as raised said
-  2026-08-06; 0.134 entered both probes on 2026-08-19, and 2026-08-06 read
-  0.110) and measures no half-width, so the claim was falsified and the
-  comparison it rests on has no v2 reading. The
-  margin decision holds (largest movement 0.0185). Reading a v2 half-width is
-  the first step, and it is `stop-inversion-margin.probe.ts`'s to take, one
-  instrument per commit. **That reading is in: 2026-09-12, 0.125 median over 197
-  non-inverted days — the same 0.125 read 2026-08-21 over 175.** Several model
-  changes land between those two runs (the round-robin seed cap, the importance
-  weight, the pair seeds), so the pair is two readings and not a statement about
-  the curve. The falsification stands against a TIGHTER bound than the record
-  used: 0.1700 is outside 0.125, where this finding as raised compared it
-  against 0.134. What is
-  left is that probe's own re-read against 0.125 — every verdict it prints
-  survives the move, since the kill threshold is half-width/10 and the four arms
-  move 0.0185 and ≤ 0.0025 — and then whether §8.10's feasibility finding 1
-  still says what it says.
+- **M105 — the λ₀ fit's RMSE was compared against a half-width no run had read
+  on this curve — raised 2026-09-11, CLOSED 2026-09-12.** Each stop probe now
+  measures its own; `scripts/stop-margin-fit-error.probe.ts` and
+  `scripts/stop-inversion-margin.probe.ts` carry the runs and the verdict.
+
+- **M106 — the honest arm's λ₀ bias GROWS with n: +0.0111 at n = 3, +0.0917 at
+  n = 12 — raised 2026-09-12, open,
+  `scripts/stop-margin-fit-error.probe.ts`.** Noticed closing M105, and nothing
+  in that run explains it. The honest population carries no interrupted days, so
+  this is not the contamination the margin exists for; and the arm's RMSE barely
+  moves (0.1767 → 0.1700) while the bias in the headline does not, so it is the
+  centre that is walking, not the spread. §8.10's ridge is the obvious suspect — the
+  prior's pull toward the λ₀ default weakens as usable points accumulate, which
+  would expose a per-day bias that n = 3 masks — but that is a hypothesis with
+  two untested halves: whether the per-day point is biased at all (no arm prints
+  a SIGNED per-day error, only |point − truth|) and whether the default sits off
+  the truth grid these users are drawn from. An instrument that prints both, and
+  fit bias by n at fixed prior strength, is what settles it. A commit of its own.
 
 ## Findings from the 2026-09-12 past-day build
 
