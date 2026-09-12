@@ -114,6 +114,7 @@
 		draft.physicalDifficulty = rating.physicalDifficulty;
 		draft.mentalDifficulty = rating.mentalDifficulty;
 		draft.enjoyment = rating.enjoyment;
+		draft.tags = rating.tags;
 		fromPick = true;
 		closeSuggestions();
 	}
@@ -122,9 +123,9 @@
 		dismissed = false;
 		active = -1;
 
-		// An emptied field drops a pick's rating, or clearing the title and typing an
-		// unrelated task deploys it under a rating nobody gave it. A pick's only:
-		// sliders the user dragged themselves are theirs.
+		// An emptied field drops a pick's rating and its tags, or clearing the title
+		// and typing an unrelated task deploys it under a rating nobody gave it. A
+		// pick's only: sliders the user dragged themselves are theirs.
 		if (!fromPick || e.currentTarget.value.trim()) return;
 
 		fromPick = false;
@@ -134,7 +135,6 @@
 			title: e.currentTarget.value,
 			mustDoToday: draft.mustDoToday,
 			importance: draft.importance,
-			tags: draft.tags,
 		};
 	}
 

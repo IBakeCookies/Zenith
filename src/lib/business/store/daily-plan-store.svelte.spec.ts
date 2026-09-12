@@ -463,6 +463,7 @@ describe('DailyPlanStore', () => {
 					mentalDifficulty: 1,
 					enjoyment: 7,
 					lastUsedDate: '2026-07-19',
+					tags: [],
 				},
 			],
 		]);

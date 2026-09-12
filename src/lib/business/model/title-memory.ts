@@ -31,6 +31,11 @@ export interface TitleRating {
 	 * is first-seen: `Map.set` keeps a re-seen key's original position.
 	 */
 	lastUsedDate: string;
+	/**
+	 * The tags of that last use, `[]` for none: the form assigns this straight
+	 * onto the draft, so an absent list would have to be defaulted at the caller.
+	 */
+	tags: string[];
 }
 
 /**
@@ -73,6 +78,7 @@ export function latestRatingsByTitle(sessions: DailySession[]): Map<string, Titl
 				mentalDifficulty: task.mentalDifficulty,
 				enjoyment: task.enjoyment,
 				lastUsedDate: session.date,
+				tags: task.tags ?? [],
 			});
 		}
 

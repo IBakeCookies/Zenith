@@ -450,6 +450,7 @@ describe('the next task to add — does the day decide its shape', () => {
 					mentalDifficulty: draft.mentalDifficulty,
 					enjoyment: draft.enjoyment,
 					lastUsedDate: '2026-09-03',
+					tags: [],
 				},
 			]),
 		);

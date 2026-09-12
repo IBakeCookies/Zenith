@@ -165,12 +165,12 @@ Untestable at every level is the signal.
   `aria-activedescendant` otherwise names an id that has unmounted — and an
   `$effect` on `active` scrolls the highlighted row into view, since a reopened
   list highlights an `<li>` that does not exist until the DOM is patched.
-- **Emptying the title field resets the three sliders to 5/5/5 only when a pick
-  put the numbers there.** `fromPick` in the same form: clearing the title and
-  typing an unrelated task would otherwise deploy it under a rating nobody
-  gave it, while sliders the user dragged are theirs and stay. Editing short of
-  empty keeps the pick, and the flag clears on submit — left set, the next
-  title being cleared would reset sliders no pick had touched.
+- **Emptying the title field resets the three sliders to 5/5/5 and drops the
+  tags, only when a pick put them there.** `fromPick` in the same form: clearing
+  the title and typing an unrelated task would otherwise deploy it under a
+  rating nobody gave it. A pick REPLACES the draft's tags rather than merging —
+  symmetric with the sliders. Editing short of empty keeps the pick; the flag
+  clears on submit, or the next clear would reset a form no pick had touched.
 - **A card whose reading costs a solve renders with a prompt line where the
   reading will go** — `plan-advice-card` and `budget-curve-card`: the heading,
   the description and the card's own run button from the first paint, and one
@@ -266,7 +266,7 @@ Six components hold what the two screens say the same way:
   `energy-task-row` → `task-row-shell`, because a row may not read the session
   store. It reached only the add form until 2026-09-04, on the grounds that the
   editor offers no titles either — but that reason does not transfer: a picked
-  title rewrites the three ratings and a picked TAG rewrites nothing, so
+  title rewrites the ratings and the tags, a picked TAG rewrites nothing, so
   withholding the list only invited a second spelling of a tag the user has.
   `TaskEdit` — the seven fields a form can set — is this component's
   type, since adding a task and re-tuning one emit the same thing. Importance
