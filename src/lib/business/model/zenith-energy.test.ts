@@ -876,7 +876,8 @@ describe('Zenith Energy Model', () => {
 			// has its own tests below. The fine step costs ~1.1 s alone and 2.6 s
 			// under the server project, which fits the 5 s default until the
 			// browser projects run alongside it — so the timeout below is a hang
-			// detector, not a machine-speed gate, as on the quantization test.
+			// detector, not a machine-speed gate, as on the quantization test,
+			// which CI's contention took past 20 s (2026-09-12); both carry 60 s.
 			const day = PROBE_DAY;
 
 			const handBuilt = evaluateSchedule(
@@ -903,7 +904,7 @@ describe('Zenith Energy Model', () => {
 			});
 
 			expect(result.evaluation.objective).toBeGreaterThanOrEqual(handBuilt.objective - 1e-9);
-		}, 20_000);
+		}, 60_000);
 
 		// Two frontier days, found by search and frozen, whose lattice optimum funds
 		// two tasks the seeds below the pair family do not reach (§8.6). Both optima
@@ -1132,9 +1133,10 @@ describe('Zenith Energy Model', () => {
 
 		// The slowest test in the suite: it runs the 0.25 h lattice twice, 32 slots
 		// deep, which is where the §8.6 pair seeds climb longest — this fixture went
-		// 813 ms → 1970 ms when they landed. That fits the 5 s default alone but not
-		// alongside the browser projects, so the timeout below is a hang detector,
-		// not a machine-speed gate.
+		// 813 ms → 1970 ms when they landed, and 4.8 s on a 4-core box at load 13
+		// (2026-09-12). CI runs the server and both browser projects at once on a
+		// 4-core runner and timed out at 20 s (2026-09-12), so the timeout below is
+		// a hang detector with room for that contention, not a machine-speed gate.
 		it('quantization keeps ≥97% of the fine-step objective, and both days’ structure', () => {
 			// Probe 2026-08-21: ratios 0.9843 (probeDay) and 0.9952 (mixedDay). The
 			// bound leaves slack for param drift but catches a structural regression
@@ -1155,7 +1157,7 @@ describe('Zenith Energy Model', () => {
 
 				expect(funded(coarse.blocks)).toEqual(funded(fine.blocks));
 			}
-		}, 20_000);
+		}, 60_000);
 
 		it('honors a stepHours override (blocks land on that lattice instead)', () => {
 			const { blocks } = optimizeSchedule(probeDay, 8, DEFAULT_ENERGY_PARAMS, undefined, {
