@@ -49,6 +49,27 @@ import {
 
 type Reading = Pick<Metric, 'value' | 'band' | 'track'>;
 
+/**
+ * The scale a reading sits on. The denominator IS the reading, so it is drawn
+ * one pip per unit — until a pip is thinner than the gap beside it and the bar
+ * reads better. A total of nothing has no scale at all: an empty track would
+ * draw a denominator that does not exist.
+ *
+ * Pips only where both numbers are whole, because a pip is one unit counted:
+ * 1.5 of 6 logged hours fills two of them, and `Array(6.5)` is not a length.
+ */
+export function buildMetricTrack(filled: number, total: number): MetricTrack | undefined {
+	if (total <= 0) return undefined;
+
+	const counted = Number.isInteger(filled) && Number.isInteger(total);
+
+	return {
+		kind: counted && total <= 8 ? 'pips' : 'bar',
+		filled,
+		total,
+	};
+}
+
 export function buildMetrics(
 	metrics: DailyMetrics,
 	pools: { cognitiveHours: number; physicalHours: number },
@@ -193,14 +214,7 @@ export function buildMetrics(
 				planned,
 				`${flowCoverage.reached}/${flowCoverage.total}`,
 				AXIS_BAND.flowCoverage((flowCoverage.reached / flowCoverage.total) * 100),
-				{
-					// The denominator IS this reading, so it is drawn one pip per task —
-					// until a pip is thinner than the gap beside it and the bar reads
-					// better.
-					kind: flowCoverage.total <= 8 ? 'pips' : 'bar',
-					filled: flowCoverage.reached,
-					total: flowCoverage.total,
-				},
+				buildMetricTrack(flowCoverage.reached, flowCoverage.total),
 			),
 		},
 		{

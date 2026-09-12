@@ -473,3 +473,28 @@ export async function copyFlowLogToDate(page: Page, date: string) {
 		date,
 	);
 }
+
+/** The tag rows of the analytics breakdown card, in the order the card lists them. */
+export const tagRows = (page: Page) =>
+	page
+		.locator('.card-shell')
+		.filter({
+			has: page.getByRole('heading', {
+				name: 'Logged hours by tag',
+			}),
+		})
+		.getByRole('listitem');
+
+/** The rename editor on one tag's row: the ✎ opens it, and the field is the row's. */
+export async function openRenameEditor(page: Page, tag: string) {
+	await tagRows(page)
+		.filter({
+			hasText: tag,
+		})
+		.getByRole('button', {
+			name: `Rename ${tag}`,
+		})
+		.click();
+
+	return page.getByLabel('New tag name');
+}

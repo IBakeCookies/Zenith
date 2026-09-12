@@ -64,6 +64,18 @@
 	);
 
 	const withUntagged = tagHours([drain(1, 3)], [day([task(1)])], RANGE_START);
+
+	// Two tags and an untagged remainder, so every row on the card is drawn against
+	// the same denominator: the 1.5 h the rows themselves add up to.
+	const withShares = tagHours(
+		[drain(1, 0.8), drain(2, 0.5), drain(3, 0.2)],
+		[day([task(1, ['school']), task(2, ['exercise']), task(3)])],
+		RANGE_START,
+	);
+
+	/** A row's bar, as a whole percentage — the share the reader actually sees. */
+	const fillPercent = (row: HTMLElement) =>
+		Math.round(parseFloat(row.querySelector<HTMLElement>('.band-track > div')!.style.width));
 </script>
 
 <Story
@@ -79,6 +91,43 @@
 		await expect(within(rows[0]).getByText('5')).toBeInTheDocument();
 		await expect(within(rows[1]).getByText('exercise')).toBeInTheDocument();
 		await expect(within(rows[1]).getByText('2')).toBeInTheDocument();
+	}}
+/>
+
+<Story
+	name="Each row against the range"
+	args={{
+		breakdown: withShares,
+	}}
+	play={async ({ canvas }) => {
+		// The denominator is the rows' own sum and not the Logged hours tile: a task
+		// with two tags counts under both, so against the tile a bar could overrun
+		// its track.
+		const rows = canvas.getAllByRole('listitem');
+
+		expect(fillPercent(rows[0])).toBe(53);
+		expect(fillPercent(rows[1])).toBe(33);
+		expect(fillPercent(rows[2])).toBe(13);
+
+		// The bar takes the width the label and the hours leave, rather than a fixed
+		// one that leaves half the card empty.
+		expect(rows[0].querySelector('.band-track')).toHaveClass('flex-1');
+	}}
+/>
+
+<Story
+	name="The caveat reads under the rows"
+	args={{
+		breakdown: withShares,
+	}}
+	play={async ({ canvas }) => {
+		// The hint says what the card shows; why the rows can out-total the tile is a
+		// fact about the rows, so it reads after them.
+		expect(canvas.getByText(/Where the range/).textContent).not.toMatch(/under both/);
+
+		const note = canvas.getByText(/counts its hours under both/);
+
+		expect(note.previousElementSibling!.tagName).toBe('UL');
 	}}
 />
 
@@ -128,9 +177,13 @@
 	args={{
 		breakdown: tagHours([], [], RANGE_START),
 	}}
-	play={async ({ canvas }) => {
+	play={async ({ canvas, canvasElement }) => {
 		// A range with no 🪫 sessions says so, rather than showing an empty box
 		await expect(canvas.getByText('No hours logged in this range.')).toBeInTheDocument();
+
+		// And nothing to take a share of draws no scale — an empty track would say
+		// every tag got none of a total that exists.
+		expect(canvasElement.querySelectorAll('.band-track')).toHaveLength(0);
 	}}
 />
 

@@ -1,11 +1,11 @@
 import { expect, test, type Page } from '@playwright/test';
-import { AUTOSAVE_MS, seedDay } from './helpers';
+import { AUTOSAVE_MS, isoDate, seedDay, setIndexedDBStoreFailing } from './helpers';
 
 /* The analytics screen reads a year of stored days through AnalyticsStore, whose
    whole job happens after hydration: load, slice by range, fold. None of it runs
    during SSR, so only a real browser proves it. */
 
-/** The "Active days" fold row — its denominator is the viewed range's length. */
+/** The "Active days" row — its denominator is the viewed range's length. */
 function activeDaysTile(page: Page) {
 	return page
 		.locator('div', {
@@ -55,25 +55,6 @@ test('stats and chart come off the stored days', async ({ page }) => {
 			}),
 		).toBeVisible();
 
-	// The other five are one click away, not gone.
-	const folded = ['Active days', 'Longest streak', 'Planned hours', 'Rest hours', 'Best day'];
-
-	for (const tile of folded)
-		await expect(
-			page.getByText(tile, {
-				exact: true,
-			}),
-		).not.toBeVisible();
-
-	await page.getByText('5 more metrics').click();
-
-	for (const tile of folded)
-		await expect(
-			page.getByText(tile, {
-				exact: true,
-			}),
-		).toBeVisible();
-
 	// One of two tasks done, priority-weighted — a real percentage reaches the copy
 	await expect(page.getByText(/\d+% of planned tasks/)).toBeVisible();
 
@@ -110,6 +91,223 @@ async function seedCompletedDay(page: Page) {
 
 	await page.goto('/analytics');
 }
+
+/** One reading's tile: the label `<p>`'s parent, which is what `stat-tile.svelte` draws. */
+const statTile = (page: Page, label: string) =>
+	page
+		.getByText(label, {
+			exact: true,
+		})
+		.locator('xpath=..');
+
+/** A tile's bar as a whole percentage — the share the reader actually sees. */
+async function fillPercent(page: Page, label: string) {
+	const fill = statTile(page, label).locator('.band-track > div');
+
+	await expect(fill).toHaveCount(1);
+
+	return Math.round(parseFloat(await fill.evaluate((node) => (node as HTMLElement).style.width)));
+}
+
+/* A range the four readings can be read against: 23 planned tasks over six days, six
+   of them done, 20.8 declared hours, one 🪫 session of 1.5 h — and a five-day run of
+   completed days a fortnight back, which is the streak's own denominator. Written
+   straight into IndexedDB, the way `task-tags.e2e.ts` seeds its days: a plan this size
+   is not typeable through the UI and a past day is read-only either way. */
+const RANGE_DAYS = [
+	{
+		offset: -6,
+		tasks: 5,
+		completed: 2,
+		hours: 4,
+	},
+	{
+		offset: -5,
+		tasks: 4,
+		completed: 2,
+		hours: 4,
+	},
+	{
+		offset: -4,
+		tasks: 4,
+		completed: 2,
+		hours: 4,
+	},
+	{
+		offset: -3,
+		tasks: 4,
+		completed: 0,
+		hours: 4,
+	},
+	{
+		offset: -2,
+		tasks: 3,
+		completed: 0,
+		hours: 2.4,
+	},
+	// Nothing completed on the last three days, so the current streak really is 0.
+	{
+		offset: -1,
+		tasks: 3,
+		completed: 0,
+		hours: 2.4,
+	},
+];
+
+const STREAK_DAYS = [-12, -11, -10, -9, -8].map((offset) => ({
+	offset,
+	tasks: 1,
+	completed: 1,
+	hours: 4,
+}));
+
+/** Ids unique across days and never negative, so the 🪫 row below can name one. */
+const taskId = (offset: number, index: number) => (30 + offset) * 100 + index;
+const LOGGED_TASK = taskId(-6, 0);
+
+async function seedRange(page: Page) {
+	await page.goto('/');
+	// The planner settles onto the loaded day after hydration, and a navigation
+	// mid-`evaluate` destroys the context the write is running in.
+	await page.waitForTimeout(AUTOSAVE_MS);
+
+	await page.evaluate(
+		({ days, drainDate, drainTask }) =>
+			new Promise<void>((resolve, reject) => {
+				const request = indexedDB.open('zenith-db');
+				request.onerror = () => reject(request.error);
+
+				request.onsuccess = () => {
+					const transaction = request.result.transaction(
+						['sessions', 'drainObservations'],
+						'readwrite',
+					);
+
+					for (const day of days) {
+						transaction.objectStore('sessions').put({
+							date: day.date,
+							availableHours: day.hours,
+							switchCost: 0.25,
+							updatedAt: 1,
+							tasks: day.tasks,
+						});
+					}
+
+					transaction.objectStore('drainObservations').add({
+						date: drainDate,
+						taskId: drainTask,
+						taskTitle: 'deep work',
+						hours: 1.5,
+						cognitiveDemand: 0.5,
+						physicalDemand: 0.3,
+						mindDrain: 6,
+						bodyDrain: 2,
+						createdAt: 100,
+					});
+
+					transaction.onerror = () => reject(transaction.error);
+					transaction.oncomplete = () => resolve();
+				};
+			}),
+		{
+			days: [...STREAK_DAYS, ...RANGE_DAYS].map((day) => ({
+				date: isoDate(day.offset),
+				hours: day.hours,
+				tasks: Array.from(
+					{
+						length: day.tasks,
+					},
+					(_, index) => ({
+						id: taskId(day.offset, index),
+						title: `task ${day.offset}.${index}`,
+						physicalDifficulty: 3,
+						mentalDifficulty: 5,
+						enjoyment: 5,
+						createdAt: isoDate(day.offset),
+						completed: index < day.completed,
+					}),
+				),
+			})),
+			drainDate: isoDate(-6),
+			drainTask: LOGGED_TASK,
+		},
+	);
+}
+
+test('tasks completed reads against what was planned', async ({ page }) => {
+	await seedRange(page);
+	await page.goto('/analytics');
+
+	// 6 of 23: the denominator the reader would otherwise have to hold.
+	await expect(statTile(page, 'Tasks completed')).toContainText('/ 23');
+	expect(await fillPercent(page, 'Tasks completed')).toBe(26);
+});
+
+test('logged hours reads against the hours planned', async ({ page }) => {
+	await seedRange(page);
+	await page.goto('/analytics');
+
+	await expect(page.getByText('of 20.8 h planned')).toBeVisible();
+	expect(await fillPercent(page, 'Logged hours')).toBe(7);
+});
+
+test('the streak reads against the longest one in the range', async ({ page }) => {
+	await seedRange(page);
+	await page.goto('/analytics');
+
+	const streak = statTile(page, 'Current streak');
+
+	await expect(streak).toContainText('longest 5 days');
+
+	// One pip per day of the record, none of them reached: a bar would say 0 with no
+	// sense of how far off it is.
+	await expect(streak.locator('span.band-fill')).toHaveCount(5);
+	await expect(streak.locator('span.band-fill.bg-ty-secondary')).toHaveCount(0);
+});
+
+test('a tile with no reading has no scale', async ({ page }) => {
+	await seedRange(page);
+
+	// Only the ☕ store: the history read does not touch it, so the page paints and
+	// only the model report — which is where the logged hours come from — fails.
+	await setIndexedDBStoreFailing(page, 'restObservations');
+
+	// Client-side, so the patch above survives — it is not an init script.
+	await page
+		.getByRole('link', {
+			name: 'Analytics',
+		})
+		.click();
+
+	await expect(statTile(page, 'Logged hours')).toContainText('—');
+	await expect(statTile(page, 'Logged hours').locator('.band-track')).toHaveCount(0);
+
+	// The control: the readings the history read answers keep their scale, so the
+	// absence above is the missing reading's doing and not a page that drew none.
+	await expect(statTile(page, 'Tasks completed').locator('.band-track')).toHaveCount(1);
+});
+
+test('the three remaining readings need no click', async ({ page }) => {
+	await seedCompletedDay(page);
+
+	for (const reading of ['Active days', 'Rest hours', 'Best day'])
+		await expect(
+			page.getByText(reading, {
+				exact: true,
+			}),
+		).toBeVisible();
+
+	// The two the tiles absorbed as their own denominators are not rows any more,
+	// and with three readings left there is nothing worth folding.
+	await expect(page.getByText(/more metrics/)).toHaveCount(0);
+
+	for (const gone of ['Longest streak', 'Planned hours'])
+		await expect(
+			page.getByText(gone, {
+				exact: true,
+			}),
+		).toHaveCount(0);
+});
 
 test('one card holds both readings', async ({ page }) => {
 	await seedCompletedDay(page);

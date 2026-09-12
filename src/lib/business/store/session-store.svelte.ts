@@ -1279,16 +1279,19 @@ export class SessionStore {
 	}
 
 	/**
-	 * One tag rewritten everywhere it was ever used — every stored day and the
-	 * loaded one, which is the only write in this store that touches days other
-	 * than the viewed one. The two verbs below differ in the fold and in what
-	 * they leave `#tagVocabulary`; everything else is this method.
+	 * One tag rewritten everywhere it was ever used — every stored day, the loaded
+	 * one, and every saved routine, which is the only write in this store that
+	 * touches days other than the viewed one. The two verbs below differ in the
+	 * fold and in what they leave `#tagVocabulary`; everything else is this method.
 	 *
-	 * Raw in, raw out: `sanitizeSession` rebuilds a record field by field, so
-	 * writing its output back would drop whatever a future field adds — the same
-	 * failure mode as the whole-day write sites (business/AGENTS.md).
+	 * Raw in, raw out: `sanitizeSession` and `sanitizeRoutines` rebuild a record
+	 * field by field, so writing either one's output back would drop whatever a
+	 * future field adds — the same failure mode as the whole-day write sites
+	 * (business/AGENTS.md).
 	 */
-	async #rewriteTagInHistory(fold: (tasks: Task[]) => Task[]): Promise<boolean> {
+	async #rewriteTagInHistory(
+		fold: <T extends { tags?: string[] }>(tasks: T[]) => T[],
+	): Promise<boolean> {
 		// The fixture's tasks carry tags, and this write never goes near the viewed
 		// day's guards — so it is refused here, like every other write.
 		if (this.#isShowingDemo) return false;
@@ -1318,8 +1321,28 @@ export class SessionStore {
 				});
 			}
 
-			// The loaded day is held in memory the whole time /analytics is open, so a
-			// rewrite that stopped at storage is undone by the next auto-save.
+			// Raw here too, and for the same reason `sanitizeRoutines` is skipped.
+			for (const routine of await routineRepository.$readAllRoutines()) {
+				if (!Array.isArray(routine.tasks)) continue;
+
+				const tasks = fold(routine.tasks);
+
+				if (tasks === routine.tasks) continue;
+
+				await routineRepository.$updateRoutine({
+					...routine,
+					tasks,
+				});
+			}
+
+			// The menu renders this list and `importRoutine` reads it, so a rewrite
+			// that stopped at storage hands the old tag back until the next reload.
+			this.#routines = await this.#readRoutines();
+
+			// Last, and after every write: the loaded day is held in memory the whole
+			// time /analytics is open, so a rewrite that stopped at storage is undone
+			// by the next auto-save — but a fold applied before a write that then threw
+			// would persist a tag the banner has just said was not saved.
 			this.#tasks = fold(this.#tasks);
 
 			return true;

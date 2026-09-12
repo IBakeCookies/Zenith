@@ -3,7 +3,7 @@ import type { DailyMetrics } from '$lib/business/model/metric/daily-metrics';
 import type { RemainingDay } from '$lib/business/model/metric/remaining-day';
 import * as m from '$lib/paraglide/messages.js';
 import { AXIS_BAND, type Band } from '$lib/presentation/utils/band';
-import { buildMetrics } from '$lib/presentation/utils/metric-descriptor';
+import { buildMetrics, buildMetricTrack } from '$lib/presentation/utils/metric-descriptor';
 
 /** Group sizes, so the pin names the shape and not twenty-four expectations. */
 const countBy = <T, K extends string>(items: T[], key: (item: T) => K) =>
@@ -80,12 +80,18 @@ function dailyMetrics(overrides: Partial<DailyMetrics> = {}): DailyMetrics {
 	};
 }
 
-/** A full day: tasks, a budget, and one task already done. */
+/** A full day: tasks, a budget, and one task already done. Its flow coverage is
+ *  spelled out because a funded day has one — left at the empty day's 0/0 it is a
+ *  reading with no denominator, which now draws no scale. */
 const plannedDay: Partial<DailyMetrics> = {
 	totalTasks: 3,
 	completedTasks: 1,
 	budgetHours: 8,
 	activeTasks: activeTasks(2),
+	flowCoverage: {
+		reached: 1,
+		total: 3,
+	},
 };
 
 /** Only the burn-down is read here; the rest of the re-plan renders on the task rows. */
@@ -609,5 +615,27 @@ describe('buildMetrics', () => {
 			filled: Math.min(3, total),
 			total,
 		});
+	});
+});
+
+describe('buildMetricTrack', () => {
+	// The threshold `buildMetrics` used to spell inline, now the one rule its
+	// callers read: past eight, a pip is thinner than the gap beside it.
+	it('draws a total too long to count as a bar', () => {
+		expect(buildMetricTrack(0, 9)?.kind).toBe('bar');
+	});
+
+	// A reading with no denominator has no scale to sit on, and an empty track
+	// would draw one as though the reading were 0 of something.
+	it('draws nothing when there is nothing to measure against', () => {
+		expect(buildMetricTrack(0, 0)).toBeUndefined();
+	});
+
+	// A pip is one unit counted, so only whole numbers have pips at all: 1.5 of 6
+	// hours drew a sixth pip's worth of nothing and filled two, and a fractional
+	// total is not even a length `Array()` accepts.
+	it('draws a reading that is not counted in whole units as a bar', () => {
+		expect(buildMetricTrack(1.5, 6)?.kind).toBe('bar');
+		expect(buildMetricTrack(1.5, 6.5)?.kind).toBe('bar');
 	});
 });

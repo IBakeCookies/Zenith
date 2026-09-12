@@ -18,7 +18,7 @@ import { AUTOSAVE_DEBOUNCE_MS } from '$lib/business/store/debounced-write.svelte
 import { addDays, toISODate } from '$lib/business/utils/date';
 import { DEFAULT_CAPACITY_POOLS, DEFAULT_USER_CONSTANTS } from '$lib/business/model/zenith';
 import type { StorageStatusStore } from '$lib/business/store/storage-status.svelte';
-import type { DailySession } from '$lib/business/type';
+import type { DailySession, SavedRoutine } from '$lib/business/type';
 import type { TitleRating } from '$lib/business/model/title-memory';
 import { summarizeBudgetHistory } from '$lib/business/model/budget-memory';
 import { summarizeDeclaredConstraints } from '$lib/business/model/constraint-memory';
@@ -54,6 +54,8 @@ const readHistoryPrefillsMock = vi.mocked(sessionHistory.readHistoryPrefills);
 const updateSessionMock = vi.mocked(sessionRepository.$updateSession);
 const readSessionByDateMock = vi.mocked(sessionRepository.$readSessionByDate);
 const updateRoutineMock = vi.mocked(routineRepository.$updateRoutine);
+const readAllRoutinesMock = vi.mocked(routineRepository.$readAllRoutines);
+const readSessionsByDateRangeMock = vi.mocked(sessionRepository.$readSessionsByDateRange);
 
 /** What the boot read answers before any day has been budgeted or rated. */
 const noPrefills = () => ({
@@ -1815,6 +1817,11 @@ describe('SessionStore task tags', () => {
 	afterEach(() => {
 		vi.useRealTimers();
 		readSessionByDateMock.mockImplementation(async () => null);
+		// `clearAllMocks` keeps implementations, and the two seeders below install one
+		// that would otherwise answer the next describe's boot read.
+		readAllRoutinesMock.mockImplementation(async () => []);
+		updateRoutineMock.mockImplementation(async () => {});
+		readSessionsByDateRangeMock.mockImplementation(async () => []);
 	});
 
 	/* A tag is part of what the task IS, so it travels everywhere the sliders do. The
@@ -1878,6 +1885,84 @@ describe('SessionStore task tags', () => {
 		flushSync();
 
 		expect(store.tasks[0].tags).toEqual(['exercise']);
+	});
+
+	/* `Task.tags` is carried by two stores, and the rewrite that made "everywhere"
+	   true has to reach both. These two are about `routines` — the second carrier. */
+
+	/** The `routines` store as storage: the rewrite re-reads what it just put, and a
+	 *  mock pinned to one fixture would hand the old tag straight back. */
+	function seedRoutineStore(routines: SavedRoutine[]) {
+		const held = structuredClone(routines);
+
+		readAllRoutinesMock.mockImplementation(async () => structuredClone(held));
+
+		updateRoutineMock.mockImplementation(async (routine: SavedRoutine) => {
+			const index = held.findIndex((r) => r.id === routine.id);
+
+			held[index === -1 ? held.length : index] = structuredClone(routine);
+		});
+	}
+
+	/** One stored day carrying `tag`, so the rename below is a real write and not an
+	 *  empty one reporting success over a history it never touched. */
+	function seedTaggedDay(date: string, tag: string) {
+		readSessionsByDateRangeMock.mockImplementation(async () => [
+			{
+				date,
+				tasks: [
+					{
+						id: 1,
+						title: 'Morning run',
+						physicalDifficulty: 7,
+						mentalDifficulty: 1,
+						enjoyment: 6,
+						createdAt: date,
+						completed: false,
+						tags: [tag],
+					},
+				],
+				availableHours: 5,
+				switchCost: 0.25,
+				updatedAt: 1,
+			},
+		]);
+	}
+
+	it('drops a deleted tag from the routines on screen, not only from storage', async () => {
+		seedRoutineStore([
+			{
+				id: 'routine-1',
+				name: 'Errands',
+				tasks: [
+					{
+						title: 'Post the parcel',
+						physicalDifficulty: 3,
+						mentalDifficulty: 2,
+						enjoyment: 5,
+						tags: ['errand'],
+					},
+				],
+				createdAt: 1,
+			},
+		]);
+
+		const { store } = await setup();
+
+		expect(store.routines[0].tasks[0].tags).toEqual(['errand']);
+		expect(await store.deleteTag('errand')).toBe(true);
+
+		// `store.routines`, not a fresh read: the menu renders the in-memory list, so a
+		// rewrite that stopped at storage hands the old tag back until the next reload.
+		expect('tags' in store.routines[0].tasks[0]).toBe(false);
+	});
+
+	it('completes a rename on a profile with no saved routines', async () => {
+		seedTaggedDay(addDays(toISODate(new Date()), -3), 'dep work');
+
+		const { store } = await setup();
+
+		expect(await store.renameTag('dep work', 'deep work')).toBe(true);
 	});
 
 	it('carries tags to tomorrow', async () => {

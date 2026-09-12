@@ -622,17 +622,15 @@ filtered to the viewed range would name less than the button removes. A row's
 date is also a link to `/?date=<that day>` for ⚡ and 🪫, which is navigation and
 not the correction path; ☕ belongs to no day's row and gets no link.
 
-### The range readings are one card: four headline, five folded
+### The range readings are one card: four headline, three reference
 
 Tasks completed, Avg completion rate, Current streak and Logged hours keep the
-large reading and the note — volume, trend, consistency, load, one per question
-the range asks. Active days, Longest streak, Planned hours, Rest hours and Best
-day fold under a rule in the same card as label, value and suffix; the five
-notes are what the hierarchy cost. `metric-headline-strip.svelte`'s own comment
-holds why there is a headline set at all, and `metrics_more` — which `/`'s own
-readings no longer fold behind — labels this summary (R3 — one key for one
-concept). The fold carries no `Band`: none of these readings is judged, so no
-colour and no tooltip.
+large reading, the note and a `MetricTrack` under it — volume, trend,
+consistency, load, one per question the range asks. Two of the old folded rows
+are the notes' numbers and those tracks' denominators: Longest streak in the
+streak's, Planned hours in the logged hours'. Active days, Rest hours and Best
+day read always-open under a rule in the same card as label, value and suffix.
+Nothing here is judged: every track is `neutral`, no row a `Band` or a tooltip.
 
 **One card, not one per reading** — `/`'s shape. `stat-tile.svelte` therefore
 draws no shell of its own: four shells side by side said the four readings were
@@ -830,7 +828,9 @@ therefore matches twice, which is why `time-budget.e2e.ts` picks the tile by the
 title over nothing is a question the card cannot answer. Momentum is one badge
 that names itself (`momentum_badge`) — the state alone is a word with no subject.
 `metric-label` and `metric-band-text` are what both cards draw (R3). A tile also
-draws a `MetricTrack`: `{ kind: 'bar' | 'pips'; filled; total }`, none on an N/A.
+draws a `MetricTrack`, whose markup is `metric-track.svelte` for all three
+drawers; where a reading's own count is the denominator, `buildMetricTrack`
+decides it — pips or bar, and none at all on an N/A or a total of nothing.
 
 ### The Lab's task list reads in schedule order, snapshotted per visit
 

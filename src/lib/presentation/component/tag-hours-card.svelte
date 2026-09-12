@@ -4,6 +4,7 @@
 	import X from '@lucide/svelte/icons/x';
 	import type { TagHoursBreakdown } from '$lib/business/model/tags';
 	import * as m from '$lib/paraglide/messages.js';
+	import MetricTrack from '$lib/presentation/component/metric-track.svelte';
 	import { cn } from '$lib/presentation/utils';
 
 	interface Props {
@@ -60,6 +61,10 @@
 						: []),
 				],
 	);
+
+	// The rows' own sum, never the "Logged hours" tile: a task carrying two tags
+	// counts under both, so against the tile a bar could overrun its own track.
+	const total = $derived(rows.reduce((sum, row) => sum + row.hours, 0));
 
 	let editingTag = $state<string | null>(null);
 	let draft = $state('');
@@ -173,6 +178,18 @@
 							{/if}
 						</div>
 
+						<!-- Between the label group and the hours, so the row reads
+						     label · share · hours. Unbanded: nothing here judges a tag. -->
+						<MetricTrack
+							track={{
+								kind: 'bar',
+								filled: row.hours,
+								total,
+							}}
+							band="neutral"
+							class="flex-1"
+						/>
+
 						<span class="text-sm font-medium text-ty-primary">
 							<span class="tabular-nums">{hours(row.hours)}</span>
 							{m.unit_hours()}
@@ -225,5 +242,8 @@
 				</li>
 			{/each}
 		</ul>
+		<!-- After the rows, not in the hint: why they can out-total the tile is a fact
+		     about the rows themselves. -->
+		<p class="mt-text-xs text-xs text-ty-silent">{m.ana_tag_hours_double_count()}</p>
 	{/if}
 </div>
