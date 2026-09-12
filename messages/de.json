@@ -125,6 +125,7 @@
 	"task_remove_aria": "Aufgabe löschen",
 	"task_remove_toast": "„{title}“ gelöscht.",
 	"carry_toast": "{count} auf morgen verschoben.",
+	"move_toast": "„{title}“ auf morgen verschoben.",
 	"task_title_label": "Titel",
 	"budget_title": "Tag einrichten",
 	"budget_figure_budget": "Budget",

@@ -15,7 +15,10 @@
 		describeDeferDestination,
 	} from '$lib/presentation/utils/plan-advice-descriptor';
 	import { removeTaskWithUndo } from '$lib/presentation/utils/remove-task-with-undo';
-	import { carryUnfinishedWithUndo } from '$lib/presentation/utils/carry-unfinished-with-undo';
+	import {
+		carryUnfinishedWithUndo,
+		moveTaskToTomorrowWithUndo,
+	} from '$lib/presentation/utils/carry-with-undo';
 	import { getDemoHref } from '$lib/presentation/utils/demo-link';
 	import {
 		removeFlowLogWithUndo,
@@ -351,7 +354,7 @@
 					{destination}
 					hasError={plan.hasAdviceError}
 					oncheck={() => plan.computeAdvice()}
-					onapply={(id) => session.moveTaskToTomorrow(id)}
+					onapply={(id) => moveTaskToTomorrowWithUndo(session, id)}
 					onapplybudget={(hours) => (session.availableHours = hours)}
 				/>
 			{/if}

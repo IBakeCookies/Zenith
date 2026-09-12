@@ -180,18 +180,6 @@
 			</Tooltip.Content>
 		</Tooltip.Root>
 	{/if}
-	{#if deferredTo}
-		<Tooltip.Root>
-			<Tooltip.Trigger class="cursor-help">
-				<Badge class="bg-info-tint uppercase tracking-wide text-info-strong">
-					{m.task_deferred_badge()}
-				</Badge>
-			</Tooltip.Trigger>
-			<Tooltip.Content>
-				<p>{m.task_deferred_tooltip()}</p>
-			</Tooltip.Content>
-		</Tooltip.Root>
-	{/if}
 	<!-- `normal` is silent: a badge for the level nobody chose would be on every row. -->
 	{#if importance !== 'normal'}
 		<Tooltip.Root>
@@ -338,6 +326,7 @@
 		{mentalDifficulty}
 		{enjoyment}
 		{mustDoToday}
+		{deferredTo}
 		{importance}
 		{tags}
 		{tagVocabulary}

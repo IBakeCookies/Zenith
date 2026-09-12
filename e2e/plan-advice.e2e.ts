@@ -259,6 +259,51 @@ test('applying a deferral moves the task to tomorrow’s plan', async ({ page })
 	).toBeVisible();
 });
 
+/* The lever is the carry on one row, so it offers the same way back: the toast's Undo
+   lifts the mark and takes the copy out of tomorrow — a day the move may have created,
+   which the undo then removes rather than leaving a stored day the user never opened. */
+test('the applied deferral offers a way back', async ({ page }) => {
+	await page.goto('/');
+	await addDrainingTask(page, 'Write the spec');
+	await addDrainingTask(page, 'Migrate the database');
+	await addDrainingTask(page, 'Refactor the auth flow');
+	await setBudget(page, 4);
+
+	await page
+		.getByRole('button', {
+			name: 'Check my day',
+		})
+		.click();
+
+	const apply = page
+		.getByRole('button', {
+			name: /Move “.+” to tomorrow/,
+		})
+		.first();
+
+	await expect(apply).toBeVisible();
+	const title = (await apply.getAttribute('aria-label'))!.match(/“(.+)”/)![1];
+
+	await apply.click();
+
+	await expect(page.getByText(`Moved “${title}” to tomorrow.`)).toBeVisible();
+
+	await page
+		.getByRole('button', {
+			name: 'Undo',
+		})
+		.click();
+
+	await expect(taskRow(page, title)).toBeVisible();
+	await expect(taskRow(page, title).getByText('Moved to tomorrow')).toHaveCount(0);
+
+	// The un-marking is a debounced autosave; let it land before navigating.
+	await page.waitForTimeout(AUTOSAVE_MS);
+	await page.goto(`/?date=${isoDate(1)}`);
+
+	await expect(page.getByText('No tasks deployed yet')).toBeVisible();
+});
+
 /* The other performable lever (the budget is a choice about the day, which is
    why it is a lever at all where the switch cost is only a diagnostic). What the
    button buys over retyping the label: the trim lever is `budget − planSlack`

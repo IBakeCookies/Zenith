@@ -233,7 +233,7 @@ midnight re-loads and re-arms the autosave.
 ### Five write sites carry the whole day, so a new field lands in all five
 
 `SessionStore` writes a `DailySession` from the autosave payload, from each
-tomorrow move's destination payload, from the carry's undo (the same destination,
+tomorrow move's destination payload, from the moves' undo (the same destination,
 rewritten) and from `#rewriteTagInHistory` (the rename and the delete) — each a
 whole record, so every field one of them does not carry is a field it erases.
 `#persistSession` cannot catch that: it takes the payload already built. A field
@@ -259,8 +259,8 @@ which of the two flags a site takes is the whole of it:
   before `initializeStorage`, the day effect seeds instead of loading, the
   yesterday effect and the `visibilitychange` re-read stand down.
 - `#isShowingDemo` — whether the fixture is on screen. Gates the WRITES:
-  `#persistSession`, the auto-save effect, `logFlow`, `saveCurrentAsRoutine`,
-  `deleteRoutine`, the two tomorrow moves and the carry's undo, `#rewriteTagInHistory`, and the two
+  `#persistSession`/`#deleteSession`, the auto-save effect, `logFlow`, `saveCurrentAsRoutine`,
+  `deleteRoutine`, the two tomorrow moves and their undo, `#rewriteTagInHistory`, and the two
   remaining reads a click can
   still reach (`readDeferDestination`, `importFromDate`). Leaving the demo drops
   the param while the fixture is still in `#tasks`, and a URL-keyed auto-save ran
@@ -589,13 +589,13 @@ latch (two overlapping read-modify-writes on tomorrow would drop one task).
 Destination is hard-coded to `selectedDate + 1` — neither caller means anything
 else (YAGNI) — and the advice stays a counterfactual: only the button commits.
 
-`carryUnfinishedToTomorrow` is the single move for every task `carryableCount`
-counts, in ONE destination write (a loop over the single move would hit its own
-latch), and stashes its way back in `undoCarry` for the page's toast — a stash, not
-a return value, since both moves return whether they moved: it removes the copies
-from tomorrow under the same latch, then un-marks the rows. `carryableCount` is the
-one field the control is gated on: one derived list, empty wherever the move would
-refuse, so the label never overstates
+`carryUnfinishedToTomorrow` is the single move for every task `carryableCount` counts,
+in ONE destination write (a loop over the single move would hit its own latch). Both
+moves stash their way back in `undoCarry` for the page's toast — a stash, not a return
+value, since both return whether they moved: it removes the copies from tomorrow under
+the same latch — deleting a destination the move CREATED and nothing else has reached,
+or its prefill budget would stand as a declaration — then un-marks the rows. `carryableCount`
+is the one field the control is gated on: one derived list, empty wherever the move would refuse, so the label never overstates
 ([the-carry-that-kept-the-count.md](../../../docs/features/the-carry-that-kept-the-count.md)).
 
 The destination record is also **read** for a preview — the card's day-level

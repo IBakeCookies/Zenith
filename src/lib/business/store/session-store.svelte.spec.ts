@@ -30,6 +30,7 @@ vi.mock('$lib/business/session-history', () => ({
 
 vi.mock('$lib/data/repository/session-repository', () => ({
 	$updateSession: vi.fn(async () => {}),
+	$deleteSession: vi.fn(async () => {}),
 	$readSessionByDate: vi.fn(async () => null),
 	$readSessionsByDateRange: vi.fn(async () => []),
 }));
@@ -52,6 +53,7 @@ vi.mock('$lib/data/repository/flow-observation-repository', () => ({
 const initializeStorageMock = vi.mocked(sessionHistory.initializeStorage);
 const readHistoryPrefillsMock = vi.mocked(sessionHistory.readHistoryPrefills);
 const updateSessionMock = vi.mocked(sessionRepository.$updateSession);
+const deleteSessionMock = vi.mocked(sessionRepository.$deleteSession);
 const readSessionByDateMock = vi.mocked(sessionRepository.$readSessionByDate);
 const updateRoutineMock = vi.mocked(routineRepository.$updateRoutine);
 const readAllRoutinesMock = vi.mocked(routineRepository.$readAllRoutines);
@@ -1162,6 +1164,120 @@ describe('SessionStore persistence', () => {
 		expect(await store.carryUnfinishedToTomorrow()).toBe(true);
 
 		expect(updateSessionMock.mock.calls[0][0].tasks[0]).not.toHaveProperty('deferredTo');
+	});
+
+	/* The undo is the carry's two writes in reverse — and a carry into a day with no
+	   record CREATED one, with the weekday prefill written in as its budget. Written
+	   back empty, that record is a declaration the user never made, in the history
+	   every later prefill reads (ROADMAP item 16): the undo deletes what the carry made. */
+	it('deletes the tomorrow the carry created when it is undone', async () => {
+		const { store } = await setup();
+		const tomorrow = addDays(store.today, 1);
+
+		store.addTask({
+			title: 'ship it',
+			physicalDifficulty: 3,
+			mentalDifficulty: 5,
+			enjoyment: 5,
+		});
+
+		flushSync();
+		useFakeTimers();
+
+		expect(await store.carryUnfinishedToTomorrow()).toBe(true);
+		expect(updateSessionMock).toHaveBeenCalledTimes(1);
+
+		// Tomorrow now holds what the carry wrote.
+		readSessionByDateMock.mockImplementation(async (date) =>
+			date === tomorrow ? updateSessionMock.mock.calls[0][0] : null,
+		);
+
+		await store.undoCarry!();
+
+		expect(deleteSessionMock).toHaveBeenCalledWith(tomorrow);
+		expect(updateSessionMock).toHaveBeenCalledTimes(1);
+		expect(deferralOf(store.tasks[0])).toBeUndefined();
+	});
+
+	it('gives a tomorrow that already existed its own tasks back, minus the copies', async () => {
+		const { store } = await setup();
+		const tomorrow = addDays(store.today, 1);
+
+		const existing: DailySession = {
+			date: tomorrow,
+			tasks: [
+				{
+					id: 1,
+					title: 'Dentist',
+					physicalDifficulty: 2,
+					mentalDifficulty: 2,
+					enjoyment: 2,
+					createdAt: tomorrow,
+					completed: false,
+				},
+			],
+			availableHours: 5,
+			switchCost: 0.25,
+			updatedAt: 1,
+		};
+
+		readSessionByDateMock.mockImplementation(async (date) => (date === tomorrow ? existing : null));
+
+		store.addTask({
+			title: 'ship it',
+			physicalDifficulty: 3,
+			mentalDifficulty: 5,
+			enjoyment: 5,
+		});
+
+		flushSync();
+		useFakeTimers();
+
+		expect(await store.carryUnfinishedToTomorrow()).toBe(true);
+
+		const carried = updateSessionMock.mock.calls[0][0];
+		expect(carried.tasks.map((t) => t.title)).toEqual(['ship it', 'Dentist']);
+		readSessionByDateMock.mockImplementation(async (date) => (date === tomorrow ? carried : null));
+
+		await store.undoCarry!();
+
+		expect(deleteSessionMock).not.toHaveBeenCalled();
+
+		expect(updateSessionMock.mock.calls[1][0]).toMatchObject({
+			date: tomorrow,
+			availableHours: 5,
+		});
+
+		expect(updateSessionMock.mock.calls[1][0].tasks.map((t) => t.title)).toEqual(['Dentist']);
+	});
+
+	// The single move is the carry on one row, and offers the same way back for the
+	// same toast.
+	it('hands the single move the same way back', async () => {
+		const { store } = await setup();
+		const tomorrow = addDays(store.today, 1);
+
+		store.addTask({
+			title: 'ship it',
+			physicalDifficulty: 3,
+			mentalDifficulty: 5,
+			enjoyment: 5,
+		});
+
+		flushSync();
+		useFakeTimers();
+
+		expect(await store.moveTaskToTomorrow(store.tasks[0].id)).toBe(true);
+		expect(deferralOf(store.tasks[0])).toBe(tomorrow);
+
+		readSessionByDateMock.mockImplementation(async (date) =>
+			date === tomorrow ? updateSessionMock.mock.calls[0][0] : null,
+		);
+
+		await store.undoCarry!();
+
+		expect(deleteSessionMock).toHaveBeenCalledWith(tomorrow);
+		expect(deferralOf(store.tasks[0])).toBeUndefined();
 	});
 
 	/* The destination line reads a day the card cannot send to on a past day, where

@@ -21,6 +21,13 @@ export async function $readSessionByDate(date: string): Promise<DailySession | n
 	return result || null;
 }
 
+/** Delete the record for a date; a date with none is a no-op. */
+export async function $deleteSession(date: string): Promise<void> {
+	await withStore('sessions', 'readwrite', (store) => {
+		store.delete(date);
+	});
+}
+
 /**
  * All sessions with startDate ≤ date ≤ endDate (inclusive), sorted ascending.
  * Dates are YYYY-MM-DD strings (the store's keyPath), so lexicographic key

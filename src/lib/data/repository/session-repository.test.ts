@@ -2,6 +2,7 @@ import 'fake-indexeddb/auto';
 import { describe, it, expect } from 'vitest';
 import {
 	$updateSession,
+	$deleteSession,
 	$readSessionByDate,
 	$readSessionsByDateRange,
 } from '$lib/data/repository/session-repository';
@@ -65,5 +66,12 @@ describe('session-repository', () => {
 
 	it('returns [] for an empty range', async () => {
 		expect(await $readSessionsByDateRange('1990-01-01', '1990-12-31')).toEqual([]);
+	});
+
+	it('deletes a record, and a missing one without complaint', async () => {
+		await $updateSession(session('2026-03-01'));
+		await $deleteSession('2026-03-01');
+		expect(await $readSessionByDate('2026-03-01')).toBeNull();
+		await expect($deleteSession('2026-03-01')).resolves.toBeUndefined();
 	});
 });

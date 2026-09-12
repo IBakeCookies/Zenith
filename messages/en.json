@@ -125,6 +125,7 @@
 	"task_remove_aria": "Delete task",
 	"task_remove_toast": "Deleted “{title}”.",
 	"carry_toast": "Moved {count} to tomorrow.",
+	"move_toast": "Moved “{title}” to tomorrow.",
 	"task_title_label": "Title",
 	"budget_title": "Day Setup",
 	"budget_figure_budget": "budget",

@@ -61,7 +61,7 @@ retype a row, regenerate:
   §5.1      651-760  Posterior-aware allocation
 §6          762-774  Summary of v1 → v2 changes
 §7          776-798  Known approximations and deliberate non-changes
-§8         800-1891  Energy model (zenith-energy.ts) — fatigue-recovery exten…
+§8         800-1893  Energy model (zenith-energy.ts) — fatigue-recovery exten…
   §8.1      813-835  Intermittent-rest recovery correction
   §8.2      837-859  Warm-up carryover instead of binary reset
   §8.3      861-879  Verified consequences and a calibration question, closed
@@ -72,12 +72,12 @@ retype a row, regenerate:
   §8.8    1140-1175  45-minute plan granularity
   §8.9    1177-1224  Recovery-rate calibration from pre/post-rest pairs
   §8.10   1226-1477  Stopping-value calibration from observed stop times
-  §8.11   1479-1610  Live stop advisor — §8.10 run forward mid-day
-  §8.12   1612-1766  The budget curve — what the day's LENGTH is worth
-  §8.13   1768-1832  Capacity from the fitted drain rate
-  §8.14   1834-1891  Per-title drain rate — which task costs more than its sl…
-§9        1893-1955  Plan-adherence reading and its verdict band
-§10       1957-2004  References
+  §8.11   1479-1612  Live stop advisor — §8.10 run forward mid-day
+  §8.12   1614-1768  The budget curve — what the day's LENGTH is worth
+  §8.13   1770-1834  Capacity from the fitted drain rate
+  §8.14   1836-1893  Per-title drain rate — which task costs more than its sl…
+§9        1895-1957  Plan-adherence reading and its verdict band
+§10       1959-2006  References
 ```
 
 <!-- section-index:end -->
@@ -361,8 +361,8 @@ ones.
 
 The tie above is also where the one consequence of the two scales lands.
 `calculateInterleavedOrder` is fed the **rounded** key from the plan path
-(`metric/daily-metrics.ts:136`) and the **raw** `optimalAvgProductivity` from
-`metric/remaining-day.ts:154` — each site's choice is argued above, but one
+(`metric/daily-metrics.ts:141`) and the **raw** `optimalAvgProductivity` from
+`metric/remaining-day.ts:180` — each site's choice is argued above, but one
 function is thus ordered at two precisions, so next-up and the `#N` sequence can
 disagree on a tie. Neither site moves: the raw key is strictly finer, and the
 plan path must print the rounded one.
@@ -1533,11 +1533,13 @@ rational stop no session of any length clears λ₀, so maxing over durations
 does not push the user past it.
 
 **Candidates vs reconstruction.** The max runs over the OPEN tasks only
-(`openTaskIds` on the observation, the unchecked ones): "one more session
-of a task you already checked off" is no advice. Every logged task stays in
-the reconstruction regardless — a completed task's hours drained the
-reservoirs the open ones must work with. §8.10's `lo` bound reads the same
-field, for the same reason.
+(`openTaskIds` on the observation: unchecked, and not moved to tomorrow): "one
+more session of a task you already checked off — or sent to tomorrow" is no
+advice. Every logged task stays in the reconstruction regardless — a completed
+or moved task's hours drained the reservoirs the open ones must work with.
+§8.10's `lo` bound reads the same field for the checked-off half of that reason
+and keeps a moved row OPEN: on a finished day, declining to work it was part of
+the stop, so it is a forgone step like any unworked open task.
 
 **Bounds of validity, stated on the card's tooltip:** the reading trusts
 today's 🪫 logs, so unlogged work reads as free time (the advisor will say
