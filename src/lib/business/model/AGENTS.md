@@ -211,8 +211,7 @@ its allocation code, so the main page is unaffected by changes here.
   too — is **stipulated, not derived**: over m ∈ [0.1, 0.5] λ₀ fit RMSE moves
   at most 0.0185 (swept 2026-08-13; re-swept 2026-09-11 on the v2 curve, where
   only the 30%-interrupted n = 3 arm moves), so neither the constant nor the
-  inversion-censoring rule moves without evidence above the instrument's 0.125
-  bracket half-width (re-read 2026-09-12 on the v2 curve). The margin is a dead end.
+  inversion-censoring rule moves without evidence. The margin is a dead end.
 - **Obligation is not read, and neither repair pays** (2026-08-28,
   `scripts/stop-obligation-bias.probe.ts`, MATH.md §8.10). The fit reads a day's
   hours as a leisure CHOICE, so a compelled day — a deadline ground past the
@@ -656,10 +655,5 @@ MATH.md §2 and §6; the energy model runs the same curve (§8).
 
 ### λ₀'s fit error is not a well-posedness test
 
-§8.10's feasibility finding 1 claims well-posedness because W\*(λ₀) is monotone
-and graded — a property of the MAP, pinned by `zenith-energy.test.ts`. The fit's
-RMSE at a given n is a different quantity, and a well-posed map is still
-estimated imprecisely from few noisy days: RMSE outside the bracket half-width
-is not a defect in the map. Each stop probe measures that half-width over its
-OWN population rather than transcribing the other's, which went three readings
-stale while every verdict priced against it (M105).
+§8.10's finding 1 is W\*(λ₀) monotone and graded (`zenith-energy.test.ts`),
+not fit precision: RMSE outside the bracket half-width is no defect (M105).

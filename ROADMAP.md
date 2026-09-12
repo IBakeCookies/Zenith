@@ -955,8 +955,8 @@ in the feature file; two readings became findings.
   (15.395319 → 15.492131). Whether the move is worth building is a later
   change's decision, priced by `scripts/energy-search-gap.probe.ts`.
 - **M105 — the λ₀ fit's RMSE was compared against a half-width no run had read
-  on this curve — raised 2026-09-11, CLOSED 2026-09-12.** Each stop probe now
-  measures its own; `scripts/stop-margin-fit-error.probe.ts` and
+  on this curve — raised 2026-09-11, CLOSED 2026-09-12.**
+  `scripts/stop-margin-fit-error.probe.ts` and
   `scripts/stop-inversion-margin.probe.ts` carry the runs and the verdict.
 
 - **M106 — the honest arm's λ₀ bias GROWS with n: +0.0111 at n = 3, +0.0917 at
@@ -964,8 +964,7 @@ in the feature file; two readings became findings.
   `scripts/stop-margin-fit-error.probe.ts`.** Noticed closing M105, and nothing
   in that run explains it. The honest population carries no interrupted days, so
   this is not the contamination the margin exists for; and the arm's RMSE barely
-  moves (0.1767 → 0.1700) while the bias in the headline does not, so it is the
-  centre that is walking, not the spread. §8.10's ridge is the obvious suspect — the
+  moves (0.1767 → 0.1700). §8.10's ridge is the obvious suspect — the
   prior's pull toward the λ₀ default weakens as usable points accumulate, which
   would expose a per-day bias that n = 3 masks — but that is a hypothesis with
   two untested halves: whether the per-day point is biased at all (no arm prints
