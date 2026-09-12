@@ -130,8 +130,7 @@ Untestable at every level is the signal.
   closes the whole form while the user was only dismissing the suggestions. Stop it in
   the list-open branch ONLY: the Escape that arrives with no list open is the one that
   is supposed to close the dialog. Same family as the `DropdownMenu` key-ownership
-  rule below, opposite conclusion, because there the document listener was the wanted
-  behaviour.
+  rule below, opposite conclusion: there the document listener was wanted.
 - **An inline editor focuses with `{@attach (node) => node.focus()}`, never
   `autofocus`.** The attribute is inert on any node inserted after load (the
   document's autofocus-processed flag), so all three editors that used it — ⚡,
@@ -196,7 +195,8 @@ Untestable at every level is the signal.
   refutes it rather than merely dating it — it carries its own key off
   `SessionStore.writeGenerationFor` and the card simply drops the tile.
 - **Columns aligned down a card are one CSS grid with subgrid rows, never a
-  `<table>` restyled at a breakpoint** — `plan-advice-card`'s lever table.
+  `<table>` restyled at a breakpoint** — `plan-advice-card`'s lever table and
+  `model-parameter-table`, whose rows fold to three lines below `sm`, no cell lost.
 - **A seeded editor copies its seed at mount** — `flow-log-form`,
   `drain-log-form`, `rest-log-form`, `task-edit-form` all read `seed` (and
   `focusMinutes`) once and never again, so **every re-opening must be a fresh

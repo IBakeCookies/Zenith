@@ -7,7 +7,8 @@
 	import StatTile from '$lib/presentation/component/stat-tile.svelte';
 	import CompletionYieldChart from '$lib/presentation/component/completion-yield-chart.svelte';
 	import MetricTrendChart from '$lib/presentation/component/metric-trend-chart.svelte';
-	import ParamTrend from '$lib/presentation/component/param-trend.svelte';
+	import PlanAdherenceSummary from '$lib/presentation/component/plan-adherence-summary.svelte';
+	import ModelParameterTable from '$lib/presentation/component/model-parameter-table.svelte';
 	import QuadrantDistribution from '$lib/presentation/component/quadrant-distribution.svelte';
 	import LogHistoryList from '$lib/presentation/component/log-history-list.svelte';
 	import TagHoursCard from '$lib/presentation/component/tag-hours-card.svelte';
@@ -16,9 +17,7 @@
 	import FitLogSummary from '$lib/presentation/component/fit-log-summary.svelte';
 	import { getDateLocale } from '$lib/presentation/utils/locale.svelte';
 	import { showToast } from '$lib/presentation/utils/toast';
-	import { formatDecimals } from '$lib/presentation/utils/number-format';
 	import { calibrationRows } from '$lib/presentation/utils/calibration-descriptor';
-	import { adherenceVerdict } from '$lib/presentation/utils/plan-audit-descriptor';
 	import { completionChartPoints } from '$lib/presentation/utils/completion-chart-points';
 	import { metricTrendSeries } from '$lib/presentation/utils/metric-trend-series';
 	import { buildMetricTrack } from '$lib/presentation/utils/metric-descriptor';
@@ -37,8 +36,6 @@
 
 	const session = getSessionStore();
 	const observations = getEnergyObservationStore();
-
-	const oneDecimal = (value: number) => formatDecimals(value, 1, getDateLocale());
 
 	// Derived here rather than read off a store: this page builds no `EnergyLabStore`,
 	// which is where the rest count of the same shape lives.
@@ -94,7 +91,6 @@
 	);
 
 	const modelRows = $derived(calibrationRows(calibration, getDateLocale()));
-	const auditVerdict = $derived(adherenceVerdict(audit));
 
 	const drainRanking = $derived(analytics.drainRanking);
 	const drainRankRows = $derived(
@@ -314,7 +310,7 @@
 	     calibration grid and the logs card sit outside this gate and the drain ranking may
 	     not render at all. Both charts are a fixed viewBox at `w-full`, so a ratio is what
 	     tracks their height. -->
-	{#each ['h-16', 'aspect-[800/180]', 'aspect-[800/180]', 'h-10', 'h-5', 'h-33'] as body, i (i)}
+	{#each ['h-16', 'aspect-[800/180]', 'aspect-[800/180]', 'h-10', 'h-5', 'h-[201px]'] as body, i (i)}
 		<div class="card-shell mt-grid-xl rounded-xl p-box-lg" aria-hidden="true">
 			{@render skeletonBody(body)}
 		</div>
@@ -491,40 +487,7 @@
 		{:else if audit.usedCount === 0}
 			<p class="mt-text-md text-sm text-ty-secondary">{m.ana_adherence_empty()}</p>
 		{:else}
-			<div class="mt-text-md grid gap-grid-xs sm:grid-cols-3">
-				<div>
-					<p class="text-xs text-ty-silent">{m.ana_adherence_classic()}</p>
-					<p class="mt-text-2xs text-2xl font-semibold text-ty-primary">
-						{Math.round(audit.classicOverlap * 100)}%
-					</p>
-				</div>
-				<div>
-					<p class="text-xs text-ty-silent">{m.ana_adherence_energy()}</p>
-					<p class="mt-text-2xs text-2xl font-semibold text-ty-primary">
-						{Math.round(audit.energyOverlap * 100)}%
-					</p>
-				</div>
-				<div>
-					<p class="text-xs text-ty-silent">{m.ana_adherence_spread()}</p>
-					<p class="mt-text-2xs text-2xl font-semibold text-ty-primary">
-						{oneDecimal(audit.actualTaskSpread)}
-					</p>
-					<p class="mt-text-3xs text-xs text-ty-silent">
-						{m.ana_adherence_spread_note({
-							actual: oneDecimal(audit.actualTaskSpread),
-							classic: oneDecimal(audit.classicTaskSpread),
-							energy: oneDecimal(audit.energyTaskSpread),
-						})}
-					</p>
-				</div>
-			</div>
-			<p class="mt-text-sm text-xs text-ty-secondary">
-				{auditVerdict} · {audit.usedCount === 1
-					? m.ana_adherence_days_one()
-					: m.ana_adherence_days_other({
-							count: audit.usedCount,
-						})}
-			</p>
+			<PlanAdherenceSummary {audit} locale={getDateLocale()} class="mt-text-md" />
 		{/if}
 	</div>
 
@@ -537,26 +500,7 @@
 		{:else if calibration === null}
 			{@render pending()}
 		{:else}
-			<div class="mt-text-md grid gap-text-xs">
-				{#each modelRows as row (row.label)}
-					<div class="flex flex-wrap items-baseline justify-between gap-x-grid-xs">
-						<span class="text-xs text-ty-silent">{row.label}</span>
-						<span class="flex items-baseline gap-grid-2xs text-sm">
-							{#if row.trend}
-								<ParamTrend
-									values={row.trend.values}
-									defaultValue={row.trend.defaultValue}
-									ariaLabel={row.trend.ariaLabel}
-								/>
-							{/if}
-							<span class="font-medium text-ty-primary" style="font-variant-numeric: tabular-nums"
-								>{row.value}</span
-							>
-							<span class="text-xs text-ty-silent"> · {row.note}</span>
-						</span>
-					</div>
-				{/each}
-			</div>
+			<ModelParameterTable rows={modelRows} class="mt-text-md" />
 		{/if}
 	</div>
 
