@@ -29,18 +29,6 @@ export const BAND_TEXT_CLASS: Record<Band, string> = {
 };
 
 /**
- * The rule down the left of a headline tile. `neutral` is the plain card line
- * and not a colour: the tile's rule is what marks a reading as out of the
- * ordinary, so an ordinary one must not carry a hue of its own.
- */
-export const BAND_BORDER_CLASS: Record<Band, string> = {
-	success: 'border-success',
-	neutral: 'border-line-strong',
-	warning: 'border-warning',
-	critical: 'border-danger',
-};
-
-/**
  * Ink for the diagonal stripes of the `hatch` utility, which paints in
  * `currentColor` — the day's rails warm up in their block's band. `neutral` is
  * `ty-ghost` rather than `BAND_TEXT_CLASS`'s primary ink: a hatch is a texture

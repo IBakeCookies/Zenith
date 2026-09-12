@@ -562,4 +562,52 @@ describe('buildMetrics', () => {
 		expect(row.value).toBe('0%');
 		expect(row.band).toBe('critical');
 	});
+
+	// The track is the reading's own scale, so an N/A can never keep a stale one:
+	// it is emitted through the same `gated` call that decides the value.
+	it('carries no track on a reading the day cannot answer', () => {
+		const rows = buildMetrics(
+			dailyMetrics({
+				...plannedDay,
+				budgetHours: 0,
+			}),
+			pools,
+		);
+
+		const gatedOut = rows.filter((candidate) => candidate.value === m.na_value());
+
+		expect(gatedOut.length).toBeGreaterThan(0);
+
+		for (const row of gatedOut) {
+			expect(row.track).toBeUndefined();
+		}
+
+		// The control: with the budget back, the same headline readings do carry one,
+		// so the assertion above is the gate's doing and not a track nobody emits.
+		const funded = buildMetrics(dailyMetrics(plannedDay), pools);
+
+		expect(funded.filter((row) => row.headline && row.track)).toHaveLength(4);
+	});
+
+	// Pips are the denominator made visible, which is the reading itself for Flow
+	// Coverage — but below the gap between them they are noise, and a dozen funded
+	// tasks is an ordinary day.
+	it.each([1, 4, 8, 9, 12, 20])('draws Flow Coverage as pips to eight tasks (%i)', (total) => {
+		const row = reading(
+			dailyMetrics({
+				...plannedDay,
+				flowCoverage: {
+					reached: Math.min(3, total),
+					total,
+				},
+			}),
+			m.metric_flow_coverage(),
+		);
+
+		expect(row.track).toEqual({
+			kind: total <= 8 ? 'pips' : 'bar',
+			filled: Math.min(3, total),
+			total,
+		});
+	});
 });

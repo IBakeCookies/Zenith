@@ -159,9 +159,9 @@ Read this before touching markup, classes, or anything under
   disappears — `log-row` did, in the analytics log list. A nested panel that
   keeps `surface-card` (both columns of the add dialog's form) carries a border,
   which is what still separates it there. The third way out is to drop the fill: the
-  metrics dashboard's headline tiles were bordered cards and are now bare, each
-  marked by a 2px rule down its left in its own band colour, so there is no
-  second surface to separate.
+  metrics dashboard's headline tiles are bare, each marked by the band-coloured
+  track under its value where the day can answer it, so there is no second
+  surface to separate.
 - **A full-bleed bar across the page uses `surface-float`, not
   `surface-card`.** The sticky nav bar and the footer. The two hold the same
   value everywhere but one theme; they differ where a theme is translucent _and_
@@ -259,7 +259,10 @@ Read this before touching markup, classes, or anything under
   `svelte-ignore` for `a11y_no_noninteractive_tabindex`.
 - **A repeated cluster becomes an `@utility`, not a wrapper component** —
   `field-input` (every text and date field), `range-track` (every slider, its
-  `accent-*` left to the call site), `row-action` (a row's right-edge controls),
+  `accent-*` left to the call site), `band-track`/`band-fill` (a reading's scale
+  and the bar on it — the band and the width left to the call site; a pip is a
+  bare `band-fill`, because a track behind pips fills their gaps),
+  `row-action` (a row's right-edge controls),
   `input-overlay` (the carve-outs above) and `hatch` (the rail's warm-up segment
   and its legend swatch — a `repeating-linear-gradient` no class expresses,
   striped in `currentColor` so the ink stays a `text-*`), over `banner-shell` and `card-shell`. A wrapper would cost each caller a level it cannot always afford,

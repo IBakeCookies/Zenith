@@ -401,6 +401,18 @@
 	@apply h-1 w-full cursor-pointer appearance-none rounded-lg bg-surface-inset;
 }
 
+/* The read-only twin of `range-track`: a reading's own scale, under the number.
+   The fill's band is the one thing a call site decides (`BAND_BAR_CLASS`), and
+   its width the one thing a call site computes — the track clips, so a fill that
+   overruns cannot draw past the scale it is measured on. */
+@utility band-track {
+	@apply h-1 w-full overflow-hidden rounded-lg bg-surface-inset;
+}
+
+@utility band-fill {
+	@apply h-full rounded-lg;
+}
+
 /* A real checkbox or radio stretched invisibly over the label that paints it —
    STYLE.md's `appearance-auto accent-brand` carve-out, where the native control
    keeps its accessible name, its keys and its `.check()` while the label carries
