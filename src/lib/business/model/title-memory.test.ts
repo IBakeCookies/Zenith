@@ -42,6 +42,7 @@ describe('latestRatingsByTitle', () => {
 			mentalDifficulty: 2,
 			enjoyment: 3,
 			lastUsedDate: '2026-08-01',
+			tags: [],
 		});
 	});
 
@@ -59,6 +60,7 @@ describe('latestRatingsByTitle', () => {
 			mentalDifficulty: 1,
 			enjoyment: 2,
 			lastUsedDate: '2026-08-03',
+			tags: [],
 		});
 	});
 
@@ -79,6 +81,7 @@ describe('latestRatingsByTitle', () => {
 			mentalDifficulty: 4,
 			enjoyment: 9,
 			lastUsedDate: '2026-08-01',
+			tags: [],
 		});
 	});
 
@@ -99,6 +102,7 @@ describe('latestRatingsByTitle', () => {
 			mentalDifficulty: 2,
 			enjoyment: 4,
 			lastUsedDate: '2026-08-01',
+			tags: [],
 		});
 	});
 
@@ -113,6 +117,7 @@ describe('latestRatingsByTitle', () => {
 			mentalDifficulty: 0,
 			enjoyment: 1,
 			lastUsedDate: '2026-08-01',
+			tags: [],
 		});
 	});
 
@@ -201,6 +206,7 @@ describe('suggestTitles', () => {
 				mentalDifficulty: 2,
 				enjoyment: 3,
 				lastUsedDate: '2026-08-01',
+				tags: [],
 			},
 		]);
 	});

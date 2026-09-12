@@ -48,6 +48,7 @@ const rating = (
 	mentalDifficulty: mental,
 	enjoyment: 5,
 	lastUsedDate,
+	tags: [],
 });
 
 /** In the order given, keyed the way `latestRatingsByTitle` keys them. */

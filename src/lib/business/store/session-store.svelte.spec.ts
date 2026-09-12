@@ -2181,6 +2181,7 @@ describe('SessionStore title memory', () => {
 						mentalDifficulty: 2,
 						enjoyment: 3,
 						lastUsedDate: '2026-08-01',
+						tags: [],
 					},
 				],
 			]),
@@ -2196,6 +2197,7 @@ describe('SessionStore title memory', () => {
 					mentalDifficulty: 2,
 					enjoyment: 3,
 					lastUsedDate: '2026-08-01',
+					tags: [],
 				},
 			]),
 		);
@@ -2236,6 +2238,7 @@ describe('SessionStore title memory', () => {
 						mentalDifficulty: 2,
 						enjoyment: 3,
 						lastUsedDate: '2026-08-01',
+						tags: [],
 					},
 				],
 			]),

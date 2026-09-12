@@ -50,6 +50,7 @@
 			mentalDifficulty: mental as number,
 			enjoyment: 5,
 			lastUsedDate: '2026-09-01',
+			tags: [],
 		},
 		suggestedHours: hours as number,
 	}));

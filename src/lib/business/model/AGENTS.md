@@ -258,6 +258,12 @@ not enter any of them until the next load.
 - Title suggestions need at least `TITLE_QUERY_MIN` = 2 typed characters; the
   match is a **substring**, not a prefix, the order is alphabetical, and the
   list is uncapped — no ranking, no cap.
+- A title's **tags** ride on `TitleRating` as well, `[]` where the last use had
+  none, so picking a remembered title files the task under the same labels
+  without re-tagging it. `importance` deliberately does not: ROADMAP's Phase 2
+  preamble prices a `high` remembered on the WRONG task at 1.96–2.97× what
+  declaring nothing costs, so a wrong carry is worse than a blank — and
+  `mustDoToday` is a statement about today, not about the task.
 - The next-task ranking (`metric/next-task-suggestion.ts`) is the other reading
   over the same memory, and it does rank. In order: today's own titles are
   dropped, what is left is capped at `NEXT_TASK_CANDIDATE_LIMIT` = 8 by recency —
