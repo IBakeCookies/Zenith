@@ -15,6 +15,7 @@
 		describeDeferDestination,
 	} from '$lib/presentation/utils/plan-advice-descriptor';
 	import { removeTaskWithUndo } from '$lib/presentation/utils/remove-task-with-undo';
+	import { carryUnfinishedWithUndo } from '$lib/presentation/utils/carry-unfinished-with-undo';
 	import { getDemoHref } from '$lib/presentation/utils/demo-link';
 	import {
 		removeFlowLogWithUndo,
@@ -210,7 +211,7 @@
 		onsaveroutine={(name) => session.saveCurrentAsRoutine(name)}
 		ondeleteroutine={(id) => session.deleteRoutine(id)}
 		carryCount={session.carryableCount}
-		oncarry={() => session.carryUnfinishedToTomorrow()}
+		oncarry={() => carryUnfinishedWithUndo(session)}
 	/>
 {/snippet}
 

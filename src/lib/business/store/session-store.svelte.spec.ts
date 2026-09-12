@@ -18,7 +18,7 @@ import { AUTOSAVE_DEBOUNCE_MS } from '$lib/business/store/debounced-write.svelte
 import { addDays, toISODate } from '$lib/business/utils/date';
 import { DEFAULT_CAPACITY_POOLS, DEFAULT_USER_CONSTANTS } from '$lib/business/model/zenith';
 import type { StorageStatusStore } from '$lib/business/store/storage-status.svelte';
-import type { DailySession, SavedRoutine } from '$lib/business/type';
+import type { DailySession, SavedRoutine, Task } from '$lib/business/type';
 import type { TitleRating } from '$lib/business/model/title-memory';
 import { summarizeBudgetHistory } from '$lib/business/model/budget-memory';
 import { summarizeDeclaredConstraints } from '$lib/business/model/constraint-memory';
@@ -923,7 +923,7 @@ describe('SessionStore persistence', () => {
 		useFakeTimers(); // freeze the auto-save so only the move writes
 
 		expect(await store.moveTaskToTomorrow(id)).toBe(true);
-		expect(store.tasks).toHaveLength(0);
+		expect(store.tasks).toHaveLength(1);
 
 		const write = updateSessionMock.mock.calls[0][0];
 		expect(write.date).toBe(addDays(store.today, 1));
@@ -1063,7 +1063,7 @@ describe('SessionStore persistence', () => {
 		useFakeTimers(); // freeze the auto-save so only the carry writes
 
 		expect(await store.carryUnfinishedToTomorrow()).toBe(true);
-		expect(store.tasks).toHaveLength(0);
+		expect(store.tasks).toHaveLength(3);
 		expect(store.carryableCount).toBe(0);
 
 		expect(updateSessionMock).toHaveBeenCalledTimes(1);
@@ -1071,6 +1071,97 @@ describe('SessionStore persistence', () => {
 		expect(write.date).toBe(addDays(store.today, 1));
 		expect(write.tasks.map((t) => t.title)).toEqual(['file the return', 'write it up', 'ship it']);
 		expect(new Set(write.tasks.map((t) => t.id)).size).toBe(3);
+	});
+
+	/** The mark a carry leaves on the day it left. Read through a cast because `Task` has
+	 *  no such field yet — adding it is the first thing the build does, and this helper
+	 *  goes with the cast when it does. */
+	const deferralOf = (task: Task) => (task as { deferredTo?: string }).deferredTo;
+
+	/* The day a task was planned for is the day that has to answer for it: every reading
+	   the calendar and analytics screens print is derived from the stored task list at
+	   read time, so dropping the row makes a day that finished 1 of 3 read as finished. */
+	it('marks the tasks it carried instead of dropping them', async () => {
+		const { store } = await setup();
+
+		for (const title of ['ship it', 'write it up']) {
+			store.addTask({
+				title,
+				physicalDifficulty: 3,
+				mentalDifficulty: 5,
+				enjoyment: 5,
+			});
+		}
+
+		flushSync();
+		useFakeTimers();
+
+		expect(await store.carryUnfinishedToTomorrow()).toBe(true);
+
+		expect(store.tasks.map(deferralOf)).toEqual([addDays(store.today, 1), addDays(store.today, 1)]);
+	});
+
+	// The row stays, so the count is no longer emptied by the move itself: without this
+	// the control keeps offering the carry, and a second press duplicates tomorrow.
+	it('stops counting a task it has already carried', async () => {
+		const { store } = await setup();
+
+		store.addTask({
+			title: 'ship it',
+			physicalDifficulty: 3,
+			mentalDifficulty: 5,
+			enjoyment: 5,
+		});
+
+		flushSync();
+		useFakeTimers();
+
+		expect(await store.carryUnfinishedToTomorrow()).toBe(true);
+
+		flushSync();
+
+		expect(store.carryableCount).toBe(0);
+	});
+
+	// The single move is the same gesture on one row, and both write through
+	// `#toCarriedTask` — so a mark on one and not the other is the drift R3 forbids.
+	it('marks the one task the single move carried', async () => {
+		const { store } = await setup();
+
+		store.addTask({
+			title: 'ship it',
+			physicalDifficulty: 3,
+			mentalDifficulty: 5,
+			enjoyment: 5,
+		});
+
+		flushSync();
+		useFakeTimers();
+
+		expect(await store.moveTaskToTomorrow(store.tasks[0].id)).toBe(true);
+
+		expect(deferralOf(store.tasks[0])).toBe(addDays(store.today, 1));
+	});
+
+	// What travels is definition and provenance only. The mark is neither: it is a
+	// statement about the day the task LEFT, so tomorrow's copy opens unmarked or the
+	// day it lands on reads as having already carried it.
+	it('never writes the mark into tomorrow’s copy', async () => {
+		const { store } = await setup();
+
+		store.addTask({
+			title: 'ship it',
+			physicalDifficulty: 3,
+			mentalDifficulty: 5,
+			enjoyment: 5,
+		});
+
+		flushSync();
+		useFakeTimers();
+
+		expect(await store.carryUnfinishedToTomorrow()).toBe(true);
+
+		expect(updateSessionMock.mock.calls[0][0].tasks[0]).not.toHaveProperty('deferredTo');
 	});
 
 	/* The destination line reads a day the card cannot send to on a past day, where
