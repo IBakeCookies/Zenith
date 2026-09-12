@@ -661,6 +661,8 @@
 	"error_body": "Ein unerwarteter Fehler ist aufgetreten. Neu laden hilft meistens — deine Daten sind lokal gespeichert und nicht betroffen.",
 	"error_reload": "Seite neu laden",
 	"error_home": "Zurück zu Heute",
+	"version_update": "Eine neue Version von Fallow ist verfügbar.",
+	"version_update_reload": "Neu laden",
 	"demo_banner": "Das ist ein Beispieltag — Fallows Zahlen, nicht deine. Hier wird nichts gespeichert.",
 	"demo_banner_exit": "Mit meinem eigenen Tag starten",
 	"demo_task_feature": "Die Suchfunktion schreiben",

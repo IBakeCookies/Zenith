@@ -661,6 +661,8 @@
 	"error_body": "An unexpected error occurred. Reloading usually fixes it — your data is stored locally and is not affected.",
 	"error_reload": "Reload page",
 	"error_home": "Back to today",
+	"version_update": "A new version of Fallow is available.",
+	"version_update_reload": "Reload",
 	"demo_banner": "This is an example day — Fallow's numbers, not yours. Nothing here is saved.",
 	"demo_banner_exit": "Start my own day",
 	"demo_task_feature": "Write the search feature",

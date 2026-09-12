@@ -661,6 +661,8 @@
 	"error_body": "Se ha producido un error inesperado. Recargar suele arreglarlo — tus datos se guardan localmente y no se ven afectados.",
 	"error_reload": "Recargar la página",
 	"error_home": "Volver a hoy",
+	"version_update": "Hay una nueva versión de Fallow disponible.",
+	"version_update_reload": "Recargar",
 	"demo_banner": "Este es un día de ejemplo: son los números de Fallow, no los tuyos. Aquí no se guarda nada.",
 	"demo_banner_exit": "Empezar mi propio día",
 	"demo_task_feature": "Programar la función de búsqueda",

@@ -32,12 +32,14 @@
 		showToast,
 		showToastAfterReload,
 	} from '$lib/presentation/utils/toast';
+	import { watchVersionUpdates } from '$lib/presentation/utils/version-update';
 
 	let { children }: LayoutProps = $props();
 
 	const id = $props.id();
 
 	onMount(flushPendingToasts);
+	onMount(watchVersionUpdates);
 
 	const themeStore = getThemeStore();
 

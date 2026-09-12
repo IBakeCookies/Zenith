@@ -107,3 +107,18 @@ which only the Docker `prod` stage sets; Vercel's build is unchanged. The
 container has no `x-vercel-ip-timezone` and no `/_vercel/*` scripts — the
 layout already re-derives the clock at mount and gates analytics on
 `isVercel`, so nothing else branches on the host.
+
+## A stale tab is offered the new build on refocus, never reloaded for it
+
+2026-09-12. `presentation/utils/version-update.ts` listens for
+`visibilitychange` and `await`s `updated.check()` — one request to
+`_app/version.json` per refocus, made only when the user is looking at the tab.
+`kit.version.pollInterval` stays unset: a week-long tab would pay thousands of
+requests for a fact it needs once. The toast lives forever
+(`duration: Number.POSITIVE_INFINITY`) under a fixed sonner id, so a second
+detection replaces it rather than stacking; its action is the only thing that
+reloads, because a reload during an open task editor throws the draft away.
+`check()` resolves `false` in dev and on a failed fetch, so this is only
+verifiable against `npm run preview`. `_app/version.json` takes the worker's
+network-first page path, so offline it answers from the last copy fetched —
+this build's own until a newer one has. Pinned by `e2e/version-update.e2e.ts`.

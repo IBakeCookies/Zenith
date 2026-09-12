@@ -32,6 +32,18 @@ export function showUndoToast(message: string, undoLabel: string, onUndo: () => 
 	});
 }
 
+/** The stale-tab offer. Why it outlives the user and carries an id: docs/deployment.md. */
+export function showUpdateToast(message: string, reloadLabel: string, onReload: () => void) {
+	toast.info(message, {
+		id: 'version-update',
+		duration: Number.POSITIVE_INFINITY,
+		action: {
+			label: reloadLabel,
+			onClick: onReload,
+		},
+	});
+}
+
 /** Every severity, derived from the map so the two can never drift. */
 export const TOAST_SEVERITIES = Object.keys(showToast) as ToastSeverity[];
 
