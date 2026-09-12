@@ -48,9 +48,9 @@
  * re-run under it, so every figure it printed was a v1 reading. The median
  * bracket half-width reads 0.125 over 197 non-inverted days — the same 0.125
  * read 2026-08-21 over 175, and the reading ROADMAP M105 was waiting on. Two
- * readings, not a statement about the curve: the round-robin seed cap, the
- * importance weight and the pair seeds all landed between those runs, and they
- * move the plans claims 2 and 3 are measured on. Claim 2's mood inversions past
+ * readings, not a statement about the curve: the round-robin seed cap and the
+ * pair seeds both landed between those runs, and they move the plans claims 2
+ * and 3 are measured on. Claim 2's mood inversions past
  * the margin read 2 of 1024 where the figure of record was 14 (2026-08-21), and
  * the optimizer's own plans still never invert: 0 of 207.
  *

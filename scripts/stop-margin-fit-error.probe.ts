@@ -50,7 +50,7 @@
  * fire in the 30%-interrupted n = 3 arm (0.0185 clears a tenth of the
  * half-width at any of the three values), and the scope kill line still fires.
  * The comparison ROADMAP M105 asked for therefore lands on a resolution this
- * probe measured over the days it actually judges: the honest n = 12 RMSE of
+ * probe measured over its own rational days: the honest n = 12 RMSE of
  * 0.1700 is outside it.
  *
  * WHAT THE 2026-09-11 RE-RUN CHANGED, and why every number below moved again.
