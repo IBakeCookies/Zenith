@@ -6,7 +6,7 @@
 	import { Badge } from '$lib/presentation/component/ui/badge';
 	import MetricBandText from '$lib/presentation/component/metric-band-text.svelte';
 	import MetricLabel from '$lib/presentation/component/metric-label.svelte';
-	import { BAND_BORDER_CLASS, BAND_TEXT_CLASS } from '$lib/presentation/utils/band';
+	import { BAND_BAR_CLASS, BAND_TEXT_CLASS } from '$lib/presentation/utils/band';
 
 	interface Props {
 		metrics: Metric[];
@@ -27,52 +27,52 @@
 </script>
 
 <div class={cn('card-shell p-box-md sm:p-box-xl', className)}>
-	<!-- Momentum names itself inside the badge: the state alone ("Stable") is a
-	     word with no subject once nothing sits beside it, so the badge is both the
-	     reading and its own tooltip trigger. tailwind-merge lets `class` win the
-	     fill and the ink, so the variant only picks tinted vs. plain: a
-	     `destructive` branch would style nothing and name a severity the warning
-	     fill contradicts. -->
-	<div class="mb-grid-sm">
-		<Tooltip.Provider>
-			<Tooltip.Root>
-				<Tooltip.Trigger>
-					{#snippet child({ props })}
-						<Badge
-							{...props}
-							variant={trend ? 'default' : 'outline'}
-							class={trend === 1
-								? 'bg-success-tint text-success-strong'
-								: trend === -1
-									? 'bg-warning-tint text-warning-strong'
-									: ''}
-						>
-							{m.momentum_badge({
-								state:
-									trend === null
-										? m.na_value()
-										: trend === 1
-											? m.momentum_upward()
-											: trend === -1
-												? m.momentum_reset_required()
-												: m.momentum_stable(),
-							})}
-						</Badge>
-					{/snippet}
-				</Tooltip.Trigger>
-				<Tooltip.Content side="left">
-					<p>{m.momentum_tooltip()}</p>
-				</Tooltip.Content>
-			</Tooltip.Root>
-		</Tooltip.Provider>
-	</div>
+	<!-- Momentum is the leading column of the same row the tiles sit in, so the
+	     verdict reads as one line and not two stacked ones; below `lg` there is no
+	     width for a fifth column and it keeps a row of its own. -->
+	<div class="grid grid-cols-2 gap-grid-sm lg:grid-cols-[auto_repeat(4,minmax(0,1fr))]">
+		<!-- Momentum names itself inside the badge: the state alone ("Stable") is a
+		     word with no subject once nothing sits beside it, so the badge is both the
+		     reading and its own tooltip trigger. tailwind-merge lets `class` win the
+		     fill and the ink, so the variant only picks tinted vs. plain: a
+		     `destructive` branch would style nothing and name a severity the warning
+		     fill contradicts. -->
+		<div class="col-span-2 lg:col-span-1 lg:border-r lg:border-line-soft lg:pr-box-md">
+			<Tooltip.Provider>
+				<Tooltip.Root>
+					<Tooltip.Trigger>
+						{#snippet child({ props })}
+							<Badge
+								{...props}
+								variant={trend ? 'default' : 'outline'}
+								class={trend === 1
+									? 'bg-success-tint text-success-strong'
+									: trend === -1
+										? 'bg-warning-tint text-warning-strong'
+										: ''}
+							>
+								{m.momentum_badge({
+									state:
+										trend === null
+											? m.na_value()
+											: trend === 1
+												? m.momentum_upward()
+												: trend === -1
+													? m.momentum_reset_required()
+													: m.momentum_stable(),
+								})}
+							</Badge>
+						{/snippet}
+					</Tooltip.Trigger>
+					<Tooltip.Content side="left">
+						<p>{m.momentum_tooltip()}</p>
+					</Tooltip.Content>
+				</Tooltip.Root>
+			</Tooltip.Provider>
+		</div>
 
-	<!-- Four across, each behind a rule in its own band colour — the rule is what
-	     makes an out-of-the-ordinary reading findable without reading any of the
-	     numbers. -->
-	<div class="grid grid-cols-2 gap-grid-sm lg:grid-cols-4">
 		{#each headline as item (item.label)}
-			<div class="border-l-2 pl-box-xs {BAND_BORDER_CLASS[item.band]}">
+			<div>
 				<MetricLabel text={item.label} description={item.description} />
 				<p
 					class="mt-text-3xs text-2xl font-medium leading-tight tabular-nums capitalize wrap-anywhere {BAND_TEXT_CLASS[
@@ -82,6 +82,34 @@
 					{item.value}
 				</p>
 				<MetricBandText band={item.band} />
+				{#if item.track}
+					{@const track = item.track}
+					<!-- The scale the number sits on, in the band it reads in — which is
+					     what makes an out-of-the-ordinary reading findable without reading
+					     any of the numbers. The fill stops at the end of its track; the
+					     value does not, because over 100% is the reading. -->
+					{#if track.kind === 'pips'}
+						<!-- Not `band-track`: its fill would show through the gaps in the
+						     colour an unfilled pip already is, and the pips would read as one
+						     bar. Each pip is its own track. -->
+						<div class="mt-text-2xs flex h-1 gap-grid-2xs">
+							{#each Array(track.total), index}
+								<span
+									class="band-fill flex-1 {index < track.filled
+										? BAND_BAR_CLASS[item.band]
+										: 'bg-surface-inset'}"
+								></span>
+							{/each}
+						</div>
+					{:else}
+						<div class="band-track mt-text-2xs">
+							<div
+								class="band-fill {BAND_BAR_CLASS[item.band]}"
+								style="width: {Math.min(100, Math.max(0, (track.filled / track.total) * 100))}%"
+							></div>
+						</div>
+					{/if}
+				{/if}
 			</div>
 		{/each}
 	</div>

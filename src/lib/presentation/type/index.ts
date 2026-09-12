@@ -12,6 +12,17 @@ import type { Band } from '$lib/presentation/utils/band';
  */
 export type MetricGroup = 'fit' | 'worth' | 'cost' | 'endurance';
 
+/**
+ * Where a reading sits on its own scale. One shape rather than a kind-less pair
+ * of numbers, so a mark with no denominator cannot be spelled. A percentage is
+ * `filled: 9, total: 100`.
+ */
+export interface MetricTrack {
+	kind: 'bar' | 'pips';
+	filled: number;
+	total: number;
+}
+
 /** One row/tile in the metrics dashboard. */
 export interface Metric {
 	/** promoted out of the list to a large tile — the day's headline readings */
@@ -22,4 +33,6 @@ export interface Metric {
 	description: string;
 	/** How the reading judges; the component owns the colour and the wording. */
 	band: Band;
+	/** Absent where the day cannot answer the reading: an N/A has no scale. */
+	track?: MetricTrack;
 }

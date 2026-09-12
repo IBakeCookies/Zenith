@@ -91,7 +91,7 @@
 		// cognitive row, at 89%, is the ordinary reading that says nothing.
 		const physical = canvas.getByText('41% → 62%').closest('div')!;
 
-		await expect(physical.querySelector('.h-1')!.firstElementChild).toHaveClass(
+		await expect(physical.querySelector('.band-track')!.firstElementChild).toHaveClass(
 			BAND_BAR_CLASS.success,
 		);
 
@@ -203,7 +203,7 @@
 		// buys none of it — and this panel prints that figure nowhere else.
 		const warmUp = canvas.getByText('short of flow by 1h 30m').closest('div')!;
 
-		await expect(warmUp.querySelector('.h-1')!.firstElementChild).toHaveAttribute(
+		await expect(warmUp.querySelector('.band-track')!.firstElementChild).toHaveAttribute(
 			'style',
 			expect.stringContaining('width: 0%'),
 		);
@@ -227,7 +227,7 @@
 		await expect(within(warmUp).getByText('Warm-up')).toBeInTheDocument();
 		await expect(within(warmUp).getByText('Optimal')).toHaveClass('sr-only');
 
-		await expect(warmUp.querySelector('.h-1')!.firstElementChild).toHaveClass(
+		await expect(warmUp.querySelector('.band-track')!.firstElementChild).toHaveClass(
 			BAND_BAR_CLASS.success,
 		);
 	}}
@@ -247,13 +247,13 @@
 		// what the day funds.
 		const warmUp = canvas.getByText('short of flow by 30m').closest('div')!;
 
-		await expect(warmUp.querySelector('.h-1')!.firstElementChild).toHaveClass(
+		await expect(warmUp.querySelector('.band-track')!.firstElementChild).toHaveClass(
 			BAND_BAR_CLASS.warning,
 		);
 
 		// How far the funded hours get toward flow arrival — the timeline block's own
 		// fill, so the two surfaces read the same reading.
-		await expect(warmUp.querySelector('.h-1')!.firstElementChild).toHaveAttribute(
+		await expect(warmUp.querySelector('.band-track')!.firstElementChild).toHaveAttribute(
 			'style',
 			expect.stringContaining('width: 50%'),
 		);
@@ -335,7 +335,9 @@
 		// where the pool rows above read on human capacity.
 		const risk = canvas.getByText('31% → 58%').closest('div')!;
 
-		await expect(risk.querySelector('.h-1')!.firstElementChild).toHaveClass(BAND_BAR_CLASS.warning);
+		await expect(risk.querySelector('.band-track')!.firstElementChild).toHaveClass(
+			BAND_BAR_CLASS.warning,
+		);
 
 		await expect(canvas.getByText('Caution')).toHaveClass('sr-only');
 	}}

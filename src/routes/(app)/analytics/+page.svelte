@@ -72,6 +72,13 @@
 	);
 
 	const calibration = $derived(analytics.calibration);
+	// Both α fits read the same 🪫 rows, so either off its default is a personalized model.
+	// Null until the snapshot lands: the count's store answers before it does.
+	const drainRatesFitted = $derived(
+		calibration
+			? calibration.energy.cognitiveDrain.fitted || calibration.energy.physicalDrain.fitted
+			: null,
+	);
 	const audit = $derived(analytics.audit);
 	const rateDelta = $derived(analytics.completionRateDelta);
 	const bestDay = $derived(analytics.bestDay);
@@ -603,6 +610,7 @@
 		<DrainCalibrationCard
 			logCount={observations.drainObservations.length}
 			pendingLogs={pendingDrainLogs}
+			ratesFitted={drainRatesFitted}
 		/>
 	</div>
 {/if}

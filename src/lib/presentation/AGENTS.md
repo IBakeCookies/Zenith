@@ -794,10 +794,9 @@ keeps its own copy, and it is a wider predicate — it also drops an unfunded ta
 **A view model carries a `Band`, never a class string.** `Metric.band` and
 `AdviceRow.beforeBand` name the band; the component looks up `BAND_TEXT_CLASS` /
 `BAND_BAR_CLASS` and `bandLabel`. Keying anything off `text-success` makes
-renaming a token a silent behaviour change: the dashboard's screen-reader band
-text was wired that way and a `-strong` swap would have dropped it with nothing
-failing. `bandLabel` returns `null` for `neutral` on purpose — the default value
-colour makes no claim, so silence is the honest equivalent.
+renaming a token a silent behaviour change. `bandLabel` returns `null` for
+`neutral` on purpose — the default value colour makes no claim, so silence is
+the honest equivalent.
 
 **The plan-adherence verdict band is not one of them.**
 `ADHERENCE_TIE_BAND` (`utils/plan-audit-descriptor.ts`) stays in this layer, but
@@ -830,7 +829,8 @@ therefore matches twice, which is why `time-budget.e2e.ts` picks the tile by the
 `<p>` only a tile draws its value in. A column with no readings is dropped: a
 title over nothing is a question the card cannot answer. Momentum is one badge
 that names itself (`momentum_badge`) — the state alone is a word with no subject.
-`metric-label` and `metric-band-text` are what both cards draw (R3).
+`metric-label` and `metric-band-text` are what both cards draw (R3). A tile also
+draws a `MetricTrack`: `{ kind: 'bar' | 'pips'; filled; total }`, none on an N/A.
 
 ### The Lab's task list reads in schedule order, snapshotted per visit
 

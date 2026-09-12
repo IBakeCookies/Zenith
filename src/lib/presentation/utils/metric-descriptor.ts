@@ -34,7 +34,7 @@
  * the red 0 these metrics were rescoped to remove.
  */
 
-import type { Metric } from '$lib/presentation/type';
+import type { Metric, MetricTrack } from '$lib/presentation/type';
 import type { DailyMetrics } from '$lib/business/model/metric/daily-metrics';
 import type { RemainingDay } from '$lib/business/model/metric/remaining-day';
 import * as m from '$lib/paraglide/messages.js';
@@ -47,7 +47,7 @@ import {
 	type Band,
 } from '$lib/presentation/utils/band';
 
-type Reading = Pick<Metric, 'value' | 'band'>;
+type Reading = Pick<Metric, 'value' | 'band' | 'track'>;
 
 export function buildMetrics(
 	metrics: DailyMetrics,
@@ -59,11 +59,14 @@ export function buildMetrics(
 		band: 'neutral',
 	};
 
-	const gated = (available: boolean, value: string, band: Band): Reading =>
+	// The track rides the gate the value does, so an N/A can never keep a stale
+	// scale under it.
+	const gated = (available: boolean, value: string, band: Band, track?: MetricTrack): Reading =>
 		available
 			? {
 					value,
 					band,
+					track,
 				}
 			: notAvailable;
 
@@ -172,6 +175,11 @@ export function buildMetrics(
 				hasTasks,
 				`${completionRate}%`,
 				completedTasks > 0 ? getBandBiggerBetter(completionRate) : 'neutral',
+				{
+					kind: 'bar',
+					filled: completionRate,
+					total: 100,
+				},
 			),
 		},
 		{
@@ -185,6 +193,14 @@ export function buildMetrics(
 				planned,
 				`${flowCoverage.reached}/${flowCoverage.total}`,
 				AXIS_BAND.flowCoverage((flowCoverage.reached / flowCoverage.total) * 100),
+				{
+					// The denominator IS this reading, so it is drawn one pip per task —
+					// until a pip is thinner than the gap beside it and the bar reads
+					// better.
+					kind: flowCoverage.total <= 8 ? 'pips' : 'bar',
+					filled: flowCoverage.reached,
+					total: flowCoverage.total,
+				},
 			),
 		},
 		{
@@ -213,6 +229,11 @@ export function buildMetrics(
 				planned && Number.isFinite(humanCapacity.percent),
 				`${humanCapacity.percent}%`,
 				AXIS_BAND.humanCapacity(humanCapacity.percent),
+				{
+					kind: 'bar',
+					filled: humanCapacity.percent,
+					total: 100,
+				},
 			),
 		},
 		{
@@ -307,7 +328,11 @@ export function buildMetrics(
 			group: 'endurance',
 			label: m.metric_burnout_risk(),
 			description: m.metric_burnout_risk_desc(),
-			...gated(planned, `${burnoutRisk}%`, AXIS_BAND.burnoutRisk(burnoutRisk)),
+			...gated(planned, `${burnoutRisk}%`, AXIS_BAND.burnoutRisk(burnoutRisk), {
+				kind: 'bar',
+				filled: burnoutRisk,
+				total: 100,
+			}),
 		},
 		{
 			group: 'cost',
