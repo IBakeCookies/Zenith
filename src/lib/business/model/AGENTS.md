@@ -653,3 +653,13 @@ against is the weighted objective.
 ### The productivity curve deviates from the source article on purpose
 
 MATH.md §2 and §6; the energy model runs the same curve (§8).
+
+### λ₀'s fit error is not a well-posedness test
+
+§8.10's feasibility finding 1 claims well-posedness because W\*(λ₀) is monotone
+and graded — a property of the MAP, pinned by `zenith-energy.test.ts`. The fit's
+RMSE at a given n is a different quantity, and a well-posed map is still
+estimated imprecisely from few noisy days: RMSE outside the bracket half-width
+is not a defect in the map. Each stop probe measures that half-width over its
+OWN population rather than transcribing the other's, which went three readings
+stale while every verdict priced against it (M105).
