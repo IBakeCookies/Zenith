@@ -76,7 +76,7 @@ triage — fix bugs, decline the rest out loud.
 - the area's `AGENTS.md` updated when a module boundary or a convention moved —
   that is the durable half, and it moves in this commit
 - MATH.md untouched: a formula that changed means step 1 was answered wrong
-- no feature file — nothing shipped to the user
+- no `/plan` — nothing shipped to the user
 - `npx prettier --write` on touched files only
 
 Report: the arithmetic, what moved, what you ran and what you did not.

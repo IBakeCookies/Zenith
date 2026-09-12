@@ -1,106 +1,113 @@
 ---
 name: plan
-description: Interview the user and write a Fallow feature spec to docs/features/<slug>.md — scenarios, out-of-scope, doc routing. Use when starting new work or fixing a known bug, before any code is written. Not about the app's own day planner.
+description: Interview the user and write the failing tests that define a Fallow change — e2e for a flow, a unit test or probe for a model or repair — with the build brief in the test file's header. Use when starting new work or fixing a known bug, before any code is written. Not about the app's own day planner.
 ---
 
-# Planning a feature
+# Planning a change
 
-Output is one file: `docs/features/<slug>.md`, from
-[TEMPLATE.md](../../../docs/features/TEMPLATE.md). Nothing else. No code, no
-subagents, no branch.
+Output is the failing tests, and nothing else — no implementation, no
+subagents, no branch. The tests are the spec: acceptance criteria that run, and
+the whole input of `/build`. Assume that reader has none of this conversation.
 
-Read AGENTS.md's **doc table**, **§0** and **§4 settled decisions** — the map,
-the scope rule the spec's out-of-scope section enforces, and the closed list.
-Not §1–§3: those govern writing code, and this phase writes none. Never restate
-a rule here; route to it.
+Read AGENTS.md's **doc table**, **§0** and **§4**, and
+[docs/testing.md](../../../docs/testing.md)'s R6 and level table. Not §1–§3:
+those govern writing code, and this phase writes none. Never restate a rule
+here; route to it.
 
-The spec exists so the build phase can start cold. Assume its reader has none
-of this conversation.
+## Kind picks the level
 
-## Kind is the first decision
+- **feature** — the user can see or do something they cannot now. One
+  `e2e/<name>.e2e.ts`, named for the feature (testing.md), test titles in the
+  user's words. **If it cannot be said in their words, it is not a feature** —
+  do not stretch one; a repair dressed as a feature invents a user the change
+  does not have.
+- **model** — the solver computes something else; the outcome reaches the user
+  with no click. A `*.test.ts` beside the module when the answer is a bound that
+  must hold. When it is a number that moves, it is a probe — an instrument, not
+  a test — so the brief names it (`scripts/<name>.probe.ts` → MATH.md §N) and
+  `/build` writes it.
+- **repair** — a figure, constant or doc disagreed with the code, and nothing
+  shipped moves. A test where one can pin the agreement; where none can, there
+  is nothing to plan — fix the doc (AGENTS.md §0).
 
-TEMPLATE.md opens with four. Pick one, put it in the header: it decides whose
-language **Goal** is written in and whether **Scenarios** are required.
-
-`/plan` writes `feature`, `model` and `repair`. An `audit` records an
-investigation that already happened — no interview, no build phase.
-
-The test, applied to the Goal once it is written: **if it cannot be said in the
-user's own words, it is not a `feature`.** Do not stretch one. A `repair`
-dressed as a feature invents a user the change does not have, and every scenario
-under it is fiction. Most of this directory is `model` and `repair` — that is
-the honest count, not a gap to close.
+An investigation with nothing to build has no plan. Its finding goes to the
+file that owns the thing — MATH.md, the area `AGENTS.md`'s settled decisions,
+the probe header — and ROADMAP.md collapses to a date and that link.
 
 ## Interview
 
-Ask the user; do not infer. Batch questions with `AskUserQuestion` rather than
-one at a time, and only for things that change what gets built — routine calls
-are yours to make.
-
-Worth asking about, in rough order:
+Ask the user; do not infer. Batch questions with `AskUserQuestion`, and only
+for things that change what gets built — routine calls are yours.
 
 - the observable outcome — what the user sees or can do that they cannot now
 - the state it depends on: which day, which logs, which fits (almost nothing in
   Fallow is stateless — the causal fit window alone means the same click gives
   different output on different data)
 - the boundary — the nearby thing this is _not_
-- empty, failed and first-run cases, which is where scenarios go missing
+- empty, failed and first-run cases, which is where tests go missing
 
-## A known bug is a one-scenario spec
+A known bug is one test: the reproduction is already arrange, act, assert.
+Interview for the exact state it needs and write that. Restructuring with no
+behaviour change is `/refactor`, not a plan.
 
-Same file, same phases — R6 takes the failing test from the _reproduction_, and
-a reproduction is already **Given / When / Then**. Interview for the exact
-state it needs, write the one scenario, and let `/build` run unchanged.
-**Goal** states the wrong behaviour and the right one; **Decisions** records the
-cause. Restructuring with no behaviour change is neither — that is `/refactor`.
+## Writing the tests
 
-## Routing is yours, not the user's
+- One behaviour per test, one observable per assertion. A test with an `and`
+  in it can come back half-true.
+- Every arrange is constructible against today's tree — a fresh profile, a
+  seeded day, a fixture. A component that does not exist yet has no story to
+  play against: its acceptance test is the e2e that drives the page, and the
+  story arrives with the build as a fixture.
+- Run each file and read the red. `npx playwright test e2e/<file>` for a flow,
+  `npm run test:unit -- --run <path>` otherwise (`--project storybook` for a
+  story); what each costs and what may not run alongside is in testing.md's
+  five commands. **The red is the behaviour being absent** — a locator that
+  finds nothing, a figure that reads wrong, a function that is not there. A
+  typo, a fixture that cannot be arranged or a wrong locator is the test's own
+  bug; fix it before finishing.
+- A **pin** asserts what the change must not move, so it passes today. Watch it
+  pass and list it under Pins, or `/build` reads a green test as one that never
+  ran red.
 
-Resolve **Read before building** by reading AGENTS.md's doc table and grepping
-for the code that owns the behaviour. Cite files and MATH.md sections, not
-areas. A spec that says "the model layer" has moved the search to the
-implementer and spent its context there; that was the whole point of writing it
-down.
+## The brief
 
-Cite the area `AGENTS.md` when the change adds or moves a **public export** —
-that is where this repo prices its interfaces, and it is the half that outlives
-the spec.
+The header comment of the test file that carries the primary scenario — or,
+in an existing file, the comment above the tests you added. The e2e files show
+the shape: prose that says why the flow is worth driving.
 
-**A roadmap item is a want, not a record of how the code works.** Some are years
-of edits old and assert mechanisms that have since moved. If routing disproves
-one, say so in **Decisions** and put the ROADMAP line in **Read before
-building** so `/build` corrects it in the landing commit. Do not quietly plan
-around it — the next reader believes it.
+```
+/* <Goal — one or two sentences: for a feature, in the user's words; for a
+   model, the number that moves; for a repair, that nothing shipped moves.>
 
-## Scenarios
+   Tests: <every test file this plan wrote>
+   Pins: <titles that pass today>
+   Out of scope: <considered and left out, one line each>
+   Read before building:
+   - <path> — <why it matters here>
+   - MATH.md §N — <the formula this touches>
+   Decisions: <decided — why. Rejected <alternative>, because <reason>.>
+   Roadmap: item N | none */
+```
 
-A `feature`'s section, and required there. A `model` or `repair` has no click:
-it writes Claims, and only the Claim bullets below apply.
+Everything under the Goal is `/build`'s input and is deleted at land (the build
+skill says where each part goes), so write it for the implementer.
 
-Write them with the user, in their words, then tighten:
-
-- split every `and` into its own **Then**
-- give every scenario a **Given**, even if it is "a fresh profile, no logs"
-- pick the test level from `docs/testing.md`'s table and name the file
-- math with no click gets a **Claim**, not a scenario — backed by a probe when
-  the answer is a number that moves, by a test when it is a bound that holds
-- **mark a Claim that pins existing behaviour `(pin)`.** It goes green on its
-  first run, which is its pass condition and not a failure of R6 — `/build`
-  knows the rule and cannot be left guessing which ones they are. A pin is
-  phrased through the surface that exists TODAY, or it cannot run against the
-  old code at all
-
-If a scenario cannot be phrased as something observable, it is not acceptance
-criteria — it is implementation, and it belongs in **Decisions** or nowhere.
+**Out of scope** is what stops the implementer building more than was asked
+(AGENTS.md §0). **Read before building** is routing you resolve yourself, by
+the doc table and by grepping for the code that owns the behaviour — files and
+MATH.md sections, not areas; cite the area `AGENTS.md` when a public export is
+added or moved, since that is where the repo prices its interfaces. A ROADMAP
+item is a want, not a record of how the code works; when routing disproves one,
+say so under Decisions and route to the ROADMAP line so `/build` corrects it.
+**Decisions** carry the rejected half, which the code cannot show.
 
 ## Before finishing
 
-- Kind set, and **Goal** written in that kind's voice?
-- MATH.md changes? Name the section in **Read before building**.
-- Does this re-open a settled decision (AGENTS.md §4, the model rules, or
-  ROADMAP's not-proposed list)? Say so to the user and stop — those are closed.
-- On the roadmap already? Cite the item number; do not renumber anything.
-- Leave **Open questions** empty by answering them, or stop and ask.
+- MATH.md changes? Name the section under Read before building.
+- Re-opens a settled decision (AGENTS.md §4, the model rules, ROADMAP's
+  not-proposed list)? Say so to the user and stop — those are closed.
+- On the roadmap? Cite the item number; renumber nothing.
+- Open questions answered, or stop and ask — the brief has no section for them.
 
-Then show the user the path and the scenario list, and say the build phase is
-`/build <slug>`.
+Then show the test files and their titles, and say the build phase is
+`/build <test file>`.

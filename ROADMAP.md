@@ -13,15 +13,17 @@ they are
 never reused; phase numbers are not cited and were re-cut on 2026-08-04 when
 items 11–23 were added. Update this file when an item ships or is rejected.
 
-**A shipped item or a closed finding collapses to its date and a link.** What
-was decided, what was rejected and what the review caught go to
-`docs/features/<slug>.md`, frozen at land — a finding that closes without a
-feature of its own still gets one, or its record is only in this file and this
-file grows. An entry here never describes how the code works today: that is
+**A shipped item or a closed finding collapses to its date and a link** — to
+the test file that carries its scenarios (`/plan` writes them; before
+2026-09-12 that was `docs/features/<slug>.md`, and those links stay), or, for a
+finding with no test, to the file that owns it: MATH.md, the area `AGENTS.md`'s
+settled decisions, the probe header. What was decided and rejected goes to the
+landing commit, and to the settled decisions when it closes a question someone
+would re-open. An entry here never describes how the code works today: that is
 MATH.md and the area `AGENTS.md`, and a claim about current behaviour written
 here is the one that rots (2026-08-13 sweep: 14 of 161). Collapsing was skipped
 often enough that on 2026-08-21 the file was 1650 lines, half of them closed
-records; six of those became the feature files they should have had at land.
+records.
 
 **Prettier renumbers a contiguous ordered list to increment from its first
 number**, so an out-of-sequence item dropped into the middle of a phase is

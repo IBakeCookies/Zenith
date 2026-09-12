@@ -166,8 +166,13 @@ are cheap and one of them is load-bearing:
   import, a `.svelte` type-only crossing).
 - **The test file you wrote or touched**, because R6 is not satisfiable
   otherwise — you have to watch it fail and then pass
-  (`npm run test:unit -- --run path/to/file`). The full `test:unit` stays the
-  user's: three projects, two of them real browsers.
+  (`npm run test:unit -- --run path/to/file`; `npx playwright test e2e/<file>`
+  for a flow, which builds the app and serves it on 4173 first — so a preview
+  holding that port stops before it, and nothing else runs during the build: a
+  `check` or a storybook run beside a `vite build` leaves the served page with
+  a `__sveltekit_<hash>` its modules do not match, and every click times out).
+  The full `test:unit` stays the user's: three projects, two of them real
+  browsers.
 - **`npx prettier --write`** on the files you touched (never the tree).
 
 The costs above are this repo on a 4-core box, 2026-09-04, except `check`:

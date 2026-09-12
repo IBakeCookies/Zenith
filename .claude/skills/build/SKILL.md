@@ -1,50 +1,44 @@
 ---
 name: build
-description: Implement a Fallow feature spec from docs/features/<slug>.md — failing tests, dispatch, review, land. Use after /plan, or when asked to implement an existing feature spec. Not for `npm run build`.
+description: Make a planned Fallow change's failing tests green — red once, dispatch, review, land. Takes the test file `/plan` wrote. Not for `npm run build`.
 ---
 
-# Building a planned feature
+# Building a planned change
 
-Takes a slug. Reads AGENTS.md §0–§4, `docs/features/<slug>.md`, and **only the
-files its "Read before building" section names**. If that section is thin, the
-spec is not ready — go back to `/plan` rather than starting a search here.
+Takes the test file `/plan` wrote; its header comment is the brief. Read
+AGENTS.md §0–§4, the brief, and **only the files its Read before building
+names**. If that list is thin, the plan is not ready — go back to `/plan`
+rather than starting a search here.
 
-If the spec has **Open questions**, answer them with the user before step 1.
+A spec still at `planning` in `docs/features/` is the same input in prose:
+transcribe its scenarios into the test files it names, then continue from
+step 1.
 
-## 1. Failing tests first, and they are yours to write
+**This phase writes no test.** The one edit it makes to one is fixing a red
+that is not the behaviour's absence — a typo, a wrong locator, a fixture the
+tree moved under — and every such edit is named in the report.
 
-Transcribe each scenario into the test file it names, run it, and read the
-failure. R6 in full — including what a wrong failure looks like — is
-[docs/testing.md](../../../docs/testing.md).
+## 1. Red, once
 
-Do this yourself. It is transcription, not design (the assertions are already
-written), and a subagent that writes the test and the code in one pass cannot
-prove it ever saw red.
-
-A **Claim** backed by a test is R6 like any other: red first. Only a
-probe-backed Claim is written afterwards, because a probe reports a number and
-there is no red to watch — add its `scripts/PROBES.md` row in the same change.
-
-Two Claims do not go red, and both are correct:
-
-- **a pin** — "unchanged to 12 decimals", "this case is still dropped". It
-  asserts what the change must _not_ move, so it passes on the first run against
-  the old code and that is its pass condition (the refactor row in
-  [docs/testing.md](../../../docs/testing.md)). Watch it pass, then leave it
-  alone: a pin you edited afterwards proves nothing.
-- **a probe-backed one**, as above.
-
-Say which Claims were pins when you report, so nobody reads a green suite as a
-suite that never ran red.
+Run the brief's test files (the commands, and what may not run alongside them:
+testing.md's five commands). Every test is red for the reason the brief states,
+and the Pins pass. Anything else is the test's bug or a tree that moved under
+it: fix the test, and say so.
 
 ## 2. Dispatch
 
-One implementer subagent. Give it the spec path, the test command, the routing
-list, and the **Out of scope** section verbatim. Not this conversation.
+One implementer subagent. Give it the test paths, the run command, the Read
+before building list, **Out of scope** verbatim, and this line:
 
-Its job is to make the failing tests green without touching anything the spec
-did not name. It reports a change manifest — files and what changed — not a
-narrated diff.
+> **Do not edit a test.** If one has to change to pass, stop and report — the
+> plan or the code is wrong, and that call is not yours.
+
+Check it mechanically when it returns: `git diff --stat` over the test files is
+empty. Its job is every test green without touching anything the brief did not
+route to. A probe the brief names is the one test-shaped file it writes, with
+its `scripts/PROBES.md` row (docs/testing.md, Writing a probe). Tell it each
+e2e run rebuilds the app, so it batches edits before a run. It reports a change
+manifest — files and what changed — not a narrated diff.
 
 Subagents do not inherit this session's Honey hook, so paste the worker
 directive from `honey:honey-superpowers` into the prompt.
@@ -52,37 +46,38 @@ directive from `honey:honey-superpowers` into the prompt.
 ## 3. Review
 
 Follow **The reviewer pass** in [docs/testing.md](../../../docs/testing.md):
-the blast-radius table, the brief that stops a reviewer padding, giving it the
-root `AGENTS.md` plus the layer file for what the diff touches, and the triage
-on the way back — verify every claim against the code, fix bugs, decline the
-rest out loud in one line each.
+the blast-radius table, the brief that stops a reviewer padding, the root
+`AGENTS.md` plus the layer file for what the diff touches, and the triage on
+the way back — verify every claim against the code, fix bugs, decline the rest
+out loud in one line each.
 
 Two things this phase adds:
 
-- give the reviewer the spec's scenario list, so it can report a scenario the
-  diff does not actually satisfy
-- **one pass, as testing.md says.** If it shows the spec was wrong rather than
-  the code, stop and surface that — no amount of code review fixes a spec.
+- give the reviewer the test titles, so it can report a test the diff passes
+  without the behaviour — an assertion on the implementation — or a behaviour
+  the diff does not deliver
+- **one pass.** If it shows the plan was wrong rather than the code, stop and
+  surface that; no code review fixes a plan.
 
 ## 4. Land
 
 Nothing here is optional, and the docs move in the same commit as the code:
 
-- the test files you touched pass, and `npx prettier --write` on touched files
-  only — never the tree
-- whatever the change itself puts in doubt: `npm run check` after a type-level
-  change, `npm run depcheck` after crossing a layer
+- the brief's test files pass; `npx prettier --write` on touched files only —
+  never the tree
+- whatever the change puts in doubt: `npm run check` after a type-level change,
+  `npm run depcheck` after crossing a layer
 - a user-visible change is driven in a browser — the `verify` skill
 - MATH.md updated in **this** commit if a formula, constant, bound or fit moved
-- `scripts/PROBES.md` row added for any new probe
-- a changed convention written into the area's `AGENTS.md`, not left in the
-  feature file — the feature file is not where anyone looks it up
-- ROADMAP.md: collapse the item — or the finding — to its date and a link to the
-  feature file, and write the record in that file, never in ROADMAP.md. A closure
-  with no feature of its own still gets one, or the record has nowhere to go but
-  the roadmap. Never renumber, and re-run `npx prettier --write ROADMAP.md` after
-  (it renumbers lists)
-- the spec's **Status** set to `landed <date>`, **Open questions** emptied
+- a changed convention written into the area's `AGENTS.md`
+- **the brief is consumed.** The Goal stays as the file's header; Tests, Pins,
+  Out of scope, Read before building and Roadmap are deleted. Decisions go to
+  the landing commit's body, and one that closes a question someone would
+  re-open goes to the area `AGENTS.md`'s settled decisions (§4)
+- ROADMAP.md: collapse the item to its date and a link to the test file. Never
+  renumber, and re-run `npx prettier --write ROADMAP.md` after (it renumbers
+  lists)
 
 The five-command gate is the user's to run, not yours. Report what shipped,
-which scenarios are green, and **what you ran and what you did not**.
+which tests are green, which were pins, and **what you ran and what you did
+not**.
