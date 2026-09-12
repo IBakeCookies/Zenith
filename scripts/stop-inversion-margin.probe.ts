@@ -42,6 +42,18 @@
  * model has no task size, so "checked off" has no model correlate and the rate
  * is an axis, never a measured frequency.
  *
+ * WHAT THE 2026-09-12 RE-RUN CHANGED, and the one reading it was run for. The
+ * energy model moved to the classic model's v2 curve on 2026-09-11
+ * (docs/features/the-curve-nobody-chose.md) and this instrument had not been
+ * re-run under it, so every figure it printed was a v1 reading. The median
+ * bracket half-width reads 0.125 over 197 non-inverted days — the same 0.125
+ * read 2026-08-21 over 175, and the reading ROADMAP M105 was waiting on. Two
+ * readings, not a statement about the curve: the round-robin seed cap, the
+ * importance weight and the pair seeds all landed between those runs, and they
+ * move the plans claims 2 and 3 are measured on. Claim 2's mood inversions past
+ * the margin read 2 of 1024 where the figure of record was 14 (2026-08-21), and
+ * the optimizer's own plans still never invert: 0 of 207.
+ *
  * WHAT THE 2026-08-21 RE-RUN CHANGED. `bracketOf` took the shipped
  * `isClockCensored` — a day whose own span, breaks included, leaves no room for
  * another step reveals nothing — and the shipped overhang trim it replicated went
@@ -480,9 +492,10 @@ function paramsAt(lambda: number): EnergyParams {
 const LAMBDAS = [0.3, 0.5, 0.9, 1.3];
 /**
  * The instrument's own resolution: the median bracket half-width claim 3 below
- * measures — 0.125 over 175 non-inverted days, every one of them a day the app
- * can produce, and every one of them past the clock censor (2026-08-21; 0.129
- * over 274 days before it). Re-read it whenever claim 3's median moves.
+ * measures — 0.125 over 197 non-inverted days, every one of them a day the app
+ * can produce, and every one of them past the clock censor (2026-09-12, on the
+ * v2 curve; 0.125 over 175 days on v1, 0.129 over 274 before the censor).
+ * Re-read it whenever claim 3's median moves.
  */
 const BRACKET_HALF_WIDTH = 0.125;
 

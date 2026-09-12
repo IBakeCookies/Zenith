@@ -1901,11 +1901,12 @@ export const STOP_PRIOR_STRENGTH = 1;
 /**
  * Prior scale for indifference-point noise, in λ₀ units (output per hour).
  * Two sources add up: lattice quantization (the day's bracket is one 45-min
- * step wide — half-width a median 0.125 over 175 non-inverted days, measured
- * 2026-08-21 past the clock censor, with the days' own breaks in the
- * reconstruction; the 0.15 this comment first quoted was one probe day) and day-to-day mood in the stop
- * decision itself, which no instrument separates. 0.25 ≈ a quarter of
- * the informative λ₀ band ([0.4, 1.5] on the probe day).
+ * step wide — half-width a median 0.125 over 197 non-inverted days, measured
+ * 2026-09-12 on the v2 curve, past the clock censor, with the days' own breaks
+ * in the reconstruction; the 0.15 this comment first quoted was one probe day)
+ * and day-to-day mood in the stop decision itself, which no instrument
+ * separates. 0.25 ≈ a quarter of the informative λ₀ band ([0.4, 1.5] on the
+ * probe day).
  */
 export const STOP_NOISE_PRIOR_STD = 0.25;
 
@@ -1939,20 +1940,21 @@ export const STOP_FIT_MAX = 3;
  * grid, so do not re-derive 0.25 from them:
  *
  *   - "rational days and rational-±1-step 'mood' days never invert at all" is
- *     FALSE for mood days — 47 of 926 invert, 14 of them censored, worst gap
- *     0.399 — so some honest days really are dropped. Re-read 2026-08-21 past
- *     the clock censor, with each day's own breaks in the reconstruction, where
- *     the optimizer's OWN plans do not invert at all: 0 of 191.
+ *     FALSE for mood days — 48 of 1024 invert, 2 of them censored, worst gap
+ *     0.397 — so some honest days really are dropped. Re-read 2026-09-12 on the
+ *     v2 curve, past the clock censor, with each day's own breaks in the
+ *     reconstruction, where the optimizer's OWN plans do not invert at all:
+ *     0 of 207.
  *   - the "~+0.1 loose-max bias plus ~0.15 half-width" decomposition does not
- *     add up: measured, the bias is median 0.000 / mean 0.019 and the
+ *     add up: measured, the bias is median 0.000 / mean 0.022 and the
  *     half-width median 0.125, summing to 0.125 — not 0.25.
  *
  * RE-DERIVED 2026-08-13 (`scripts/stop-margin-fit-error.probe.ts`, re-read
  * 2026-09-11 on the v2 curve) and it is not derivable: over [0.1, 0.5] the
- * whole range moves λ₀ fit RMSE by at most 0.0185 — 13.8% of the instrument's
- * 0.134 bracket half-width, 7.4% of σ₀ — and only in the 30%-interrupted n = 3
- * arm; the other three move ≤ 0.0025. Most interrupted days never invert at all
- * (25.8% / 20.6% of logged interrupted-tail / -mid days do, only 12.4% / 13.0%
+ * whole range moves λ₀ fit RMSE by at most 0.0185 — 7.4% of σ₀ — and only in
+ * the 30%-interrupted n = 3 arm; the other three move ≤ 0.0025. Most
+ * interrupted days never invert at all (25.8% / 20.6% of logged
+ * interrupted-tail / -mid days do, only 12.4% / 13.0%
  * past 0.25), so censoring cannot reach the contamination it exists for. 0.25
  * is LEFT as an arbitrary point in that region: one arm now moves by an
  * instrument-visible amount, and nothing clears the half-width that would move
@@ -2048,8 +2050,8 @@ function hasUnreadBreaks(observation: StopObservation): boolean {
  * window edge with no recovered break is dropped. Small inversions (within the margin, i.e. within the
  * instrument's own slack) keep the bracket midpoint as the compromise between
  * the two bounds. Near-rational days (±1 step of "mood") invert
- * RARELY but not never — 47 of 926, 14 of them past the margin — while the
- * app's own plans, read with their breaks, invert 0 of 191 (2026-08-21, see
+ * RARELY but not never — 48 of 1024, 2 of them past the margin — while the
+ * app's own plans, read with their breaks, invert 0 of 207 (2026-09-12, see
  * STOP_INVERSION_MARGIN).
  */
 export function stopBracket(

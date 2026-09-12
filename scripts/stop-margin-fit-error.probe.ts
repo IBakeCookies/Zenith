@@ -618,7 +618,7 @@ const IN_RANGE = MARGINS.map((m, i) => ({
 
 /** n = 3 matters because §8.10's prior gives ONE day 50% of the fit — the only regime where the margin has leverage. */
 const DAY_COUNTS = [3, 12];
-/** The instrument's own resolution: median bracket half-width, `stop-inversion-margin.probe.ts` 2026-08-06. */
+/** The instrument's own resolution: median bracket half-width, `stop-inversion-margin.probe.ts` 2026-08-19. */
 const BRACKET_HALF_WIDTH = 0.134;
 
 interface Arm {
