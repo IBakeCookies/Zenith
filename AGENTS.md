@@ -7,24 +7,24 @@ missing, it is one hop away.
 
 ## The documentation
 
-| File                                                               | Read it when                                                                                                                                            |
-| ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **this file**                                                      | always                                                                                                                                                  |
-| [`src/lib/data/AGENTS.md`](src/lib/data/AGENTS.md)                 | touching repositories, IndexedDB, migrations, persisted shapes                                                                                          |
-| [`src/lib/business/AGENTS.md`](src/lib/business/AGENTS.md)         | touching stores, state, the business-layer root                                                                                                         |
-| [`business/model/AGENTS.md`](src/lib/business/model/AGENTS.md)     | touching the model — invariants and the settled model decisions                                                                                         |
-| [`src/lib/presentation/AGENTS.md`](src/lib/presentation/AGENTS.md) | touching routes, components, the task rows, the log history                                                                                             |
-| [STYLE.md](src/lib/presentation/style/STYLE.md)                    | touching markup, classes, tokens, themes                                                                                                                |
-| [docs/testing.md](docs/testing.md)                                 | writing a test, verifying, or dispatching the reviewer                                                                                                  |
-| [docs/design.md](docs/design.md)                                   | arguing about where code goes, a split, or an abstraction                                                                                               |
-| [docs/deployment.md](docs/deployment.md)                           | touching SSR, the service worker, locales, SEO, prerendering                                                                                            |
-| [MATH.md](MATH.md)                                                 | changing a formula — **authoritative**. Derivations only: the shape and why not the alternative                                                         |
-| [scripts/PROBES.md](scripts/PROBES.md)                             | adding or citing a probe                                                                                                                                |
-| [ROADMAP.md](ROADMAP.md)                                           | what is next and what was refused; a shipped item or closed finding is a date and a link to its spec                                                    |
-| [docs/features/](docs/features/)                                   | one file per planned change — kind `feature`, `model`, `repair` or `audit`; frozen at land                                                              |
-| [`.claude/skills/`](.claude/skills/)                               | the workflow itself: `plan` writes the spec, `build` implements one, `refactor` moves shipped code, `verify` drives the app, `eval` measures these docs |
-| [README.md](README.md)                                             | user-facing: what the app does and how to run it                                                                                                        |
-| [zenith.md](zenith.md)                                             | never a spec — a frozen copy of the source article, historical only                                                                                     |
+| File                                                               | Read it when                                                                                                                                                       |
+| ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **this file**                                                      | always                                                                                                                                                             |
+| [`src/lib/data/AGENTS.md`](src/lib/data/AGENTS.md)                 | touching repositories, IndexedDB, migrations, persisted shapes                                                                                                     |
+| [`src/lib/business/AGENTS.md`](src/lib/business/AGENTS.md)         | touching stores, state, the business-layer root                                                                                                                    |
+| [`business/model/AGENTS.md`](src/lib/business/model/AGENTS.md)     | touching the model — invariants and the settled model decisions                                                                                                    |
+| [`src/lib/presentation/AGENTS.md`](src/lib/presentation/AGENTS.md) | touching routes, components, the task rows, the log history                                                                                                        |
+| [STYLE.md](src/lib/presentation/style/STYLE.md)                    | touching markup, classes, tokens, themes                                                                                                                           |
+| [docs/testing.md](docs/testing.md)                                 | writing a test, verifying, or dispatching the reviewer                                                                                                             |
+| [docs/design.md](docs/design.md)                                   | arguing about where code goes, a split, or an abstraction                                                                                                          |
+| [docs/deployment.md](docs/deployment.md)                           | touching SSR, the service worker, locales, SEO, prerendering                                                                                                       |
+| [MATH.md](MATH.md)                                                 | changing a formula — **authoritative**. Derivations only: the shape and why not the alternative                                                                    |
+| [scripts/PROBES.md](scripts/PROBES.md)                             | adding or citing a probe                                                                                                                                           |
+| [ROADMAP.md](ROADMAP.md)                                           | what is next and what was refused; a shipped item or closed finding is a date and a link                                                                           |
+| [docs/features/](docs/features/)                                   | frozen specs of changes planned before 2026-09-12 — nothing new lands here; a plan is now its failing tests                                                        |
+| [`.claude/skills/`](.claude/skills/)                               | the workflow itself: `plan` writes the failing tests, `build` makes them green, `refactor` moves shipped code, `verify` drives the app, `eval` measures these docs |
+| [README.md](README.md)                                             | user-facing: what the app does and how to run it                                                                                                                   |
+| [zenith.md](zenith.md)                                             | never a spec — a frozen copy of the source article, historical only                                                                                                |
 
 New durable knowledge goes in the file that owns the area, never in a new
 top-level `.md`. **This file keeps statements; every "because" longer than a
