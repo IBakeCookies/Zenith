@@ -318,7 +318,7 @@ test('the advice card stays out of the way on a past day', async ({ page }) => {
 
 	await expect(check).toBeVisible();
 
-	// Past days are read-only, so there is nothing to adjust.
+	// A past day's tomorrow is another finished day, so there is nothing to adjust.
 	await page.goto('/?date=2026-01-02');
 
 	await expect(check).toBeHidden();

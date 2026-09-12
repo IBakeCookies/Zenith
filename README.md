@@ -88,8 +88,8 @@ Fallow reports how much better that is than an equal split. (Full derivations:
   more — each computed from the same underlying model.
 - **Suggested run order.** Alternates cognitive and physical tasks so the
   resting energy system recovers while the clock keeps running.
-- **History & routines.** Sessions are saved per day (browse past days
-  read-only) and you can save task templates as reusable routines. Everything
+- **History & routines.** Sessions are saved per day (browse and correct
+  past days) and you can save task templates as reusable routines. Everything
   lives locally in IndexedDB — no account, no server.
 
 ## How you use it
@@ -112,7 +112,7 @@ account, no server, works offline.
 - **`/` — today.** The task list and the plan it produces: hours per task,
   priority, suggested run order, stopping times, and the metric dashboard. Which
   day you are looking at comes from the URL — `/?date=YYYY-MM-DD` opens a past
-  day read-only or a future one for planning ahead, and anything invalid falls
+  day to correct or a future one to plan ahead, and anything invalid falls
   back to today. Deletions are undoable from a toast rather than guarded by a
   confirm dialog.
 - **`/calendar` — the same days as a month or week grid**, each planned day

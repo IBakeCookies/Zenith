@@ -173,7 +173,7 @@
 	"banner_future_title": "提前规划：",
 	"banner_future_body": "你在这里设置的任务和预算会保存到 {date}——到那天打开就能按计划执行。",
 	"banner_past_title": "正在查看过去的某一天：",
-	"banner_past_body": "你仍然可以勾选或取消勾选任务，并为漏评的工作时段补记 ⚡ 或 🪫（改动会被保存），但添加或编辑任务只能在今天进行。",
+	"banner_past_body": "你可以勾选或取消勾选任务，为漏评的工作时段补记 ⚡ 或 🪫，并修正当天登记的任务或小时数——改动会被保存。",
 	"metric_group_fit": "这一天装得下吗？",
 	"metric_group_worth": "时间用得值吗？",
 	"metric_group_cost": "代价是什么？",

@@ -209,13 +209,13 @@ export class SessionStore {
 	// Lab, calendar, …) always view today. Invalid dates fall back to today.
 	#today = $derived(liveToday.value);
 	#demoTitles = $derived(this.#readDemoTitles());
-	// The demo ignores the date param: a past day is read-only, and an example day
-	// nobody can poke at answers none of the questions the link exists to answer.
+	// The demo ignores the date param: the example day is one fixture, and the date
+	// it is shown under answers none of the questions the link exists to answer.
 	#dateParam = $derived(this.#demoTitles === null ? this.#readDateParam() : null);
 	#selectedDate = $derived(isISODate(this.#dateParam) ? this.#dateParam : this.#today);
 
-	// Day modes: past is read-only history (completion toggles and measurements),
-	// future is a plan you can edit freely and never measure.
+	// Day modes: a past day is history you can correct but never defer from, a
+	// future day a plan you can edit freely and never measure.
 	#isViewingPast = $derived(this.#selectedDate < this.#today);
 	#isViewingFuture = $derived(this.#selectedDate > this.#today);
 
@@ -224,12 +224,11 @@ export class SessionStore {
 		return this.#demoTitles !== null;
 	}
 
-	// The viewed day is the loaded one and is not past: the guard on every edit
-	// (the invariant `toggleTask` documents), on the auto-save and on the defer
-	// preview. Mid-navigation the in-memory day still belongs to the previous
-	// date, which a past-day check alone misses.
+	// The viewed day is the loaded one: the guard on every edit and on the
+	// auto-save. Loads are async, so mid-navigation the in-memory day still belongs
+	// to the previous date, and writing it under the incoming one would overwrite it.
 	get #canEditPlan() {
-		return this.#loadedDate === this.#selectedDate && !this.#isViewingPast;
+		return this.#loadedDate === this.#selectedDate;
 	}
 
 	// What a day with no hours of its own opens on (ROADMAP item 16). Derived
@@ -369,10 +368,9 @@ export class SessionStore {
 			}
 		});
 
-		// Auto-save to IndexedDB for today and future plans (past days save
-		// explicitly on toggle). Two guards: the day must be one this store may
-		// write, and pristine never-saved days are skipped so browsing ahead
-		// creates no empty records.
+		// Auto-save to IndexedDB on any day. Two guards: the day must be the loaded
+		// one, and pristine never-saved days are skipped so browsing creates no
+		// empty records.
 		$effect(() => {
 			// `#isShowingDemo`, not `#demoTitles`: leaving the demo drops the param
 			// while the fixture is still in `#tasks`, and this effect ran in that gap
@@ -502,8 +500,8 @@ export class SessionStore {
 	// forgotten at a new write site.
 	async #persistSession(session: DailySession) {
 		// Every session write, including the two that bypass the auto-save
-		// (`toggleTask`'s past branch, `moveTaskToTomorrow`): a fabricated task
-		// landing in a real profile is the whole reason the demo is in memory.
+		// (`moveTaskToTomorrow`'s destination, `#rewriteTagInHistory`): a fabricated
+		// task landing in a real profile is the whole reason the demo is in memory.
 		if (this.#isShowingDemo) return;
 
 		await sessionRepository.$updateSession(session);
@@ -559,6 +557,9 @@ export class SessionStore {
 	 */
 	async readDeferDestination(): Promise<DeferDestination | null> {
 		if (!this.#canEditPlan) return null;
+
+		// A past day's tomorrow is another finished day.
+		if (this.#isViewingPast) return null;
 
 		// The example day reads nothing: this one would print the visitor's real
 		// tomorrow under a banner saying the numbers are not theirs.
@@ -718,7 +719,7 @@ export class SessionStore {
 	}
 	/** How many session records have been written for days already past — the
 	 *  freshness key for a reading that folds all of them at once (the Lab's λ₀
-	 *  fit), which a completion toggle on any past day can move. */
+	 *  fit), which any write to a past day can move. */
 	get pastWriteGeneration() {
 		return this.#pastWriteGeneration;
 	}
@@ -842,10 +843,8 @@ export class SessionStore {
 	}
 
 	// Completion can be toggled on ANY day — forgetting to check a task off
-	// before midnight shouldn't falsify history. Structural edits (add/edit/
-	// remove) work on today and future plans; past days stay read-only:
-	// those rewrite the plan, this records the truth.
-	async toggleTask(id: number) {
+	// before midnight shouldn't falsify history.
+	toggleTask(id: number) {
 		// Same guard as the auto-save effect: loads are async, so mid-navigation
 		// the in-memory tasks still belong to the previous day and writing them
 		// under #selectedDate would overwrite the incoming day with them.
@@ -859,28 +858,6 @@ export class SessionStore {
 					}
 				: t,
 		);
-
-		// The auto-save $effect doesn't persist past sessions, so historical
-		// toggles are saved explicitly under the viewed date.
-		if (this.#isViewingPast) {
-			try {
-				await this.#persistSession({
-					date: this.#selectedDate,
-					tasks: $state.snapshot(this.#tasks),
-					availableHours: this.availableHours,
-					switchCost: this.switchCost,
-					cognitivePool: this.#declaredPools.cognitiveHours,
-					physicalPool: this.#declaredPools.physicalHours,
-					updatedAt: Date.now(),
-				});
-			} catch (e) {
-				logError('Failed to save completion change', e, {
-					date: this.#selectedDate,
-				});
-
-				this.#reporter.report('save-failed');
-			}
-		}
 	}
 
 	/**
@@ -934,6 +911,9 @@ export class SessionStore {
 	async moveTaskToTomorrow(id: number): Promise<boolean> {
 		if (!this.#canEditPlan) return false;
 
+		// A past day's tomorrow is another finished day.
+		if (this.#isViewingPast) return false;
+
 		// Refused rather than merely unpersisted: `#persistSession` would drop the
 		// destination write and this would still report a move, and drop the task.
 		if (this.#isShowingDemo) return false;
@@ -942,8 +922,7 @@ export class SessionStore {
 
 		const task = this.#tasks.find((t) => t.id === id);
 
-		// A completed task IS history, on the same footing as the past days
-		// `#canEditPlan` refuses.
+		// A completed task IS history: it was worked here, so there is nothing to send on.
 		if (!task || task.completed || isPinned(task)) return false;
 
 		this.#moving = true;

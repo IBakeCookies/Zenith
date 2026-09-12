@@ -173,7 +173,7 @@
 	"banner_future_title": "Planification à l'avance :",
 	"banner_future_body": "les tâches et le budget définis ici sont enregistrés au {date} — ouvre ce jour-là pour dérouler le plan.",
 	"banner_past_title": "Tu consultes un jour passé :",
-	"banner_past_body": "tu peux encore cocher ou décocher des tâches et noter un ⚡ ou 🪫 pour une séance oubliée (les changements sont enregistrés), mais ajouter ou modifier des tâches n'est possible qu'aujourd'hui.",
+	"banner_past_body": "tu peux cocher ou décocher des tâches, noter un ⚡ ou 🪫 pour une séance oubliée et corriger les tâches ou les heures déclarées — les changements sont enregistrés.",
 	"metric_group_fit": "La journée tient-elle ?",
 	"metric_group_worth": "Le temps est-il bien employé ?",
 	"metric_group_cost": "Qu'est-ce que ça coûte ?",

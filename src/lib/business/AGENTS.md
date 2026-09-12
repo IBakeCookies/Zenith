@@ -166,7 +166,7 @@ the trade runs the same way in each direction:
   caller remembering a second call is worse than the re-read it saves.
 - **In the layout when every staleness reason has a key.** `EnergyLabStore`
   moved there: its params are the Lab's alone, but its stop observations are
-  not — a completion toggle on a past day moves them — so the effect that folds
+  not — any write to a past day moves them — so the effect that folds
   the finished days keys on `SessionStore`'s past-write generation and re-reads.
   The optimizer behind `plan` is a `$derived` no `$effect` touches, so it stays
   unrun on the five routes that never show it. What it buys is the ~120 ms of
@@ -230,15 +230,14 @@ becomes visible, which asks the writer for `pending` so an unlanded edit is not
 overwritten by the stored day — reachable because a hidden tab that rolls over
 midnight re-loads and re-arms the autosave.
 
-### Four write sites carry the whole day, so a new field lands in all four
+### Three write sites carry the whole day, so a new field lands in all three
 
 `SessionStore` writes a `DailySession` from the autosave payload, from
-`toggleTask`'s past-day branch, from `moveTaskToTomorrow` and from
-`#rewriteTagInHistory` (the rename and the delete) —
-each a whole record, so every field one of them does not carry is a field it
-erases. `#persistSession` cannot catch that: it takes the payload already built.
-A field that reached only two of the first three once reset a past day's value
-when a task was ticked off there
+`moveTaskToTomorrow` and from `#rewriteTagInHistory` (the rename and the
+delete) — each a whole record, so every field one of them does not carry is a
+field it erases. `#persistSession` cannot catch that: it takes the payload
+already built. A field that reached only some of the writers once reset a past
+day's value when a task was ticked off there
 ([the-plan-that-had-no-clock.md](../../../docs/features/the-plan-that-had-no-clock.md)).
 The destination write also reads its OWN day's values through `#readDestination`
 and defaults nothing: a fallback there stamps a value onto a day that never
@@ -553,11 +552,16 @@ already showing. `NumberInput` reports on blur whether or not the value moved, s
 without it a tab through the panel stores the day — the phantom session the `null`
 above exists to prevent, reached by a touch instead of by a look. It governs the
 hours field too, which is where the hole was open before the other three existed.
-There is **no past-day rule** here: an unseen past day is read-only, saves
-nothing, and showed an invented constant before this existed, so a branch would
-guard nothing. The one limit is storage's: `switchCost` is not optional in a
-stored session, so what carries is the cost the last stored day _ran with_, which
-is the only declaration there is.
+There is **no past-day rule** here either. A past day is correctable
+([the-day-you-could-not-correct.md](../../../docs/features/the-day-you-could-not-correct.md)),
+and `#declare` compares against each field's own prefill — 0 for the hours of a
+past day nobody planned, the carry-over for its switch cost and pools, the
+constants for a stored day's undeclared pools (`#openingPools`) — so a blur that
+changes nothing declares nothing, and a branch would guard nothing. A write that
+creates an unplanned past day records that carry-over, as a created day does
+above. The one limit is storage's: `switchCost` is not optional in a stored
+session, so what carries is the cost the last stored day _ran with_, which is the
+only declaration there is.
 
 The same read carries the title→rating map and the tag vocabulary, which are
 **boot snapshots**: `readHistoryPrefills(today)` runs once at load, so a title

@@ -14,9 +14,9 @@ import {
 /* Tags are typed on the task and read on /analytics, which is two stores and a join
    apart — nothing below the browser exercises the whole path. */
 
-/** A stored day carrying one tagged task, and the 🪫 session logged against it. No UI
- *  path dates either in the past — past days are read-only — so both are written
- *  straight into IndexedDB, the way `drain-rating.e2e.ts` seeds its drain rows. */
+/** A stored day carrying one tagged task, and the 🪫 session logged against it. Both
+ *  are written straight into IndexedDB, the way `drain-rating.e2e.ts` seeds its drain
+ *  rows: faster than typing them onto a past day. */
 async function writeTaggedDay(page: Page, date: string, tag: string, hours: number) {
 	await page.evaluate(
 		({ date, tag, hours }) =>

@@ -1,6 +1,6 @@
 # The day you could not correct
 
-**Kind:** feature · **Status:** planning · **Roadmap:** none
+**Kind:** feature · **Status:** landed 2026-09-12 · **Roadmap:** none
 
 Frozen at land: this file says what was decided on the date it carries, never
 how the code works today — that is MATH.md and the area `AGENTS.md`. When later
@@ -361,6 +361,43 @@ task done on a past day asks both questions` are pins that must stay green.
   ever arguing for it, and two places where the codebase already breaks it:
   `#rewriteTagInHistory` rewrites tasks on every past day a tag was used on, and
   `toggleTask` writes past sessions.
+
+## What landed, and what moved that this file did not plan
+
+- **A story asserted the removed behaviour, and this file did not name it.**
+  `day-actions.stories.svelte`'s _Viewing a past day_ play expected both menus
+  absent. Flipped to the inverse — both present — red first, the way the store
+  test was.
+- **Two README sentences and five e2e comments called past days read-only.**
+  README's feature list and its `/?date=` line, the seeding comments in
+  `analytics-stats`, `next-task-suggestions`, `task-tags` and `plan-advice`,
+  which justified writing straight into IndexedDB with a rule that no longer
+  holds, and the rails test's "only way onto a read-only day" in
+  `day-navigation`. Corrected in the same diff (AGENTS.md §0); the seeding
+  stays, for speed.
+- **The task-row bullet did not read true, so it was rewritten.**
+  `presentation/AGENTS.md` had a past day passing none of the logging
+  callbacks. A past day has passed them since 2026-08-10; it is a day ahead that
+  withholds them (_a day ahead offers neither measurement_). The bullet now says
+  so, and that no row carries a read-only flag.
+- **The two "still offers no …" scenarios are one e2e test.** A row has no
+  actions menu to open, and the move-to-tomorrow control's only home is the
+  advice card — so one seeded past day pins both absences, and both are pins.
+- **The covariate pin is not vacuous after all.** The test asserts the edit
+  landed (`mentalDifficulty` reads 10) before asserting the ⚡ record did not
+  move, so it went red on the edit rather than green from birth.
+- **Tied rows draw newest-first.** Two 5/5/5 tasks on a day with no budget
+  render Inbox above Deep work; the undo scenario's "position it held" is
+  asserted as the order the page drew before the ✕, whatever that order is.
+- **A stored past day is written back once on view, as today already was.**
+  The autosave `$effect` re-runs when a day lands and schedules a write of what
+  it read — identical content, a fresh `updatedAt`. HEAD already did that for
+  today and future days; opening the guard extends it to past days, so every
+  visit to a stored past day is one write and one `pastWriteGeneration` bump.
+  Pre-existing and benign, so not fixed here: ROADMAP S7.
+- **The ratings fixture is the form's 5/5/5, not 3/3.** The add dialog deploys
+  its defaults and the assertion is against the 8 the ✎ raises mental to; the
+  fixture's starting rating carried no assertion.
 
 ## Open questions
 
