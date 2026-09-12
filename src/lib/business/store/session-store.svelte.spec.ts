@@ -1018,6 +1018,61 @@ describe('SessionStore persistence', () => {
 		expect(status.error).toBe('save-failed');
 	});
 
+	it('carries nothing and raises the banner when tomorrow’s write fails', async () => {
+		const { store, status } = await setup();
+
+		store.addTask({
+			title: 'ship it',
+			physicalDifficulty: 3,
+			mentalDifficulty: 5,
+			enjoyment: 5,
+		});
+
+		store.addTask({
+			title: 'write it up',
+			physicalDifficulty: 1,
+			mentalDifficulty: 6,
+			enjoyment: 4,
+		});
+
+		flushSync();
+		useFakeTimers();
+		updateSessionMock.mockRejectedValueOnce(new Error('QuotaExceededError'));
+
+		expect(await store.carryUnfinishedToTomorrow()).toBe(false);
+		expect(store.tasks).toHaveLength(2);
+		expect(status.error).toBe('save-failed');
+	});
+
+	/* Not a loop over the single move: its latch refuses every call after the first, and
+	   two overlapping read-modify-writes on tomorrow drop a task. */
+	it('lands every carried task in one write to tomorrow, each under its own id', async () => {
+		const { store } = await setup();
+
+		for (const title of ['ship it', 'write it up', 'file the return']) {
+			store.addTask({
+				title,
+				physicalDifficulty: 3,
+				mentalDifficulty: 5,
+				enjoyment: 5,
+			});
+		}
+
+		flushSync();
+		expect(store.carryableCount).toBe(3);
+		useFakeTimers(); // freeze the auto-save so only the carry writes
+
+		expect(await store.carryUnfinishedToTomorrow()).toBe(true);
+		expect(store.tasks).toHaveLength(0);
+		expect(store.carryableCount).toBe(0);
+
+		expect(updateSessionMock).toHaveBeenCalledTimes(1);
+		const write = updateSessionMock.mock.calls[0][0];
+		expect(write.date).toBe(addDays(store.today, 1));
+		expect(write.tasks.map((t) => t.title)).toEqual(['file the return', 'write it up', 'ship it']);
+		expect(new Set(write.tasks.map((t) => t.id)).size).toBe(3);
+	});
+
 	/* The destination line reads a day the card cannot send to on a past day, where
 	   the move itself refuses (ROADMAP item 21) — so both answer through the same
 	   guards, and the reading never describes a day no button can reach. */

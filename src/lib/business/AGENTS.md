@@ -230,11 +230,11 @@ becomes visible, which asks the writer for `pending` so an unlanded edit is not
 overwritten by the stored day — reachable because a hidden tab that rolls over
 midnight re-loads and re-arms the autosave.
 
-### Three write sites carry the whole day, so a new field lands in all three
+### Four write sites carry the whole day, so a new field lands in all four
 
-`SessionStore` writes a `DailySession` from the autosave payload, from
-`moveTaskToTomorrow` and from `#rewriteTagInHistory` (the rename and the
-delete) — each a whole record, so every field one of them does not carry is a
+`SessionStore` writes a `DailySession` from the autosave payload, from each
+tomorrow move's destination payload and from `#rewriteTagInHistory` (the rename
+and the delete) — each a whole record, so every field one of them does not carry is a
 field it erases. `#persistSession` cannot catch that: it takes the payload
 already built. A field that reached only some of the writers once reset a past
 day's value when a task was ticked off there
@@ -260,7 +260,7 @@ which of the two flags a site takes is the whole of it:
   yesterday effect and the `visibilitychange` re-read stand down.
 - `#isShowingDemo` — whether the fixture is on screen. Gates the WRITES:
   `#persistSession`, the auto-save effect, `logFlow`, `saveCurrentAsRoutine`,
-  `deleteRoutine`, `moveTaskToTomorrow`, `#rewriteTagInHistory`, and the two
+  `deleteRoutine`, the two tomorrow moves, `#rewriteTagInHistory`, and the two
   remaining reads a click can
   still reach (`readDeferDestination`, `importFromDate`). Leaving the demo drops
   the param while the fixture is still in `#tasks`, and a URL-keyed auto-save ran
@@ -568,7 +568,7 @@ The same read carries the title→rating map and the tag vocabulary, which are
 rated or a tag typed within the session is not offered until the next load, and
 both keep the boot day's answer while another date is viewed.
 
-### A task moves between days only via `moveTaskToTomorrow`
+### A task moves between days only via the two tomorrow moves
 
 Tasks live inside their day's `DailySession` record, so a move is two writes:
 append to tomorrow's session (a read-modify-write through `$readSessionByDate` /
@@ -577,16 +577,23 @@ then drop from today's `#tasks` (persisted by the normal autosave). In that
 order and without a transaction on purpose: the failure mode is a visible
 duplicate, never a vanished task.
 
-What travels is definition and provenance only — a fresh id in the destination
-day's id space (observation joins are per-date, so ⚡ and 🪫 stay with the day
-that measured them), no `mustDoToday`. The method refuses completed and
-`mustDoToday` tasks, no-ops mid-navigation (`#loadedDate !== #selectedDate`) and
-serializes with itself (two overlapping read-modify-writes on tomorrow would
-drop one task). Destination is hard-coded to `selectedDate + 1`: the advice
-card's "To tomorrow" button is the only caller, it never means anything else,
-and tomorrow is never the day on screen — an arbitrary-date move would have to
-answer that (YAGNI). The advice reading itself stays a counterfactual: the
-model prices "off today", only the button commits to a destination.
+What travels is definition and provenance only — `#toCarriedTask`, the one
+projection both moves write: a fresh id in the destination day's id space
+(observation joins are per-date, so ⚡ and 🪫 stay with the day that measured
+them), `createdAt` verbatim so the slide badge keeps counting, no `mustDoToday`.
+Both moves refuse completed and `mustDoToday` tasks, no-op mid-navigation
+(`#loadedDate !== #selectedDate`) and share the `#moving` latch (two overlapping
+read-modify-writes on tomorrow would drop one task).
+Destination is hard-coded to `selectedDate + 1`: neither caller (the advice
+card's lever, the Plan card's carry control) means anything else, and tomorrow is
+never the day on screen (YAGNI). The advice reading stays a counterfactual: the
+model prices "off today", only the button commits.
+
+`carryUnfinishedToTomorrow` is the single move for every task `carryableCount`
+counts, in ONE destination write (a loop over the single move would hit its own
+latch). `carryableCount` is the one field the control is gated on: one derived
+list, empty wherever the move would refuse, so the label never overstates
+([the-carry-that-kept-the-count.md](../../../docs/features/the-carry-that-kept-the-count.md)).
 
 The destination record is also **read** for a preview — the card's day-level
 "what tomorrow already holds" line (ROADMAP item 21) — and both go through

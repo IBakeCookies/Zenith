@@ -1,6 +1,6 @@
 # The carry that kept the count
 
-**Kind:** feature · **Status:** planning · **Roadmap:** none
+**Kind:** feature · **Status:** landed 2026-09-12 · **Roadmap:** none
 
 ## Goal
 

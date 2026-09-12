@@ -244,6 +244,13 @@ export class SessionStore {
 	#deferDestinationDate = $derived(addDays(this.#selectedDate, 1));
 
 	#activeTasks = $derived(this.#tasks.filter((t) => !t.completed));
+	// What one carry press moves — the count shown and the set written read this
+	// one list (R3). Empty wherever the move itself would refuse.
+	#carryableTasks = $derived(
+		this.#canEditPlan && !this.#isViewingPast && !this.#isShowingDemo
+			? this.#tasks.filter((t) => !t.completed && !isPinned(t))
+			: [],
+	);
 
 	// Capacity pools, sanitized (empty/invalid inputs → 0, i.e. no capacity)
 	#pools = $derived({
@@ -693,6 +700,9 @@ export class SessionStore {
 	get activeTasks() {
 		return this.#activeTasks;
 	}
+	get carryableCount(): number {
+		return this.#carryableTasks.length;
+	}
 	get isLoading() {
 		return this.#isLoading;
 	}
@@ -895,10 +905,37 @@ export class SessionStore {
 		};
 	}
 
-	// Serializes moveTaskToTomorrow: two overlapping moves would each
-	// read-modify-write tomorrow's record and the second would drop the first's
-	// task. Not $state — nothing renders it.
+	// Serializes moveTaskToTomorrow and carryUnfinishedToTomorrow: two overlapping
+	// moves would each read-modify-write tomorrow's record and the second would
+	// drop the first's task. Not $state — nothing renders it.
 	#moving = false;
+
+	// Definition and provenance only: a fresh id in the destination day's id space
+	// (observation joins are per-date, so the old id keeps its ⚡ and 🪫 here — the
+	// measurements stay with the day that took them) and no `mustDoToday`, a
+	// statement about today rather than about the task. `importance` DOES travel,
+	// for the same reason the sliders do: it is part of what the task is, not of
+	// which day it sits on. `createdAt` travels verbatim so the slide badge keeps counting.
+	#toCarriedTask(proxied: Task, id: number): Task {
+		// `tags` is a nested array: IndexedDB's structured clone throws DataCloneError on a Proxy.
+		const task = $state.snapshot(proxied);
+
+		return {
+			id,
+			title: task.title,
+			physicalDifficulty: task.physicalDifficulty,
+			mentalDifficulty: task.mentalDifficulty,
+			enjoyment: task.enjoyment,
+			createdAt: task.createdAt,
+			completed: false,
+			...(task.importance && {
+				importance: task.importance,
+			}),
+			...(task.tags && {
+				tags: task.tags,
+			}),
+		};
+	}
 
 	/**
 	 * Move one active task to tomorrow's plan: append it there, then drop it
@@ -931,28 +968,7 @@ export class SessionStore {
 
 		try {
 			const dest = await this.#readDestination(tomorrow);
-
-			// Definition and provenance only: a fresh id in the destination day's
-			// id space (observation joins are per-date, so the old id keeps its ⚡ and
-			// 🪫 here — the measurements stay with the day that took them) and no
-			// `mustDoToday`, a statement about today rather than about the task.
-			// `importance` DOES travel, for the same reason the sliders do: it is part
-			// of what the task is, not of which day it sits on.
-			const moved: Task = {
-				id: nextTaskId(dest.tasks),
-				title: task.title,
-				physicalDifficulty: task.physicalDifficulty,
-				mentalDifficulty: task.mentalDifficulty,
-				enjoyment: task.enjoyment,
-				createdAt: task.createdAt,
-				completed: false,
-				...(task.importance && {
-					importance: task.importance,
-				}),
-				...(task.tags && {
-					tags: task.tags,
-				}),
-			};
+			const moved = this.#toCarriedTask(task, nextTaskId(dest.tasks));
 
 			await this.#persistSession({
 				date: tomorrow,
@@ -969,6 +985,54 @@ export class SessionStore {
 			return true;
 		} catch (e) {
 			logError('Failed to move task to tomorrow', e, {
+				date: this.#selectedDate,
+			});
+
+			this.#reporter.report('save-failed');
+
+			return false;
+		} finally {
+			this.#moving = false;
+		}
+	}
+
+	/**
+	 * `moveTaskToTomorrow` for every task `carryableCount` counts, in ONE
+	 * destination write: a loop over the single move cannot work — its latch
+	 * refuses every call after the first.
+	 */
+	async carryUnfinishedToTomorrow(): Promise<boolean> {
+		if (this.#moving) return false;
+
+		// Empty under every guard the single move checks, so this is those guards too.
+		const tasks = this.#carryableTasks;
+
+		if (tasks.length === 0) return false;
+
+		this.#moving = true;
+
+		const tomorrow = this.#deferDestinationDate;
+
+		try {
+			const dest = await this.#readDestination(tomorrow);
+			let id = nextTaskId(dest.tasks);
+			const carried = tasks.map((t) => this.#toCarriedTask(t, id++));
+
+			await this.#persistSession({
+				date: tomorrow,
+				tasks: [...carried, ...dest.tasks],
+				availableHours: dest.availableHours,
+				switchCost: dest.switchCost,
+				cognitivePool: dest.declaredPools.cognitiveHours,
+				physicalPool: dest.declaredPools.physicalHours,
+				updatedAt: Date.now(),
+			});
+
+			this.#tasks = this.#tasks.filter((t) => !tasks.includes(t));
+
+			return true;
+		} catch (e) {
+			logError('Failed to carry unfinished tasks to tomorrow', e, {
 				date: this.#selectedDate,
 			});
 

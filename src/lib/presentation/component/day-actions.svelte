@@ -1,4 +1,5 @@
 <script lang="ts">
+	import ArrowRight from '@lucide/svelte/icons/arrow-right';
 	import Clock from '@lucide/svelte/icons/clock';
 	import Download from '@lucide/svelte/icons/download';
 	import Trash2 from '@lucide/svelte/icons/trash-2';
@@ -26,6 +27,9 @@
 		onimportdate: (date: string) => Promise<number>;
 		onsaveroutine: (name: string) => void;
 		ondeleteroutine: (id: string) => void;
+		/** How many tasks a carry would move; 0 hides the control. */
+		carryCount: number;
+		oncarry: () => void;
 		class?: string;
 	}
 
@@ -41,6 +45,8 @@
 		onimportdate,
 		onsaveroutine,
 		ondeleteroutine,
+		carryCount,
+		oncarry,
 		class: className,
 	}: Props = $props();
 
@@ -117,6 +123,15 @@
      reading's line of copy sit beside the readout, which is more than 375px holds in a row.
      Wrapped rows align left, against the same edge as everything above them. -->
 <div class={cn('flex flex-wrap items-center justify-start sm:justify-end gap-grid-xs', className)}>
+	{#if carryCount > 0}
+		<Button size="sm" variant="outline" class="gap-text-xs" onclick={oncarry}>
+			<ArrowRight class="h-4 w-4" />
+			{m.header_carry({
+				count: carryCount,
+			})}
+		</Button>
+	{/if}
+
 	<!-- Today only, unlike its neighbours: a day being planned can be loaded and saved,
 	     but a new 🪫 measurement is today's alone, and this reading fills one. -->
 	{#if isToday}

@@ -283,6 +283,7 @@
 		>
 			{restFormOpen ? m.common_cancel() : `☕ ${m.energy_log_rest()}`}
 		</button>
+		<!-- The Lab does not show the slide badge, so it gets no carry control. -->
 		<DayActions
 			selectedDate={session.selectedDate}
 			today={session.today}
@@ -295,6 +296,8 @@
 			onimportdate={(d) => session.importFromDate(d)}
 			onsaveroutine={(name) => session.saveCurrentAsRoutine(name)}
 			ondeleteroutine={(id) => session.deleteRoutine(id)}
+			carryCount={0}
+			oncarry={() => {}}
 		/>
 	</div>
 {/snippet}

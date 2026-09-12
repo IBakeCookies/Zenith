@@ -89,8 +89,16 @@
 				})}
 	</p>
 	<!-- Capped: a year holds hundreds of rows, and a card that grows with the history
-	     pushes every reading below it off the page. -->
-	<ul class={cn('nice-scrollbar mt-text-xs max-h-64 space-y-text-2xs overflow-y-auto', className)}>
+	     pushes every reading below it off the page. `relative` is what makes the cap
+	     hold: each row carries `sr-only` spans, which are ABSOLUTE, and a static
+	     scroller is not their containing block — they anchor to the page instead and
+	     add a thousand rows' worth of empty scroll below the footer. -->
+	<ul
+		class={cn(
+			'nice-scrollbar relative mt-text-xs max-h-64 space-y-text-2xs overflow-y-auto',
+			className,
+		)}
+	>
 		{#each rows as row (row.key)}
 			<li>
 				<div class="log-row">
