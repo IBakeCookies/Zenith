@@ -331,6 +331,123 @@ test('a title picked from the suggestions brings its ratings with it', async ({ 
 	await expect(page.getByRole('dialog')).toBeHidden();
 });
 
+/* A task the user has done before is added by picking its title, and the tags they
+   filed it under last time come back with the sliders — so a recurring task keeps
+   its labels without being re-tagged every morning.
+
+   Tests: e2e/task-list.e2e.ts ("a picked title brings its tags back with it"),
+     src/lib/business/model/title-memory.test.ts (two, under latestRatingsByTitle),
+     src/lib/presentation/component/task-form.stories.svelte
+     ("Picking a suggestion brings its tags", "A pick replaces the tags typed
+     before it", and the tag half added to "Clearing a picked title resets every
+     rating")
+   Pins: "Picking a suggestion fills the sliders" — it picks the untagged
+     `Gym session`, so its `tags: []` submit holds before and after.
+   Out of scope:
+   - `importance`. Same shape of field, and deliberately not carried: ROADMAP's
+     Phase 2 preamble prices a `high` remembered on the WRONG task at 1.96–2.97×
+     what declaring nothing costs, so a wrong carry is worse than a blank.
+   - `mustDoToday`. `src/lib/data/type/index.ts` says it is a statement about
+     TODAY, which is why nothing cross-day carries it.
+   - Merging picked tags with tags already in the draft. The pick replaces.
+   - The row editor (`task-edit-form.svelte`). It has no title combobox and gets
+     no `suggest`; nothing there changes.
+   Read before building:
+   - `src/lib/business/model/title-memory.ts` — `TitleRating` gains
+     `tags: string[]`, and `latestRatingsByTitle` fills it `task.tags ?? []`.
+     `[]` and not `undefined`: the form assigns it straight onto `draft.tags`.
+   - `src/lib/business/model/AGENTS.md`, "History prefills" — `TitleRating` is a
+     public export whose shape changes, and that section is where its fields are
+     priced (it already explains why `lastUsedDate` is on it).
+   - `src/lib/presentation/AGENTS.md`, "Emptying the title field resets the three
+     sliders to 5/5/5 only when a pick put the numbers there" — this change makes
+     that rule false as written; a pick now also writes the tags, and clearing
+     drops them. AGENTS.md §0 says correct it in this diff, not report it. The
+     same file's `task-edit-form` bullet ("a picked title rewrites the three
+     ratings and a picked TAG rewrites nothing") states the count too, and the
+     argument it makes for the editor's tag datalist survives the correction.
+     `scripts/brief-size.mjs` has that file at 881/881, so both corrections have
+     to be net-zero lines or the lint fails.
+   - `src/lib/business/model/title-memory.test.ts` — the existing `toEqual` cases
+     assert the whole rating object, so each needs `tags: []` added. Collateral of
+     the new field, not a behaviour change. The two tests added here read the field
+     through `toMatchObject` instead, which is what let them go red while `check`
+     stayed green against a `TitleRating` that has no `tags` yet; once it does,
+     `toEqual` on the whole object is the stronger assertion.
+   - `src/lib/presentation/component/task-form.svelte` — `pick()` writes
+     `draft.tags`; `handleTitleInput`'s reset drops `tags: draft.tags` from what it
+     preserves, since tags stop being the user's own once a pick writes them. The
+     panel's next-task buttons reach the same `pick` and inherit this.
+   - `src/lib/business/model/tags.ts` — `toStoredTags` normalizes and drops `[]`,
+     and a picked list is already normalized, so a pick round-trips unchanged.
+   - MATH.md — untouched. `tags.ts`'s header states a tag enters no formula.
+   Decisions: replace, not merge — why: symmetric with the sliders, and it keeps
+     the clear-after-pick reset a one-liner; a merge would need extra state to know
+     which tags the pick had written. Rejected: union, because the title is the
+     first field in the form, so the draft is almost always untagged at pick time
+     and the loss it protects against is rare.
+   Roadmap: none — it extends items 15 and 24, both shipped; renumber nothing. */
+test('a picked title brings its tags back with it', async ({ page }) => {
+	await page.goto('/');
+
+	// The row editor carries the same field labels, so scope to the add form by the
+	// dialog it is the only thing in.
+	const form = page.getByRole('dialog').locator('form');
+
+	const titleField = form.getByLabel('Title', {
+		exact: true,
+	});
+
+	await openTaskForm(page);
+	await titleField.fill('Gym session');
+	await form.getByLabel('Tags').fill('strength,morning');
+
+	// The arrange, asserted: the comma files the first tag and the deploy's blur the
+	// second, so a red below is the recall failing and not the tagging.
+	await expect(
+		form.getByRole('button', {
+			name: 'Remove tag strength',
+		}),
+	).toBeVisible();
+
+	await form
+		.getByRole('button', {
+			name: 'Deploy Task',
+		})
+		.click();
+
+	await closeTaskForm(page);
+	await page.waitForTimeout(AUTOSAVE_MS);
+	await page.reload();
+
+	await expect(taskRow(page, 'Gym session')).toBeVisible();
+
+	// The dialog is gone with the reload; the tags it stored are what the reopened
+	// form has to offer back.
+	await openTaskForm(page);
+
+	// Typed, not filled: the suggestions answer to input events.
+	await titleField.pressSequentially('GY');
+
+	await form
+		.getByRole('option', {
+			name: 'Gym session',
+		})
+		.click();
+
+	await expect(
+		form.getByRole('button', {
+			name: 'Remove tag strength',
+		}),
+	).toBeVisible();
+
+	await expect(
+		form.getByRole('button', {
+			name: 'Remove tag morning',
+		}),
+	).toBeVisible();
+});
+
 /* The badge is the page's only wiring of the mid-day re-plan's position 1 — a story
    can pass `nextTaskId` itself, so only an e2e sees `/` reading it off
    `remainingDay.nextTask`. The two orders are read from different bases and the

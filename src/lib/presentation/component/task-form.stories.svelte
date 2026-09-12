@@ -70,6 +70,7 @@
 					enjoyment: 1,
 					createdAt: '2026-08-01',
 					completed: false,
+					tags: ['deep work', 'admin'],
 				},
 			],
 			availableHours: 4,
@@ -79,6 +80,13 @@
 	]);
 
 	const suggestGym = (query: string) => suggestTitles(rated, query);
+
+	const chipLabels = (canvas: ReturnType<typeof within>) =>
+		canvas
+			.queryAllByRole('button', {
+				name: /^Remove tag /,
+			})
+			.map((button: HTMLElement) => button.getAttribute('aria-label')?.replace('Remove tag ', ''));
 
 	// `max-h-56` is about five rows and `suggestTitles` caps nothing, so twelve matches arrow past the fold.
 	const manyRuns = latestRatingsByTitle([
@@ -341,15 +349,17 @@
 
 		await userEvent.click(
 			canvas.getByRole('option', {
-				name: 'Gym session',
+				name: 'Gym admin',
 			}),
 		);
 
 		await userEvent.click(mustDo);
 
-		await expect(physical).toHaveValue('8');
-		await expect(mental).toHaveValue('2');
-		await expect(enjoyment).toHaveValue('3');
+		await expect(physical).toHaveValue('0');
+		await expect(mental).toHaveValue('6');
+		await expect(enjoyment).toHaveValue('1');
+
+		await expect(chipLabels(canvas)).toEqual(['deep work', 'admin']);
 
 		await userEvent.clear(title);
 
@@ -357,8 +367,91 @@
 		await expect(mental).toHaveValue('5');
 		await expect(enjoyment).toHaveValue('5');
 
+		await expect(chipLabels(canvas)).toEqual([]);
+
 		await expect(title).toHaveValue('');
 		await expect(mustDo).toBeChecked();
+	}}
+/>
+
+<Story
+	name="Picking a suggestion brings its tags"
+	args={{
+		suggest: fn(suggestGym),
+	}}
+	play={async ({ args, canvas, userEvent }) => {
+		const title = canvas.getByLabelText('Title');
+
+		await userEvent.type(title, 'gym');
+
+		await expect(chipLabels(canvas)).toEqual([]);
+
+		await userEvent.click(
+			canvas.getByRole('option', {
+				name: 'Gym admin',
+			}),
+		);
+
+		await expect(chipLabels(canvas)).toEqual(['deep work', 'admin']);
+
+		await userEvent.click(
+			canvas.getByRole('button', {
+				name: 'Remove tag admin',
+			}),
+		);
+
+		await userEvent.click(
+			canvas.getByRole('button', {
+				name: 'Deploy Task',
+			}),
+		);
+
+		await expect(args.onsubmit).toHaveBeenCalledExactlyOnceWith({
+			title: 'Gym admin',
+			physicalDifficulty: 0,
+			mentalDifficulty: 6,
+			enjoyment: 1,
+			mustDoToday: false,
+			importance: 'normal',
+			tags: ['deep work'],
+		});
+
+		await expect(chipLabels(canvas)).toEqual([]);
+	}}
+/>
+
+<Story
+	name="A pick replaces the tags typed before it"
+	args={{
+		suggest: fn(suggestGym),
+	}}
+	play={async ({ canvas, userEvent }) => {
+		const title = canvas.getByLabelText('Title');
+		const tags = canvas.getByLabelText('Tags');
+
+		await userEvent.type(tags, 'errand{Enter}');
+		await expect(chipLabels(canvas)).toEqual(['errand']);
+
+		await userEvent.type(title, 'gym');
+
+		await userEvent.click(
+			canvas.getByRole('option', {
+				name: 'Gym admin',
+			}),
+		);
+
+		await expect(chipLabels(canvas)).toEqual(['deep work', 'admin']);
+
+		await userEvent.clear(title);
+		await userEvent.type(title, 'gym');
+
+		await userEvent.click(
+			canvas.getByRole('option', {
+				name: 'Gym session',
+			}),
+		);
+
+		await expect(chipLabels(canvas)).toEqual([]);
 	}}
 />
 
