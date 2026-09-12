@@ -396,6 +396,7 @@ test('both fits read side by side above the log list', async ({ page }) => {
 	).toBeVisible();
 
 	await expect(drain.getByText('drain rating')).toBeVisible();
+	await expect(drain.getByText(/Drain rates personalized from 1 rating/)).toBeVisible();
 	await expect(flow.getByText(/Model personalized from 1 time-to-flow log/)).toBeVisible();
 
 	const flowBox = (await flow.boundingBox())!;
