@@ -420,16 +420,6 @@
 		</div>
 	</div>
 
-	<!-- Directly under the tile it breaks down, and ranged like it. -->
-	<TagHoursCard
-		breakdown={analytics.tagHours}
-		hasFailed={analytics.hasModelReportFailed}
-		locale={getDateLocale()}
-		onrename={renameTag}
-		ondelete={deleteTag}
-		willMerge={(from, draft) => session.willMergeTag(from, draft)}
-	/>
-
 	<div class="card-shell mt-grid-xl rounded-xl p-box-lg">
 		<h2 class="text-sm font-medium text-ty-primary">{m.ana_completion_rate()}</h2>
 		<p class="mt-text-3xs text-xs text-ty-silent">
@@ -475,20 +465,32 @@
 		<QuadrantDistribution counts={quadrantCounts} />
 	</div>
 
-	<!-- Plan adherence -->
-	<div class="card-shell mt-grid-xl rounded-xl p-box-lg">
-		<h2 class="text-sm font-medium text-ty-primary">{m.ana_adherence()}</h2>
-		<p class="mt-text-3xs text-xs text-ty-silent">{m.ana_adherence_hint()}</p>
+	<!-- Plan adherence and the tag breakdown, a half each: both are short lists of
+	     labelled bars, so full width left either one mostly empty. -->
+	<div class="mt-grid-xl grid gap-grid-lg lg:grid-cols-2">
+		<div class="card-shell rounded-xl p-box-lg">
+			<h2 class="text-sm font-medium text-ty-primary">{m.ana_adherence()}</h2>
+			<p class="mt-text-3xs text-xs text-ty-silent">{m.ana_adherence_hint()}</p>
 
-		{#if analytics.hasModelReportFailed}
-			{@render reportFailed()}
-		{:else if audit === null}
-			{@render pending()}
-		{:else if audit.usedCount === 0}
-			<p class="mt-text-md text-sm text-ty-secondary">{m.ana_adherence_empty()}</p>
-		{:else}
-			<PlanAdherenceSummary {audit} locale={getDateLocale()} class="mt-text-md" />
-		{/if}
+			{#if analytics.hasModelReportFailed}
+				{@render reportFailed()}
+			{:else if audit === null}
+				{@render pending()}
+			{:else if audit.usedCount === 0}
+				<p class="mt-text-md text-sm text-ty-secondary">{m.ana_adherence_empty()}</p>
+			{:else}
+				<PlanAdherenceSummary {audit} locale={getDateLocale()} class="mt-text-md" />
+			{/if}
+		</div>
+
+		<TagHoursCard
+			breakdown={analytics.tagHours}
+			hasFailed={analytics.hasModelReportFailed}
+			locale={getDateLocale()}
+			onrename={renameTag}
+			ondelete={deleteTag}
+			willMerge={(from, draft) => session.willMergeTag(from, draft)}
+		/>
 	</div>
 
 	<div class="card-shell mt-grid-xl rounded-xl p-box-lg">
