@@ -2,13 +2,16 @@ import { expect, test, type Page } from '@playwright/test';
 import {
 	addTask,
 	AUTOSAVE_MS,
+	closeTaskForm,
 	drainChips,
 	drainForm,
 	isoDate,
 	logDrain,
 	openDrainEditor,
+	openTaskForm,
 	plantRunningTimer,
 	setBudget,
+	setSlider,
 	taskCard,
 } from './helpers';
 
@@ -41,7 +44,25 @@ test('the session length prefills from the stop advisor', async ({ page }) => {
 	// The day is set up on `/`, where the budget field is, and worked on the Lab: the
 	// prefill has to read the same advice from either screen.
 	await page.goto('/');
-	await addTask(page, 'Deep work');
+
+	// Physical Diff 7, not the form's default 5: on the v2 curve a 5/5/5 task's best
+	// next session IS one 45-min step, and a fixture whose advice equals the fallback
+	// cannot tell the two apart below. 7 sits in the interior of the 90-min region —
+	// every neighbour from Physical Diff 6 to 9 prices the same session.
+	const form = page.getByRole('dialog');
+	const field = await openTaskForm(page);
+
+	await field.fill('Deep work');
+	await setSlider(form.getByLabel('Physical Diff'), 7);
+
+	await form
+		.getByRole('button', {
+			name: 'Deploy Task',
+		})
+		.click();
+
+	await closeTaskForm(page);
+
 	await setBudget(page, 10);
 	await page.waitForTimeout(AUTOSAVE_MS);
 
