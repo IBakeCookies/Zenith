@@ -169,6 +169,7 @@
 			slideDay={getSlideDay(task.createdAt, viewedDate)}
 			flowMinutes={flowLogs?.get(task.id)}
 			mustDoToday={task.mustDoToday}
+			deferredTo={task.deferredTo}
 			importance={task.importance}
 			tags={task.tags}
 			{tagVocabulary}

@@ -51,6 +51,8 @@
 		totalHours?: number;
 		flowMinutes?: number;
 		mustDoToday?: boolean;
+		/** The day a move sent this task to; the row stays here, marked. */
+		deferredTo?: string;
 		importance?: TaskImportance;
 		tags?: string[];
 		/** The user's past tags, for the ✎ editor's tag field — the list comes from
@@ -97,6 +99,7 @@
 		totalHours,
 		flowMinutes,
 		mustDoToday = false,
+		deferredTo,
 		importance = 'normal',
 		tags,
 		tagVocabulary,
@@ -174,6 +177,18 @@
 			</Tooltip.Trigger>
 			<Tooltip.Content>
 				<p>{m.form_must_do_today_title()}</p>
+			</Tooltip.Content>
+		</Tooltip.Root>
+	{/if}
+	{#if deferredTo}
+		<Tooltip.Root>
+			<Tooltip.Trigger class="cursor-help">
+				<Badge class="bg-info-tint uppercase tracking-wide text-info-strong">
+					{m.task_deferred_badge()}
+				</Badge>
+			</Tooltip.Trigger>
+			<Tooltip.Content>
+				<p>{m.task_deferred_tooltip()}</p>
 			</Tooltip.Content>
 		</Tooltip.Root>
 	{/if}

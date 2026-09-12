@@ -8,9 +8,11 @@ import {
 	timeBudgetBar,
 } from './helpers';
 
-/* One press sends every unfinished task to tomorrow, keeping its `createdAt` so the
-   slide badge keeps counting — the whole reason this is a move and not an import
-   (docs/features/the-carry-that-kept-the-count.md). */
+/* One press sends every unfinished task to tomorrow — but the day it left keeps its
+   own row, marked, so a day that carried two of three tasks never reads back as a day
+   that finished everything. A carried task leaves the PLAN (no hours, no run order, not
+   carryable again) and stays in the LEDGER (still not completed, still holding the 🪫
+   logs joined to it). `createdAt` still travels, so the slide badge keeps counting. */
 
 type SeededTask = {
 	id: number;
@@ -121,12 +123,14 @@ test('one press sends the day’s unfinished work to tomorrow, whole', async ({ 
 	]);
 
 	await carryControl(page, 2).click();
+	await expect(anyCarryControl(page)).toHaveCount(0);
 
-	await expect(taskRow(page, 'Write the spec')).toHaveCount(0);
-	await expect(taskRow(page, 'Boxing training')).toHaveCount(0);
+	// The day it left keeps all three rows: what it planned is what it has to answer for.
+	await expect(taskRow(page, 'Write the spec')).toBeVisible();
+	await expect(taskRow(page, 'Boxing training')).toBeVisible();
 	await expect(taskRow(page, 'Inbox sweep')).toBeVisible();
 
-	// The removal is a debounced autosave; let it land before navigating.
+	// The mark is a debounced autosave; let it land before navigating.
 	await page.waitForTimeout(AUTOSAVE_MS);
 	await page.goto(`/?date=${isoDate(1)}`);
 
@@ -145,6 +149,85 @@ test('one press sends the day’s unfinished work to tomorrow, whole', async ({ 
 	});
 });
 
+/** The Completion Rate tile on the dashboard. The label reads twice — a tile, and again
+ *  in the lower card under the question it answers — so this takes the one drawing its
+ *  value in a `<p>` that is a DIRECT child (e2e/time-budget.e2e.ts says why). */
+const completionRate = (page: Page) =>
+	page
+		.locator('div:has(> p)')
+		.filter({
+			has: page.getByText('Completion Rate', {
+				exact: true,
+			}),
+		})
+		.getByText(/^\d+%$/);
+
+/* The row the user moved is still the row they planned, so it stays where they can see
+   what they did — and take it back. */
+test('a carried task stays on the day it left, marked', async ({ page }) => {
+	await seedDay(page, isoDate(0), [seeded(1, 'Write the spec')]);
+
+	await carryControl(page, 1).click();
+	await expect(anyCarryControl(page)).toHaveCount(0);
+
+	await expect(taskRow(page, 'Write the spec').getByText('Moved to tomorrow')).toBeVisible();
+});
+
+/* The one this whole change exists for: a day that finished 1 of 3 and carried the rest
+   read back as a finished day, because every reading is derived from the day's task list
+   at read time and the carry emptied it. */
+test('carrying does not flatter the day it left', async ({ page }) => {
+	await seedDay(page, isoDate(0), [
+		seeded(1, 'Write the spec'),
+		seeded(2, 'Boxing training'),
+		seeded(3, 'Inbox sweep', {
+			completed: true,
+		}),
+	]);
+
+	await carryControl(page, 2).click();
+
+	// The control empties as the carry lands; without waiting on it every assertion here
+	// can resolve against the frame before the write.
+	await expect(anyCarryControl(page)).toHaveCount(0);
+
+	// The day finished one of the three tasks it was planned with, and pressing a button
+	// on it is not finishing the other two.
+	await expect(completionRate(page)).not.toHaveText('100%');
+});
+
+/* The row stays, so the count has to be told to stop counting it — otherwise the control
+   keeps offering a carry that already happened, and pressing it duplicates tomorrow. */
+test('a day cannot carry the same work twice', async ({ page }) => {
+	await seedDay(page, isoDate(0), [seeded(1, 'Write the spec'), seeded(2, 'Boxing training')]);
+
+	await carryControl(page, 2).click();
+
+	await expect(anyCarryControl(page)).toHaveCount(0);
+});
+
+/* Moving is reversible while the toast lives, the way a deleted task is: the marks come
+   off and tomorrow gives the copies back. */
+test('the carry offers one way back', async ({ page }) => {
+	await seedDay(page, isoDate(0), [seeded(1, 'Write the spec'), seeded(2, 'Boxing training')]);
+
+	await carryControl(page, 2).click();
+	await expect(anyCarryControl(page)).toHaveCount(0);
+	await expect(taskRow(page, 'Write the spec').getByText('Moved to tomorrow')).toBeVisible();
+
+	await page
+		.getByRole('button', {
+			name: 'Undo',
+		})
+		.click();
+
+	await expect(carryControl(page, 2)).toBeVisible();
+
+	await page.waitForTimeout(AUTOSAVE_MS);
+
+	expect(await readTasks(page, isoDate(1))).toEqual([]);
+});
+
 test('a must-do-today task stays, and the count never promised it', async ({ page }) => {
 	await seedDay(page, isoDate(0), [
 		seeded(1, 'Tax return', {
@@ -155,8 +238,9 @@ test('a must-do-today task stays, and the count never promised it', async ({ pag
 
 	await carryControl(page, 1).click();
 
-	await expect(taskRow(page, 'Boxing training')).toHaveCount(0);
+	await expect(taskRow(page, 'Boxing training').getByText('Moved to tomorrow')).toBeVisible();
 	await expect(taskRow(page, 'Tax return')).toBeVisible();
+	await expect(taskRow(page, 'Tax return').getByText('Moved to tomorrow')).toHaveCount(0);
 });
 
 test('the day count keeps running across a carry', async ({ page }) => {
@@ -169,7 +253,7 @@ test('the day count keeps running across a carry', async ({ page }) => {
 	await expect(taskRow(page, 'Fix the shed').getByText('day 5')).toBeVisible();
 
 	await carryControl(page, 1).click();
-	await expect(taskRow(page, 'Fix the shed')).toHaveCount(0);
+	await expect(anyCarryControl(page)).toHaveCount(0);
 	await page.waitForTimeout(AUTOSAVE_MS);
 	await page.goto(`/?date=${isoDate(1)}`);
 

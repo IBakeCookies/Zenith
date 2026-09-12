@@ -230,23 +230,23 @@ becomes visible, which asks the writer for `pending` so an unlanded edit is not
 overwritten by the stored day — reachable because a hidden tab that rolls over
 midnight re-loads and re-arms the autosave.
 
-### Four write sites carry the whole day, so a new field lands in all four
+### Five write sites carry the whole day, so a new field lands in all five
 
 `SessionStore` writes a `DailySession` from the autosave payload, from each
-tomorrow move's destination payload and from `#rewriteTagInHistory` (the rename
-and the delete) — each a whole record, so every field one of them does not carry is a
-field it erases. `#persistSession` cannot catch that: it takes the payload
-already built. A field that reached only some of the writers once reset a past
-day's value when a task was ticked off there
-([the-plan-that-had-no-clock.md](../../../docs/features/the-plan-that-had-no-clock.md)).
-The destination write also reads its OWN day's values through `#readDestination`
-and defaults nothing: a fallback there stamps a value onto a day that never
-chose one. `#rewriteTagInHistory` is the one that carries every field for free,
-and only because it spreads the record it read RAW — a tag rewrite taken off
+tomorrow move's destination payload, from the carry's undo (the same destination,
+rewritten) and from `#rewriteTagInHistory` (the rename and the delete) — each a
+whole record, so every field one of them does not carry is a field it erases.
+`#persistSession` cannot catch that: it takes the payload already built. A field
+that reached only some of the writers once reset a past day's value when a task
+was ticked off there ([the-plan-that-had-no-clock.md](../../../docs/features/the-plan-that-had-no-clock.md)).
+The destination writes also read their OWN day's values through `#readDestination`
+and default nothing: a fallback there stamps a value onto a day that never chose
+one. `#rewriteTagInHistory` is the one that carries every field for free, and only
+because it spreads the record it read RAW — a tag rewrite taken off
 `sanitizeSessions`' output would drop whatever a future field adds. The same
-argument in a second store: it rewrites the saved **routines** in that one
-write, read raw past `sanitizeRoutines` for that reason, then re-reads
-`#routines` so the menu and `importRoutine` are not a reload behind.
+argument in a second store: it rewrites the saved **routines** in that one write,
+read raw past `sanitizeRoutines` for that reason, then re-reads `#routines` so the
+menu and `importRoutine` are not a reload behind.
 
 ### `SessionStore` has a second day source, and it reaches no storage
 
@@ -260,7 +260,7 @@ which of the two flags a site takes is the whole of it:
   yesterday effect and the `visibilitychange` re-read stand down.
 - `#isShowingDemo` — whether the fixture is on screen. Gates the WRITES:
   `#persistSession`, the auto-save effect, `logFlow`, `saveCurrentAsRoutine`,
-  `deleteRoutine`, the two tomorrow moves, `#rewriteTagInHistory`, and the two
+  `deleteRoutine`, the two tomorrow moves and the carry's undo, `#rewriteTagInHistory`, and the two
   remaining reads a click can
   still reach (`readDeferDestination`, `importFromDate`). Leaving the demo drops
   the param while the fixture is still in `#tasks`, and a URL-keyed auto-save ran
@@ -570,50 +570,50 @@ both keep the boot day's answer while another date is viewed.
 
 ### A task moves between days only via the two tomorrow moves
 
-Tasks live inside their day's `DailySession` record, so a move is two writes:
-append to tomorrow's session (a read-modify-write through `$readSessionByDate` /
-`$updateSession` — the only store write that does not target the viewed day),
-then drop from today's `#tasks` (persisted by the normal autosave). In that
-order and without a transaction on purpose: the failure mode is a visible
-duplicate, never a vanished task.
+Tasks live inside their day's `DailySession` record, so a move is two writes: append
+a copy to tomorrow's session (a read-modify-write through `$readSessionByDate` /
+`$updateSession` — the only store write that does not target the viewed day), then
+MARK today's row `deferredTo` (persisted by the normal autosave) — in that order and
+without a transaction, so the failure mode is a visible duplicate, never a vanished
+task. Marked, never dropped: every day reading derives from `session.tasks` at read
+time, so a dropped row made a day that finished one of three read as finished and
+orphaned a started task's 🪫 hours. Each scope's reading of the mark: `daily-metrics.ts`'s header.
 
 What travels is definition and provenance only — `#toCarriedTask`, the one
 projection both moves write: a fresh id in the destination day's id space
 (observation joins are per-date, so ⚡ and 🪫 stay with the day that measured
-them), `createdAt` verbatim so the slide badge keeps counting, no `mustDoToday`.
-Both moves refuse completed and `mustDoToday` tasks, no-op mid-navigation
-(`#loadedDate !== #selectedDate`) and share the `#moving` latch (two overlapping
-read-modify-writes on tomorrow would drop one task).
-Destination is hard-coded to `selectedDate + 1`: neither caller (the advice
-card's lever, the Plan card's carry control) means anything else, and tomorrow is
-never the day on screen (YAGNI). The advice reading stays a counterfactual: the
-model prices "off today", only the button commits.
+them), `createdAt` verbatim so the slide badge keeps counting, no `mustDoToday`,
+no `deferredTo`. Both moves refuse completed, `mustDoToday` and deferred tasks,
+no-op mid-navigation (`#loadedDate !== #selectedDate`) and share the `#moving`
+latch (two overlapping read-modify-writes on tomorrow would drop one task).
+Destination is hard-coded to `selectedDate + 1` — neither caller means anything
+else (YAGNI) — and the advice stays a counterfactual: only the button commits.
 
 `carryUnfinishedToTomorrow` is the single move for every task `carryableCount`
 counts, in ONE destination write (a loop over the single move would hit its own
-latch). `carryableCount` is the one field the control is gated on: one derived
-list, empty wherever the move would refuse, so the label never overstates
+latch), and stashes its way back in `undoCarry` for the page's toast — a stash, not
+a return value, since both moves return whether they moved: it removes the copies
+from tomorrow under the same latch, then un-marks the rows. `carryableCount` is the
+one field the control is gated on: one derived list, empty wherever the move would
+refuse, so the label never overstates
 ([the-carry-that-kept-the-count.md](../../../docs/features/the-carry-that-kept-the-count.md)).
 
 The destination record is also **read** for a preview — the card's day-level
 "what tomorrow already holds" line (ROADMAP item 21) — and both go through
-`#readDestination`, which owns the fallbacks a day with no record opens on
-(R3: the line would otherwise print hours the write does not use). The preview
-refuses on the move's own guards and answers `null` on a failed read, which is
-`#readHistoryPrefills`' policy: the advice it sits under is priced on today and
-still correct.
+`#readDestination`, which owns the fallbacks a day with no record opens on (R3:
+the line would otherwise print hours the write does not use). The preview refuses
+on the move's own guards and answers `null` on a failed read — `#readHistoryPrefills`'
+policy: the advice it sits under is priced on today and still correct.
 
-A reading about a day OTHER than the viewed one cannot key its freshness off
-that day's inputs — today → tomorrow (edit it) → today fingerprints
-identically — so `#writeGenerations` counts landed session writes **per date**
-(every session write goes through `#persistSession`) and anything held across
-days keys on `writeGenerationFor(that day)`. Not one counter: today's own
-auto-save then withdrew a reading it cannot have affected. A `SvelteMap` and not
-a `Map`, because it is mutated per write rather than replaced — a plain one
-would not re-derive its dependents. Where a defer sends is
-`deferDestinationDate`, read by the move, the preview and that key.
+A reading about a day OTHER than the viewed one cannot key its freshness off that
+day's inputs — today → tomorrow (edit it) → today fingerprints identically — so
+`#writeGenerations` counts landed session writes **per date** (every session write
+goes through `#persistSession`) and anything held across days keys on
+`writeGenerationFor(that day)`. Not one counter: today's own auto-save then withdrew
+a reading it cannot have affected. A `SvelteMap`, not a `Map`: mutated per write
+rather than replaced, a plain one would not re-derive its dependents. Where a defer
+sends is `deferDestinationDate`, read by the move, the preview and that key.
 
-Its whole-past sibling is `pastWriteGeneration`, one counter over every day
-already past, because the reading it keeps fresh folds all of them in a single
-pass: no per-date count can withdraw it, since the write that invalidates it may
-land on any finished day.
+Its whole-past sibling is `pastWriteGeneration`, one counter over every day already
+past, because the reading it keeps fresh folds all of them in a single pass: no
+per-date count can withdraw it, since the invalidating write may land on any finished day.

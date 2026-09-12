@@ -52,7 +52,11 @@ import {
 	summarizeDeclaredConstraints,
 	type DeclaredConstraints,
 } from '$lib/business/model/constraint-memory';
-import { getEffectiveDifficulty, isPinned } from '$lib/business/model/metric/calculation';
+import {
+	getEffectiveDifficulty,
+	isDeferred,
+	isPinned,
+} from '$lib/business/model/metric/calculation';
 import {
 	summarizeDeferDestination,
 	type DeferDestination,
@@ -104,8 +108,8 @@ type TaskDefinition = Omit<Task, 'id' | 'createdAt' | 'completed'>;
 /**
  * The one projection every import and every saved routine carries. Listed field
  * by field rather than omitted, because what a DAY owns has to stay behind —
- * `mustDoToday`, the id, the date, the checkbox — and a spread would carry the
- * next such field silently.
+ * `mustDoToday`, `deferredTo`, the id, the date, the checkbox — and a spread
+ * would carry the next such field silently.
  */
 function toTaskDefinition(task: TaskDefinition): TaskDefinition {
 	return {
@@ -248,7 +252,7 @@ export class SessionStore {
 	// one list (R3). Empty wherever the move itself would refuse.
 	#carryableTasks = $derived(
 		this.#canEditPlan && !this.#isViewingPast && !this.#isShowingDemo
-			? this.#tasks.filter((t) => !t.completed && !isPinned(t))
+			? this.#tasks.filter((t) => !t.completed && !isPinned(t) && !isDeferred(t))
 			: [],
 	);
 
@@ -703,6 +707,10 @@ export class SessionStore {
 	get carryableCount(): number {
 		return this.#carryableTasks.length;
 	}
+	/** The way back from the last carry, for as long as its toast lives. */
+	get undoCarry() {
+		return this.#undoCarry;
+	}
 	get isLoading() {
 		return this.#isLoading;
 	}
@@ -910,6 +918,10 @@ export class SessionStore {
 	// drop the first's task. Not $state — nothing renders it.
 	#moving = false;
 
+	// Stashed rather than returned: the moves answer whether they moved, and the
+	// control reads that. Not $state — nothing renders it.
+	#undoCarry: (() => Promise<void>) | null = null;
+
 	// Definition and provenance only: a fresh id in the destination day's id space
 	// (observation joins are per-date, so the old id keeps its ⚡ and 🪫 here — the
 	// measurements stay with the day that took them) and no `mustDoToday`, a
@@ -938,12 +950,13 @@ export class SessionStore {
 	}
 
 	/**
-	 * Move one active task to tomorrow's plan: append it there, then drop it
-	 * here. The destination write is a read-modify-write against tomorrow's
-	 * stored session — the only write in this store that does not target the
-	 * viewed day (business/AGENTS.md). Ordered so the failure mode is a visible
-	 * duplicate, never a vanished task: the local removal (persisted by
-	 * auto-save) happens only after the destination write lands.
+	 * Move one active task to tomorrow's plan: copy it there, then mark it here
+	 * (`deferredTo`), so the day it left still reads as planned. The destination
+	 * write is a read-modify-write against tomorrow's stored session — the only
+	 * write in this store that does not target the viewed day
+	 * (business/AGENTS.md). Ordered so the failure mode is a visible duplicate,
+	 * never a vanished task: the local mark (persisted by auto-save) happens only
+	 * after the destination write lands.
 	 */
 	async moveTaskToTomorrow(id: number): Promise<boolean> {
 		if (!this.#canEditPlan) return false;
@@ -960,7 +973,7 @@ export class SessionStore {
 		const task = this.#tasks.find((t) => t.id === id);
 
 		// A completed task IS history: it was worked here, so there is nothing to send on.
-		if (!task || task.completed || isPinned(task)) return false;
+		if (!task || task.completed || isPinned(task) || isDeferred(task)) return false;
 
 		this.#moving = true;
 
@@ -980,7 +993,14 @@ export class SessionStore {
 				updatedAt: Date.now(),
 			});
 
-			this.#tasks = this.#tasks.filter((t) => t.id !== id);
+			this.#tasks = this.#tasks.map((t) =>
+				t.id === id
+					? {
+							...t,
+							deferredTo: tomorrow,
+						}
+					: t,
+			);
 
 			return true;
 		} catch (e) {
@@ -1012,6 +1032,8 @@ export class SessionStore {
 		this.#moving = true;
 
 		const tomorrow = this.#deferDestinationDate;
+		const date = this.#selectedDate;
+		const sourceIds = tasks.map((t) => t.id);
 
 		try {
 			const dest = await this.#readDestination(tomorrow);
@@ -1028,7 +1050,18 @@ export class SessionStore {
 				updatedAt: Date.now(),
 			});
 
-			this.#tasks = this.#tasks.filter((t) => !tasks.includes(t));
+			this.#tasks = this.#tasks.map((t) =>
+				sourceIds.includes(t.id)
+					? {
+							...t,
+							deferredTo: tomorrow,
+						}
+					: t,
+			);
+
+			const copyIds = carried.map((t) => t.id);
+
+			this.#undoCarry = () => this.#undoCarryOf(date, tomorrow, sourceIds, copyIds);
 
 			return true;
 		} catch (e) {
@@ -1039,6 +1072,55 @@ export class SessionStore {
 			this.#reporter.report('save-failed');
 
 			return false;
+		} finally {
+			this.#moving = false;
+		}
+	}
+
+	// Takes the copies back out of tomorrow, then lifts the marks — the carry's two
+	// writes in reverse, so the failure mode is again a visible duplicate.
+	async #undoCarryOf(date: string, tomorrow: string, sourceIds: number[], copyIds: number[]) {
+		// `removeTask`'s undo guard, for its reason: the toast outlives a click on
+		// another day, and the marks would come off the tasks now on screen.
+		if (this.#loadedDate !== this.#selectedDate || this.#selectedDate !== date) return;
+
+		// The moves' own two refusals: the example day reads and writes no storage.
+		if (this.#isShowingDemo || this.#moving) return;
+
+		this.#moving = true;
+
+		try {
+			const dest = await this.#readDestination(tomorrow);
+
+			await this.#persistSession({
+				date: tomorrow,
+				tasks: dest.tasks.filter((t) => !copyIds.includes(t.id)),
+				availableHours: dest.availableHours,
+				switchCost: dest.switchCost,
+				cognitivePool: dest.declaredPools.cognitiveHours,
+				physicalPool: dest.declaredPools.physicalHours,
+				updatedAt: Date.now(),
+			});
+
+			// Rebuilt without the key, as `updateTask` clears `tags`: a spread
+			// `deferredTo: undefined` autosaves a key holding undefined.
+			this.#tasks = this.#tasks.map((t) => {
+				if (!sourceIds.includes(t.id)) return t;
+
+				const restored = {
+					...t,
+				};
+
+				delete restored.deferredTo;
+
+				return restored;
+			});
+		} catch (e) {
+			logError('Failed to undo the carry', e, {
+				date,
+			});
+
+			this.#reporter.report('save-failed');
 		} finally {
 			this.#moving = false;
 		}

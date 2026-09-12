@@ -8,6 +8,7 @@ import {
 	openTaskForm,
 	setBudget,
 	taskCard,
+	taskRow,
 } from './helpers';
 
 /* The advice card is the one place the app says what to CHANGE rather than what
@@ -244,14 +245,10 @@ test('applying a deferral moves the task to tomorrow’s plan', async ({ page })
 
 	await apply.click();
 
-	// Gone from today…
-	await expect(
-		page.getByRole('checkbox', {
-			name: `Mark ${title} complete`,
-		}),
-	).toBeHidden();
+	// Marked on today — the row stays where the user can see what they moved…
+	await expect(taskRow(page, title).getByText('Moved to tomorrow')).toBeVisible();
 
-	// …and the removal is a debounced autosave; let it land before navigating.
+	// …and the mark is a debounced autosave; let it land before navigating.
 	await page.waitForTimeout(AUTOSAVE_MS);
 	await page.goto(`/?date=${isoDate(1)}`);
 
