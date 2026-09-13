@@ -1538,8 +1538,10 @@ more session of a task you already checked off — or sent to tomorrow" is no
 advice. Every logged task stays in the reconstruction regardless — a completed
 or moved task's hours drained the reservoirs the open ones must work with.
 §8.10's `lo` bound reads the same field for the checked-off half of that reason
-and keeps a moved row OPEN: on a finished day, declining to work it was part of
-the stop, so it is a forgone step like any unworked open task.
+and keeps a CARRIED row OPEN: on a finished day, declining to work it was part of
+the stop, so it is a forgone step like any unworked open task. A row the advice
+card moved reaches neither reading — that move deletes it rather than marking it
+(`business/AGENTS.md`), so the day it left has one fewer forgone step.
 
 **Bounds of validity, stated on the card's tooltip:** the reading trusts
 today's 🪫 logs, so unlogged work reads as free time (the advisor will say
